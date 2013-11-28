@@ -1,0 +1,10 @@
+setup.py
+protobix/__init__.py
+protobix/datacontainer.py
+protobix/senderexception.py
+protobix/senderprotocol.py
+protobix.egg-info/PKG-INFO
+protobix.egg-info/SOURCES.txt
+protobix.egg-info/dependency_links.txt
+protobix.egg-info/top_level.txt
+protobix.egg-info/zip-safe

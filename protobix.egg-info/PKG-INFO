@@ -1,0 +1,12 @@
+Metadata-Version: 1.0
+Name: protobix
+Version: 0.0.2
+Summary: Implementation of Zabbix Sender protocol
+Home-page: http://www.blablacar.com/
+Author: Jean Baptiste Favre
+Author-email: jean-baptiste.favre@blablacar.com
+License: GPL
+Description: This module implements Zabbix Sender Protocol.
+        It allows to build list of items and send items and send them as trapper.
+        It currently supports items as well as Low Level Discovery.
+Platform: UNKNOWN
