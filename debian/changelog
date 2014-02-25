@@ -1,3 +1,10 @@
+protobix (0.0.3-1~bbc74+1) stable; urgency=medium
+
+  * Imported Upstream version 0.0.3
+  * Add support for dryrun option
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Tue, 25 Feb 2014 12:00:07 +0100
+
 protobix (0.0.2-2~bbc72+1) stable; urgency=low
 
   * Backport for Debian Wheezy by BlaBlaCar
