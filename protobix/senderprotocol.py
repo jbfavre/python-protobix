@@ -1,7 +1,8 @@
-import simplejson
-import struct
-import socket
+import logging
 import re
+import simplejson
+import socket
+import struct
 
 from senderexception import SenderException
 
@@ -40,6 +41,9 @@ class SenderProtocol(object):
 
     def set_debug(self, debug):
         self.debug = debug
+
+    def set_dryrun(self, dryrun):
+        self.dryrun = dryrun
 
     def __repr__(self):
         return simplejson.dumps({ "data": ("%r" % self.data_container),
@@ -89,15 +93,18 @@ class SenderProtocol(object):
 
     def single_send(self, container):
         self.data_container = container
-
         for item in self.data_container.get_items_list():
             data = simplejson.dumps({ "data": [ item ],
                                       "request": self.request })
-            zbx_answer = self.send_to_zabbix(data)
-            ''' processed: 1; failed: 0; total: 1; seconds spent: 0.000062 '''
-            regex = re.match( ZBX_RESP_REGEX, zbx_answer.get('info'))
+            result = '-'
+            zbx_answer = 0
+            if not self.dryrun:
+                zbx_answer = self.send_to_zabbix(data)
+                regex = re.match( ZBX_RESP_REGEX, zbx_answer.get('info'))
+                result = regex.group(1)
+
             if self.debug:
-                print (ZBX_DBG_SEND_RESULT % (regex.group(1),
+                print (ZBX_DBG_SEND_RESULT % (result,
                                               item["host"],
                                               item["key"],
                                               item["value"]))
