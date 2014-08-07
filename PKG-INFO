@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: protobix
-Version: 0.0.3
+Version: 0.0.4
 Summary: Implementation of Zabbix Sender protocol
 Home-page: http://www.blablacar.com/
 Author: Jean Baptiste Favre
