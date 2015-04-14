@@ -1,0 +1,5 @@
+protobix (0.0.5-1~bpo78+1) stable; urgency=medium
+
+  * Initial release. Migration from old repository
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Tue, 14 Apr 2015 15:00:34 +0200
