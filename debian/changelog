@@ -1,0 +1,12 @@
+python-protobix (0.0.5-1~bpo80+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Tue, 14 Apr 2015 16:08:54 +0200
+
+python-protobix (0.0.5-1) unstable; urgency=medium
+
+  * Initial release. Migration from old repository
+  * Closes: #12345
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Tue, 14 Apr 2015 15:00:34 +0200
