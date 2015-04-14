@@ -1,0 +1,22 @@
+Source: python-protobix
+Maintainer: Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>
+Section: python
+Priority: optional
+Build-Depends: debhelper (>= 8), python-all (>= 2.6.6-3), python-setuptools, dh-python, python3-all, python3-setuptools
+Standards-Version: 3.9.6
+
+Package: python-protobix
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Description: Implementation of Zabbix Sender protocol
+ This module implements Zabbix Sender Protocol.
+ It allows one to build list of items and send items and send them as trapper.
+ It currently supports items as well as Low Level Discovery.
+
+Package: python3-protobix
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}
+Description: Implementation of Zabbix Sender protocol
+ This module implements Zabbix Sender Protocol.
+ It allows one to build list of items and send items and send them as trapper.
+ It currently supports items as well as Low Level Discovery.
