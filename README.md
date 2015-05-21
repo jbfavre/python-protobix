@@ -23,6 +23,12 @@ Build `Debian` package:
     apt-get install python-simplejson
     dpkg -i deb_dist/python-zabbix_0.0.1-1_all.deb
 
+From pip:
+
+For now, `protobix` is only available from `testpypip`:
+
+    pip install -i https://testpypi.python.org/pypi protobix
+
 ## Usage
 
 Once module is installed, you can use it as follow
@@ -36,14 +42,13 @@ Once module is installed, you can use it as follow
 import protobix
 
 ''' create DataContainer, providing data_type, zabbix server and port '''
-zbx_container = zabbix.DataContainer("items", "localhost", 10051)
-
+zbx_container = protobix.DataContainer("items", "localhost", 10051)
 ''' set debug '''
 zbx_container.set_debug(True)
 zbx_container.set_verbosity(True)
 
 ''' Add items one after the other '''
-hostname="myhost"    item="my.zabbix.item"
+hostname="myhost"
 item="my.zabbix.item"
 value=0
 zbx_container.add_item( hostname, item, value)
@@ -79,8 +84,7 @@ print "Everything is OK"
 import protobix
 
 ''' create DataContainer, providing data_type, zabbix server and port '''
-zbx_container = zabbix.DataContainer("lld", "localhost", 10051)
-
+zbx_container = protobix.DataContainer("lld", "localhost", 10051)
 ''' set debug '''
 zbx_container.set_debug(True)
 zbx_container.set_verbosity(True)
@@ -122,10 +126,3 @@ if not ret:
     print "Ooops. Something went wrong when sending data to Zabbix"
 
 print "Everything is OK"
-```
-
-## How to contribute
-
-Clone this repository, make your modifications into a dedicated branch and ask for a pull request against `upstream` branch.
-
-__Do not use master_ as reference since master includes `Debian` packaging stuff.
