@@ -14,7 +14,7 @@ ZBX_HDR_SIZE = 13
 # 2.2: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 # 2.4: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? [Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
-ZBX_DBG_SEND_RESULT = "DBG - Send result [%s] for [%s %s %s]"
+ZBX_DBG_SEND_RESULT = "DBG - Send result [%s-%s-%s-%s] for [%s %s %s]"
 
 def recv_all(sock):
     buf = ''
@@ -52,7 +52,7 @@ class SenderProtocol(object):
         self.dryrun = dryrun
 
     def __repr__(self):
-        return simplejson.dumps({ "data": ("%r" % self.data_container),
+        return simplejson.dumps({ "data": ("%r" % self.items_list),
                                   "request": self.request,
                                   "clock": int(time.time()) })
 
@@ -65,6 +65,8 @@ class SenderProtocol(object):
             zbx_sock.connect((self.zbx_host, int(self.zbx_port)))
             zbx_sock.sendall(packet)
         except (socket.gaierror, socket.error) as e:
+            # Maybe we could consider storing missed sent data for later retry
+            self.items_list = []
             zbx_sock.close()
             raise SenderException(e[1])
         else:
@@ -82,17 +84,16 @@ class SenderProtocol(object):
 
         return simplejson.loads(zbx_srv_resp_body)
 
-    def send(self, container):
+    def send(self):
         if self.debug:
-            zbx_answer = self.single_send(container)
+            zbx_answer = self.single_send()
         else:
-            zbx_answer = self.bulk_send(container)
+            zbx_answer = self.bulk_send()
         self.items_list = []
         return zbx_answer
 
-    def bulk_send(self, container):
-        self.data_container = container
-        data = simplejson.dumps({ "data": self.data_container.get_items_list(),
+    def bulk_send(self):
+        data = simplejson.dumps({ "data": self.items_list,
                                   "request": self.request,
                                   "clock": int(time.time()) })
         zbx_answer = self.send_to_zabbix(data)
@@ -100,21 +101,22 @@ class SenderProtocol(object):
             print zbx_answer.get('info')
         return zbx_answer
 
-    def single_send(self, container):
-        self.data_container = container
-        for item in self.data_container.get_items_list():
+    def single_send(self):
+        for item in self.items_list:
             data = simplejson.dumps({ "data": [ item ],
                                       "request": self.request,
                                       "clock": int(time.time()) })
-            result = '-'
             zbx_answer = 0
             if not self.dryrun:
                 zbx_answer = self.send_to_zabbix(data)
-                regex = re.match( ZBX_RESP_REGEX, zbx_answer.get('info'))
-                result = regex.group(1)
+                result = re.findall( ZBX_RESP_REGEX, zbx_answer.get('info'))
+                result = result[0]
 
             if self.debug:
-                print (ZBX_DBG_SEND_RESULT % (result,
+                print (ZBX_DBG_SEND_RESULT % (result[0],
+                                              result[1],
+                                              result[2],
+                                              result[3],
                                               item["host"],
                                               item["key"],
                                               item["value"]))

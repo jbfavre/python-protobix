@@ -5,11 +5,11 @@ from senderprotocol import SenderProtocol
 
 class DataContainer(SenderProtocol):
 
+    REQUEST = "sender data"
+
     def __init__(self, data_type=None, zbx_host="", zbx_port=10051):
-        super( DataContainer, self).__init__()
+        super( DataContainer, self).__init__(zbx_host=zbx_host, zbx_port=zbx_port)
         self.request = "sender data"
-        self.zbx_host = zbx_host
-        self.zbx_port = zbx_port
         self.items_list = []
         self.data_type = data_type
 
