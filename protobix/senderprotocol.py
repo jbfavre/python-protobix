@@ -83,6 +83,7 @@ class SenderProtocol(object):
             zbx_answer = self.single_send(container)
         else:
             zbx_answer = self.bulk_send(container)
+        self.items_list = []
         return zbx_answer
 
     def bulk_send(self, container):
