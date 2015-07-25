@@ -5,7 +5,7 @@ from distutils.core import setup
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.0.5',
+    version = '0.0.6',
 
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
