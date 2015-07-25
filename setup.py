@@ -5,7 +5,7 @@ from distutils.core import setup
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.0.6',
+    version = '0.0.7',
 
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
@@ -16,7 +16,7 @@ setup(
     author_email = 'jean-baptiste.favre@blablacar.com',
     license = 'GPL',
     url='http://github.com/jbfavre/python-protobix/',
-    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.6',
+    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.7',
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
    )
