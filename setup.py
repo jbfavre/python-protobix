@@ -16,7 +16,7 @@ setup(
     author_email = 'jean-baptiste.favre@blablacar.com',
     license = 'GPL',
     url='http://github.com/jbfavre/python-protobix/',
-    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.5',
+    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.6',
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
    )
