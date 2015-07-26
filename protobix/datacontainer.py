@@ -14,10 +14,10 @@ class DataContainer(SenderProtocol):
                        debug     = False,
                        dryrun    = False,
                        data_type = None):
-        super( DataContainer, self).__init__(zbx_host  = zbx_host,
-                                             zbx_port  = zbx_port,
-                                             debug     = debug,
-                                             dryrun    = dryrun)
+        super( DataContainer, self).__init__(zbx_host = zbx_host,
+                                             zbx_port = zbx_port,
+                                             debug    = debug,
+                                             dryrun   = dryrun)
 
     @property
     def data_type(self):

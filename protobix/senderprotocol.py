@@ -30,12 +30,12 @@ class SenderProtocol(object):
 
     def __init__(self, zbx_host,
                        zbx_port,
-                       debug     = False,
-                       dryrun    = False):
-        self._debug     = debug
-        self._dryrun    = dryrun
-        self._zbx_host  = zbx_host
-        self._zbx_port  = zbx_port
+                       debug  = False,
+                       dryrun = False):
+        self._debug    = debug
+        self._dryrun   = dryrun
+        self._zbx_host = zbx_host
+        self._zbx_port = zbx_port
 
     @property
     def zbx_host(self):
@@ -94,8 +94,9 @@ class SenderProtocol(object):
             zbx_sock.close()
             raise SenderException('Connection to Zabbix failed')
 
-
         try:
+            # Will fail with python 3
+            # TypeError: 'str' does not support the buffer interface
             zbx_sock.sendall(packet)
             zbx_srv_resp_hdr = recv_all(zbx_sock)
             zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_hdr[5:])[0]
