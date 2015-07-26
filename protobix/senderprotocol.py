@@ -4,6 +4,7 @@ import simplejson
 import socket
 import struct
 import time
+import sys
 
 from senderexception import SenderException
 
@@ -14,7 +15,7 @@ ZBX_HDR_SIZE = 13
 # 2.2: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 # 2.4: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? [Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
-ZBX_DBG_SEND_RESULT = "DBG - Send result [%s-%s-%s-%s] for [%s %s %s]"
+ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for [%s %s %s]"
 
 def recv_all(sock):
     buf = ''
@@ -27,97 +28,128 @@ def recv_all(sock):
 
 class SenderProtocol(object):
 
-    def __init__(self, zbx_host="", zbx_port=10051):
-        self.debug = False
-        self.verbosity = False
-        self.dryrun = False
-        self.request = ""
-        self.zbx_host = zbx_host
-        self.zbx_port = zbx_port
-        self.data_container = ""
+    def __init__(self, zbx_host, zbx_port,
+                       debug     = False,
+                       verbosity = False,
+                       dryrun    = False):
+        self._debug     = debug
+        self._dryrun    = dryrun
+        self._zbx_host  = zbx_host
+        self._zbx_port  = zbx_port
 
-    def set_host(self, zbx_host):
-        self.zbx_host = zbx_host
+    @property
+    def zbx_host(self):
+        return self._zbx_host
 
-    def set_port(self, zbx_port):
-        self.zbx_port = zbx_port
+    @zbx_host.setter
+    def zbx_host(self, value):
+        self._zbx_host = value
 
-    def set_verbosity(self, verbosity):
-        self.verbosity = verbosity
+    @property
+    def zbx_port(self):
+        return self._zbx_port
 
-    def set_debug(self, debug):
-        self.debug = debug
+    @zbx_port.setter
+    def zbx_port(self, value):
+        self._zbx_port = value
 
-    def set_dryrun(self, dryrun):
-        self.dryrun = dryrun
+    @property
+    def debug(self):
+        return self._debug
 
-    def __repr__(self):
-        return simplejson.dumps({ "data": ("%r" % self.items_list),
-                                  "request": self.request,
-                                  "clock": int(time.time()) })
+    @debug.setter
+    def debug(self, value):
+        if value in [True, False]:
+            self._debug = value
+        else:
+            raise ValueError('debug parameter requires boolean')
+
+    @property
+    def dryrun(self):
+        return self._dryrun
+
+    @dryrun.setter
+    def dryrun(self, value):
+        if value in [True, False]:
+            self._dryrun = value
+        else:
+            raise ValueError('dryrun parameter requires boolean')
+
+    @property
+    def result(self):
+        return self._result
 
     def send_to_zabbix(self, data):
         data_len =  struct.pack('<Q', len(data))
         packet = ZBX_HDR + data_len + data
 
+        socket.setdefaulttimeout(1)
         try:
-            zbx_sock = socket.socket()
+            zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             zbx_sock.connect((self.zbx_host, int(self.zbx_port)))
-            zbx_sock.sendall(packet)
-        except (socket.gaierror, socket.error) as e:
+        except:
             # Maybe we could consider storing missed sent data for later retry
-            self.items_list = []
+            self._items_list = []
             zbx_sock.close()
-            raise SenderException(e[1])
-        else:
-            try:
-                zbx_srv_resp_hdr = recv_all(zbx_sock)
-                zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_hdr[5:])[0]
-                zbx_srv_resp_body = zbx_sock.recv(zbx_srv_resp_body_len)
-                zbx_sock.close()
-            except:
-                zbx_sock.close()
-                if not zbx_srv_resp_hdr.startswith(ZBX_HDR) or len(zbx_srv_resp_hdr) != ZBX_HDR_SIZE:
-                    raise SenderException("Wrong zabbix response")
-                else:
-                    raise SenderException("Error while sending data to Zabbix")
+            raise SenderException('Connection to Zabbix failed')
+
+        try:
+            zbx_sock.sendall(packet)
+            zbx_srv_resp_hdr = recv_all(zbx_sock)
+            zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_hdr[5:])[0]
+            zbx_srv_resp_body = zbx_sock.recv(zbx_srv_resp_body_len)
+            zbx_sock.close()
+        except:
+            self._items_list = []
+            zbx_sock.close()
+            if not zbx_srv_resp_hdr.startswith(ZBX_HDR) or len(zbx_srv_resp_hdr) != ZBX_HDR_SIZE:
+                raise SenderException('Wrong Zabbix response')
+            else:
+                raise SenderException('Error while sending data to Zabbix')
 
         return simplejson.loads(zbx_srv_resp_body)
 
     def send(self):
+        zbx_answer = 0
+        self._result = []
+
         if self.debug:
-            zbx_answer = self.single_send()
+            self.single_send()
         else:
-            zbx_answer = self.bulk_send()
-        self.items_list = []
-        return zbx_answer
+            self.bulk_send()
+        self._items_list = []
 
     def bulk_send(self):
-        data = simplejson.dumps({ "data": self.items_list,
-                                  "request": self.request,
-                                  "clock": int(time.time()) })
-        zbx_answer = self.send_to_zabbix(data)
-        if self.verbosity:
-            print zbx_answer.get('info')
-        return zbx_answer
+        data = simplejson.dumps({ "data": self._items_list,
+                                  "request": self.REQUEST,
+                                  "clock": self.clock })
+        if not self._dryrun:
+            zbx_answer = self.send_to_zabbix(data)
+            result = re.findall( ZBX_RESP_REGEX, zbx_answer.get('info'))
+            result = result[0]
+            self._result.append(result)
+        else:
+            self._result.append(['0', '0', str(len(self._items_list))])
 
     def single_send(self):
-        for item in self.items_list:
+        for item in self._items_list:
             data = simplejson.dumps({ "data": [ item ],
-                                      "request": self.request,
-                                      "clock": int(time.time()) })
-            zbx_answer = 0
-            if not self.dryrun:
+                                      "request": self.REQUEST,
+                                      "clock": self.clock })
+            if not self._dryrun: 
                 zbx_answer = self.send_to_zabbix(data)
                 result = re.findall( ZBX_RESP_REGEX, zbx_answer.get('info'))
                 result = result[0]
+                self._result.append(result)
+            else:
+                result = ['0', '0', '1']
+                self._result.append(result)
 
             if self.debug:
-                print (ZBX_DBG_SEND_RESULT % (result[0],
-                                              result[1],
-                                              result[2],
-                                              result[3],
-                                              item["host"],
-                                              item["key"],
-                                              item["value"]))
-        return zbx_answer
+                print(
+                    ZBX_DBG_SEND_RESULT % (result[0],
+                                           result[1],
+                                           result[2],
+                                           item["host"],
+                                           item["key"],
+                                           item["value"]))
