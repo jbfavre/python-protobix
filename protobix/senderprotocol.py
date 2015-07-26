@@ -28,9 +28,9 @@ def recv_all(sock):
 
 class SenderProtocol(object):
 
-    def __init__(self, zbx_host, zbx_port,
+    def __init__(self, zbx_host,
+                       zbx_port,
                        debug     = False,
-                       verbosity = False,
                        dryrun    = False):
         self._debug     = debug
         self._dryrun    = dryrun

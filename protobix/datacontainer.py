@@ -9,13 +9,14 @@ class DataContainer(SenderProtocol):
     _data_type = None
     _items_list = []
 
-    def __init__(self, zbx_host  = '127.0.0.1', zbx_port  = 10051,
-                       debug     = False, verbosity = False,
-                       dryrun    = False, data_type = None):
+    def __init__(self, zbx_host  = '127.0.0.1',
+                       zbx_port  = 10051,
+                       debug     = False,
+                       dryrun    = False,
+                       data_type = None):
         super( DataContainer, self).__init__(zbx_host  = zbx_host,
                                              zbx_port  = zbx_port,
                                              debug     = debug,
-                                             verbosity = verbosity,
                                              dryrun    = dryrun)
 
     @property
@@ -26,6 +27,8 @@ class DataContainer(SenderProtocol):
     def data_type(self, value):
         if value in ['lld', 'items']:
           self._data_type = value
+          # Clean _items_list & _result when changing _data_type
+          # Incompatible format
           self._items_list = []
           self._result = []
         else:
