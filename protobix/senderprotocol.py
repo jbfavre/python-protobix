@@ -12,7 +12,7 @@ if sys.version_info < (3,):
 else:
     import codecs
     def b(x):
-        return codecs.latin_1_encode(x)[0]
+        return codecs.utf_8_encode(x)[0]
 
 from .senderexception import SenderException
 
