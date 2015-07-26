@@ -6,9 +6,17 @@ import struct
 import time
 import sys
 
+if sys.version_info < (3,):
+    def b(x):
+        return x
+else:
+    import codecs
+    def b(x):
+        return codecs.latin_1_encode(x)[0]
+
 from .senderexception import SenderException
 
-ZBX_HDR = "ZBXD\1%s%s"
+ZBX_HDR = "ZBXD\1"
 ZBX_HDR_SIZE = 13
 # For both 2.0 & >2.2 Zabbix version
 # 2.0: Processed 0 Failed 1 Total 1 Seconds spent 0.000057
@@ -16,15 +24,6 @@ ZBX_HDR_SIZE = 13
 # 2.4: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? [Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
 ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for [%s %s %s]"
-
-def recv_all(sock):
-    buf = ''
-    while len(buf)<ZBX_HDR_SIZE:
-        chunk = sock.recv(ZBX_HDR_SIZE-len(buf))
-        if not chunk:
-            return buf
-        buf += chunk
-    return buf
 
 class SenderProtocol(object):
 
@@ -84,7 +83,7 @@ class SenderProtocol(object):
 
         data_length = len(data)
         data_header = struct.pack('<Q', data_length)
-        packet = ZBX_HDR % (data_header, data)
+        packet = b(ZBX_HDR) + data_header + b(data)
         try:
             zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             zbx_sock.connect((self.zbx_host, int(self.zbx_port)))
@@ -92,24 +91,26 @@ class SenderProtocol(object):
             # Maybe we could consider storing missed sent data for later retry
             self._items_list = []
             zbx_sock.close()
-            raise SenderException('Connection to Zabbix failed')
+            raise SenderException('Unable to connection to Zabbix Server')
 
-        zbx_srv_resp_hdr = ''
         try:
-            # Will fail with python 3
-            # TypeError: 'str' does not support the buffer interface
-            zbx_sock.sendall(packet)
-            zbx_srv_resp_hdr = recv_all(zbx_sock)
-            zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_hdr[5:])[0]
+            zbx_sock.send(packet)
+            # Check the 5 first bytes from answer
+            zbx_srv_resp_hdr = zbx_sock.recv(5)
+            assert(zbx_srv_resp_hdr == b(ZBX_HDR))
+        except:
+            raise SenderException('Invalid response from Zabbix server')
+
+        # Get the 8 next bytes from answer to know answer size
+        zbx_srv_resp_data_hdr = zbx_sock.recv(8)
+        zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_data_hdr)[0]
+        try:
             zbx_srv_resp_body = zbx_sock.recv(zbx_srv_resp_body_len)
             zbx_sock.close()
         except:
             self._items_list = []
             zbx_sock.close()
-            if not zbx_srv_resp_hdr.startswith(ZBX_HDR) or len(zbx_srv_resp_hdr) != ZBX_HDR_SIZE:
-                raise SenderException('Wrong Zabbix response')
-            else:
-                raise SenderException('Error while sending data to Zabbix')
+            raise SenderException('Unknown error from Zabbix Server')
 
         return simplejson.loads(zbx_srv_resp_body)
 
