@@ -6,9 +6,9 @@ import struct
 import time
 import sys
 
-from senderexception import SenderException
+from .senderexception import SenderException
 
-ZBX_HDR = "ZBXD\1"
+ZBX_HDR = "ZBXD\1%s%s"
 ZBX_HDR_SIZE = 13
 # For both 2.0 & >2.2 Zabbix version
 # 2.0: Processed 0 Failed 1 Total 1 Seconds spent 0.000057
@@ -80,10 +80,11 @@ class SenderProtocol(object):
         return self._result
 
     def send_to_zabbix(self, data):
-        data_len =  struct.pack('<Q', len(data))
-        packet = ZBX_HDR + data_len + data
-
         socket.setdefaulttimeout(1)
+
+        data_length = len(data)
+        data_header = struct.pack('<Q', data_length)
+        packet = ZBX_HDR % (data_header, data)
         try:
             zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             zbx_sock.connect((self.zbx_host, int(self.zbx_port)))
@@ -92,6 +93,7 @@ class SenderProtocol(object):
             self._items_list = []
             zbx_sock.close()
             raise SenderException('Connection to Zabbix failed')
+
 
         try:
             zbx_sock.sendall(packet)
@@ -146,10 +148,10 @@ class SenderProtocol(object):
                 self._result.append(result)
 
             if self.debug:
-                print(
+                print((
                     ZBX_DBG_SEND_RESULT % (result[0],
                                            result[1],
                                            result[2],
                                            item["host"],
                                            item["key"],
-                                           item["value"]))
+                                           item["value"])))

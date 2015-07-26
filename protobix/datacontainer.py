@@ -1,7 +1,7 @@
 import simplejson
 import time
 
-from senderprotocol import SenderProtocol
+from .senderprotocol import SenderProtocol
 
 class DataContainer(SenderProtocol):
 
