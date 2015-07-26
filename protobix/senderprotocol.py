@@ -94,6 +94,7 @@ class SenderProtocol(object):
             zbx_sock.close()
             raise SenderException('Connection to Zabbix failed')
 
+        zbx_srv_resp_hdr = ''
         try:
             # Will fail with python 3
             # TypeError: 'str' does not support the buffer interface
