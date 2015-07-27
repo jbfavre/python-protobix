@@ -1,5 +1,8 @@
-import simplejson
 import time
+import configobj
+import logging
+try: import ujson as json
+except ImportError: import json
 
 from .senderprotocol import SenderProtocol
 
@@ -9,15 +12,16 @@ class DataContainer(SenderProtocol):
     _data_type = None
     _items_list = []
 
-    def __init__(self, zbx_host  = '127.0.0.1',
+    def __init__(self, data_type = None,
+                       zbx_host  = '127.0.0.1',
                        zbx_port  = 10051,
                        debug     = False,
-                       dryrun    = False,
-                       data_type = None):
-        super( DataContainer, self).__init__(zbx_host = zbx_host,
-                                             zbx_port = zbx_port,
-                                             debug    = debug,
-                                             dryrun   = dryrun)
+                       dryrun    = False):
+
+        self._debug    = debug
+        self._dryrun   = dryrun
+        self._zbx_host = zbx_host
+        self._zbx_port = zbx_port
 
     @property
     def data_type(self):
@@ -35,10 +39,6 @@ class DataContainer(SenderProtocol):
             raise ValueError('Only support either "items" or "lld"')
 
     @property
-    def items_list(self):
-        return self._items_list
-
-    @property
     def clock(self):
         return int((time.time())/60*60)
 
@@ -50,7 +50,7 @@ class DataContainer(SenderProtocol):
                      "value": value, "clock": clock}
         elif self._data_type == "lld":
             item = { "host": host, "key": key, "clock": clock,
-                     "value": simplejson.dumps({"data":value}) }
+                     "value": json.dumps({"data": value}) }
         else:
             raise ValueError('Setup data_type before adding data')
         self._items_list.append(item)
