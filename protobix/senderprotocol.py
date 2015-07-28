@@ -75,7 +75,14 @@ class SenderProtocol(object):
     def result(self):
         return self._result
 
-    def _send_to_zabbix(self, data):
+    def _send_to_zabbix(self, item):
+        # Format data to be sent
+        if type(item) is dict:
+            item = [ item ]
+        data = json.dumps({ "data": item,
+                            "request": self.REQUEST,
+                            "clock": self.clock })
+        # Set socket options & open connection
         socket.setdefaulttimeout(1)
         try:
             zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -90,8 +97,8 @@ class SenderProtocol(object):
         data_length = len(data)
         data_header = struct.pack('<Q', data_length)
         packet = b(ZBX_HDR) + data_header + b(data)
+        # Send payload to Zabbix Server and check response header
         try:
-            # Send payload to Zabbix Server
             zbx_sock.send(packet)
             # Check the 5 first bytes from answer to ensure it's well formatted
             zbx_srv_resp_hdr = zbx_sock.recv(5)
@@ -112,18 +119,12 @@ class SenderProtocol(object):
         self._result = []
         if self._debug:
             for item in self._items_list:
-                data = json.dumps({ "data": [ item ],
-                                    "request": self.REQUEST,
-                                    "clock": self.clock })
                 if not self._dryrun:
-                    zbx_answer = self._send_to_zabbix(data)
+                    zbx_answer = self._send_to_zabbix(item)
                 self._handle_response(zbx_answer, item)
         else:
-            data = json.dumps({ "data": self._items_list,
-                                "request": self.REQUEST,
-                                "clock": self.clock })
             if not self._dryrun:
-                zbx_answer = self._send_to_zabbix(data)
+                zbx_answer = self._send_to_zabbix(self._items_list)
             self._handle_response(zbx_answer)
         self._items_list = []
 
