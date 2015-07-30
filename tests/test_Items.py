@@ -3,8 +3,10 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+import time
+import sys
+import os
 
-import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import protobix
 
@@ -39,26 +41,26 @@ class TestItems(unittest.TestCase):
         self.zbx_container.send()
         self.assertEqual(len(self.zbx_container.result), 1)
         for result in self.zbx_container.result:
-            self.assertEqual(result[0], '0')
-            self.assertEqual(result[1], '4')
+            self.assertEqual(result[0], '4')
+            self.assertEqual(result[1], '0')
             self.assertEqual(result[2], '4')
         self.assertEqual(self.zbx_container.items_list, [])
 
     def testDebugSent(self):
-      self.zbx_container.dryrun = False
-      self.zbx_container.debug = True
-      self.zbx_container.data_type = self.data_type
-      self.assertEqual(self.zbx_container.items_list, [])
-      self.zbx_container.add(self.data)
-      self.assertEqual(len(self.zbx_container.items_list), 4)
-      ''' Send data to zabbix '''
-      self.zbx_container.send()
-      self.assertEqual(len(self.zbx_container.result), 4)
-      for result in self.zbx_container.result: 
-          self.assertEqual(result[0], '0')
-          self.assertEqual(result[1], '1')
-          self.assertEqual(result[2], '1')
-      self.assertEqual(self.zbx_container.items_list, [])
+        self.zbx_container.dryrun = False
+        self.zbx_container.debug = True
+        self.zbx_container.data_type = self.data_type
+        self.assertEqual(self.zbx_container.items_list, [])
+        self.zbx_container.add(self.data)
+        self.assertEqual(len(self.zbx_container.items_list), 4)
+        ''' Send data to zabbix '''
+        self.zbx_container.send()
+        self.assertEqual(len(self.zbx_container.result), 4)
+        for result in self.zbx_container.result: 
+            self.assertEqual(result[0], '1')
+            self.assertEqual(result[1], '0')
+            self.assertEqual(result[2], '1')
+        self.assertEqual(self.zbx_container.items_list, [])
 
     def testDryrunSent(self):
         self.zbx_container.data_type = self.data_type
