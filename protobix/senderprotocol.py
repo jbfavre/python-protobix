@@ -65,6 +65,8 @@ class SenderProtocol(object):
 
     # deprecated function
     def set_debug(self, value):
+        if value == None:
+            value = False
         self.debug = value
 
     # deprecated function
@@ -84,6 +86,8 @@ class SenderProtocol(object):
 
     # deprecated function
     def set_dryrun(self, value):
+        if value == None:
+            value = False
         self.dryrun = value
 
     @property
