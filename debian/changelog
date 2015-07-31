@@ -1,3 +1,13 @@
+protobix (0.0.8-1~bbc78+1) stable; urgency=medium
+
+  * Empty Datacontainer.items_list after sucessfull sending
+  * Fixed #4 - Add support for Zabbix 2.0 trapper response format
+  * Code cleaning & refacto
+  * Add unit tests
+  * Fix deprecated function to ensure setters got allowed value
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Fri, 31 Jul 2015 13:14:33 +0200
+
 protobix (0.0.5-1~bpo78+1) stable; urgency=medium
 
   * Initial release. Migration from old repository
