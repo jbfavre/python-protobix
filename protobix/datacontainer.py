@@ -42,6 +42,10 @@ class DataContainer(SenderProtocol):
     def clock(self):
         return int((time.time())/60*60)
 
+    # deprecated function
+    def set_type(self, value):
+        self.data_type = value
+
     def add_item(self, host, key, value, clock=None):
         if clock is None:
             clock = self.clock

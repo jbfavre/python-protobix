@@ -37,6 +37,10 @@ class SenderProtocol(object):
     def zbx_host(self, value):
         self._zbx_host = value
 
+    # deprecated function
+    def set_host(self, value):
+        self._zbx_host = value
+
     @property
     def zbx_port(self):
         return self._zbx_port
@@ -44,6 +48,10 @@ class SenderProtocol(object):
     @zbx_port.setter
     def zbx_port(self, value):
         self._zbx_port = value
+
+    # deprecated function
+    def set_port(self, value):
+        self.zbx_port = value
 
     @property
     def debug(self):
@@ -56,6 +64,14 @@ class SenderProtocol(object):
         else:
             raise ValueError('debug parameter requires boolean')
 
+    # deprecated function
+    def set_debug(self, value):
+        self.debug = value
+
+    # deprecated function
+    def set_verbosity(self, value):
+        return
+
     @property
     def dryrun(self):
         return self._dryrun
@@ -66,6 +82,10 @@ class SenderProtocol(object):
             self._dryrun = value
         else:
             raise ValueError('dryrun parameter requires boolean')
+
+    # deprecated function
+    def set_dryrun(self, value):
+        self.dryrun = value
 
     @property
     def items_list(self):
@@ -114,7 +134,8 @@ class SenderProtocol(object):
         zbx_sock.close()
         return json.loads(zbx_srv_resp_body)
 
-    def send(self):
+    # Using container argument is deprecated
+    def send(self, container = None):
         zbx_answer = 0
         self._result = []
         if self._debug:
