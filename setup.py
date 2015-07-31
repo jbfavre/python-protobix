@@ -1,11 +1,26 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from distutils.core import setup, Command
+# you can also import from setuptools
+
+class PyTest(Command):
+    user_options = []
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        import subprocess
+        import sys
+        errno = subprocess.call([sys.executable, 'runtests.py'])
+        raise SystemExit(errno)
 
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.0.5',
+    version = '0.0.8',
 
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
@@ -16,7 +31,8 @@ setup(
     author_email = 'jean-baptiste.favre@blablacar.com',
     license = 'GPL',
     url='http://github.com/jbfavre/python-protobix/',
-    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.5',
+    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.8',
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
+    cmdclass={'test': PyTest},
    )
