@@ -1,4 +1,4 @@
-# python-zabbix
+# python-protobix
 
 Very simple python module implementing Zabbix Sender protocol.  
 It allows one to build list of items and send them as trapper.
