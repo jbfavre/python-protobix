@@ -136,3 +136,4 @@ if not ret:
     print "Ooops. Something went wrong when sending data to Zabbix"
 
 print "Everything is OK"
+```
