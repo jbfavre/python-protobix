@@ -1,11 +1,30 @@
 # python-zabbix
 
-Very simple python module implementing Zabbix Sender protocol.
-You can find code in `module` subdir.
+Very simple python module implementing Zabbix Sender protocol.  
+It allows one to build list of items and send them as trapper.
+It currently supports `items` as well as [`Low Level Discovery`](https://www.zabbix.com/documentation/2.4/manual/discovery/low_level_discovery).
+
+## Test
+
+First, launch provided Zabbix Trapper Server:
+
+    python tests/ZabbixServerTrapper.py
+
+Then, launch test suite:
+
+    python setup.py test
 
 ## Install
 
-With Debian:
+With `pip`:
+
+    pip install protobix
+
+With `pip` (test version):
+
+    pip install -i https://testpypi.python.org/simple/ protobix
+
+Build `Debian` package:
 
     apt-get install python-stdeb python-setuptools
 
