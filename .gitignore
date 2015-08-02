@@ -1,0 +1,4 @@
+.coverage
+protobix/*.pyc
+protobix/__pycache__/
+tests/__pycache__/
