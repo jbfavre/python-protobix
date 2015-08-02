@@ -3,6 +3,8 @@ import socket
 import struct
 import time
 import sys
+import configobj
+import logging
 try: import simplejson as json
 except ImportError: import json
 
@@ -28,38 +30,72 @@ ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for [%s %s %s]"
 
 class SenderProtocol(object):
 
+    _config = {
+        'server': '127.0.0.1',
+        'port': 10051,
+        'log_output': '/tmp/zabbix_agentd.log',
+        'log_level': 3,
+        'timeout': 3,
+        'dryrun': False,
+        'data_type': None
+    }
+    LOG_LVL = [
+        logging.NOTSET,
+        logging.CRITICAL,
+        logging.ERROR,
+        logging.WARNING,
+        logging.DEBUG
+    ]
+
     @property
     def zbx_host(self):
-        return self._zbx_host
+        return self._config['server']
 
     @zbx_host.setter
     def zbx_host(self, value):
-        self._zbx_host = value
+        self._config['server'] = value
+
+    @property
+    def log_level(self):
+        return int(self._config['log_level'])
+
+    @log_level.setter
+    def log_level(self, value):
+        if isinstance(value, int) and value >= 0 and value < 5:
+            self._config['log_level'] = value
+        else:
+            raise ValueError('log_level parameter must be less than 5')
 
     # deprecated function
     def set_host(self, value):
-        self._zbx_host = value
+        self._config['server'] = value
 
     @property
     def zbx_port(self):
-        return self._zbx_port
+        return self._config['port']
 
     @zbx_port.setter
     def zbx_port(self, value):
-        self._zbx_port = value
+        self._config['port'] = value
 
     # deprecated function
     def set_port(self, value):
-        self.zbx_port = value
+        self._config['port'] = value
 
     @property
     def debug(self):
-        return self._debug
+        if self._config['log_level'] == 4:
+            return True
+        else:
+            return False
 
     @debug.setter
     def debug(self, value):
         if value in [True, False]:
-            self._debug = value
+            if value is True:
+                self._config['log_level'] = 4
+            else:
+                self._config['log_level'] = 3
         else:
             raise ValueError('debug parameter requires boolean')
 
@@ -67,20 +103,23 @@ class SenderProtocol(object):
     def set_debug(self, value):
         if value == None:
             value = False
-        self.debug = value
+        if value:
+            self._config['log_level'] = 4
+        else:
+            self._config['log_level'] = 3
 
     # deprecated function
     def set_verbosity(self, value):
-        return
+        pass
 
     @property
     def dryrun(self):
-        return self._dryrun
+        return self._config['dryrun']
 
     @dryrun.setter
     def dryrun(self, value):
         if value in [True, False]:
-            self._dryrun = value
+            self._config['dryrun'] = value
         else:
             raise ValueError('dryrun parameter requires boolean')
 
@@ -88,7 +127,7 @@ class SenderProtocol(object):
     def set_dryrun(self, value):
         if value == None:
             value = False
-        self.dryrun = value
+        self._config['dryrun'] = value
 
     @property
     def items_list(self):
@@ -97,6 +136,36 @@ class SenderProtocol(object):
     @property
     def result(self):
         return self._result
+
+    def _load_config(self,config_file):
+        # Load zabbix agent configuration as default values
+        # Default values are set in self._config
+        # - ServerActive (default: 127.0.0.1)
+        # - LogFile (default: /tmp/zabbix_agentd.log)
+        # - DebugLevel (default: 3, Allowed: 0-4)
+        #               0 -> logging.NOTSET
+        #               1 -> logging.CRITICAL
+        #               2 -> logging.ERROR
+        #               3 -> logging.WARNING
+        #               4 -> logging.DEBUG
+        # - Timeout (default: 3, Allowed: 1-30)
+        tmp_config = configobj.ConfigObj('/etc/zabbix/zabbix_agentd.conf')
+
+        if 'ServerActive' in tmp_config:
+            tmp_server = tmp_config['ServerActive'][0] \
+                         if isinstance(tmp_config['ServerActive'], list) \
+                         else tmp_config['ServerActive']
+            self._config['server'], self._config['port'] = tmp_server.split(':') \
+                         if ":" in tmp_server else (tmp_server, 10051)
+
+        if 'LogFile' in tmp_config:
+            self._config['log_output'] = tmp_config['LogFile']
+
+        if 'DebugLevel' in tmp_config:
+            self._config['log_level'] = int(tmp_config['DebugLevel'])
+
+        if 'Timeout' in tmp_config:
+            self._config['timeout'] = int(tmp_config['Timeout'])
 
     def _send_to_zabbix(self, item):
         # Format data to be sent
@@ -109,12 +178,15 @@ class SenderProtocol(object):
         socket.setdefaulttimeout(1)
         try:
             zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            zbx_sock.connect((self.zbx_host, int(self.zbx_port)))
+            zbx_sock.connect((self._config['server'], int(self._config['port'])))
         except:
             # Maybe we could consider storing missed sent data for later retry
             self._items_list = []
             zbx_sock.close()
-            raise SenderException('Unable to connect to Zabbix Server')
+            raise SenderException(
+                "Unable to connect to server %s on port %d" % \
+                (self._config['server'], self._config['port'])
+            )
 
         # Build Zabbix Sender payload
         data_length = len(data)
@@ -141,33 +213,33 @@ class SenderProtocol(object):
     def send(self, container = None):
         zbx_answer = 0
         self._result = []
-        if self._debug:
+        if self._config['log_level'] == 4:
             for item in self._items_list:
-                if not self._dryrun:
+                if not self._config['dryrun']:
                     zbx_answer = self._send_to_zabbix(item)
                 self._handle_response(zbx_answer, item)
         else:
-            if not self._dryrun:
+            if not self._config['dryrun']:
                 zbx_answer = self._send_to_zabbix(self._items_list)
             self._handle_response(zbx_answer)
         self._items_list = []
 
     def _handle_response(self, zbx_answer, item=None):
         nb_item = len(self._items_list)
-        if self._debug:
+        if self._config['log_level'] == 4:
             nb_item = 1
-        if not self._dryrun:
-            result = re.findall( ZBX_RESP_REGEX, zbx_answer.get('info'))
-            result = result[0]
-            self._result.append(result)
+        result = ['0', '0', '0']
+        if not self._config['dryrun']:
+            if zbx_answer.get('response') == 'success':
+                result = re.findall( ZBX_RESP_REGEX, zbx_answer.get('info'))
+                result = result[0]
         else:
             result = ['0', '0', str(nb_item)]
-            self._result.append(result)
-            if self._debug:
-                print((
-                    ZBX_DBG_SEND_RESULT % (result[0],
-                                           result[1],
-                                           result[2],
-                                           item["host"],
-                                           item["key"],
-                                           item["value"])))
+            if self._config['log_level'] == 4:
+                print(( ZBX_DBG_SEND_RESULT % (result[0],
+                                               result[1],
+                                               result[2],
+                                               item["host"],
+                                               item["key"],
+                                               item["value"])))
+        self._result.append(result)
