@@ -89,7 +89,11 @@ class SenderProtocol(object):
 
     @zbx_port.setter
     def zbx_port(self, value):
-        self._config['port'] = value
+        if isinstance(value, int) and \
+           value > 0 and value < 65535:
+            self._config['port'] = value
+        else:
+            raise ValueError('zbx_port requires a valid TCP port number')
 
     @property
     def dryrun(self):
@@ -122,7 +126,7 @@ class SenderProtocol(object):
         #               3 -> logging.WARNING
         #               4 -> logging.DEBUG
         # - Timeout (default: 3, Allowed: 1-30)
-        tmp_config = configobj.ConfigObj('/etc/zabbix/zabbix_agentd.conf')
+        tmp_config = configobj.ConfigObj(config_file)
 
         if 'ServerActive' in tmp_config:
             tmp_server = tmp_config['ServerActive'][0] \
@@ -196,6 +200,7 @@ class SenderProtocol(object):
                 zbx_answer = self._send_to_zabbix(self._items_list)
             self._handle_response(zbx_answer)
         self._items_list = []
+        self._config['data_type'] = None
 
     def _handle_response(self, zbx_answer, item=None):
         nb_item = len(self._items_list)
@@ -207,20 +212,18 @@ class SenderProtocol(object):
                 result = re.findall( ZBX_RESP_REGEX, zbx_answer.get('info'))
                 result = result[0]
         else:
-            result = ['0', '0', str(nb_item)]
-            if self._config['log_level'] == 4:
-                print(( ZBX_DBG_SEND_RESULT % (result[0],
-                                               result[1],
-                                               result[2],
-                                               item["host"],
-                                               item["key"],
-                                               item["value"])))
+            result = ['-', '-', str(nb_item)]
+        if self._config['log_level'] == 4:
+            print(( ZBX_DBG_SEND_RESULT % (result[0],
+                                           result[1],
+                                           result[2],
+                                           item["host"],
+                                           item["key"],
+                                           item["value"])))
         self._result.append(result)
 
     @deprecated
     def set_debug(self, value):
-        if value == None:
-            value = False
         if value:
             self._config['log_level'] = 4
         else:
