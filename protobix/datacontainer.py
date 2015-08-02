@@ -6,18 +6,6 @@ except ImportError: import json
 
 from .senderprotocol import SenderProtocol
 
-def deprecated(func):
-
-    @functools.wraps(func)
-    def new_func(*args, **kwargs):
-        print ((
-            "Call to deprecated function %s" % (
-                str(func.__name__)
-            )
-        ))
-        return func(*args, **kwargs)
-    return new_func
-
 class DataContainer(SenderProtocol):
 
     REQUEST = "sender data"
@@ -48,6 +36,22 @@ class DataContainer(SenderProtocol):
         if data_type:
             self._config['data_type'] = data_type
 
+    def deprecated(func):
+        '''This is a decorator which can be used to mark functions
+        as deprecated. It will result in a warning being emitted
+        when the function is used.'''
+
+        @functools.wraps(func)
+        def new_func(*args, **kwargs):
+            warnings.warn_explicit(
+                "Call to deprecated function {}.".format(func.__name__),
+                category=DeprecationWarning,
+                filename=func.func_code.co_filename,
+                lineno=func.func_code.co_firstlineno + 1
+            )
+            return func(*args, **kwargs)
+        return new_func
+
     @property
     def data_type(self):
         return self._config['data_type']
@@ -67,10 +71,6 @@ class DataContainer(SenderProtocol):
     def clock(self):
         return int((time.time())/60*60)
 
-    @deprecated
-    def set_type(self, value):
-        self.data_type = value
-
     def add_item(self, host, key, value, clock=None):
         if clock is None:
             clock = self.clock
@@ -89,3 +89,7 @@ class DataContainer(SenderProtocol):
             for key in data[host]:
                 if not data[host][key] == []:
                     self.add_item( host, key, data[host][key])
+
+    @deprecated
+    def set_type(self, value):
+        self.data_type = value

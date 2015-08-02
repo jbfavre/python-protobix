@@ -5,6 +5,7 @@ import time
 import sys
 import configobj
 import logging
+import warnings,functools
 try: import simplejson as json
 except ImportError: import json
 
@@ -47,6 +48,22 @@ class SenderProtocol(object):
         logging.DEBUG
     ]
 
+    def deprecated(func):
+        '''This is a decorator which can be used to mark functions
+        as deprecated. It will result in a warning being emitted
+        when the function is used.'''
+
+        @functools.wraps(func)
+        def new_func(*args, **kwargs):
+            warnings.warn_explicit(
+                "Call to deprecated function {}.".format(func.__name__),
+                category=DeprecationWarning,
+                filename=func.func_code.co_filename,
+                lineno=func.func_code.co_firstlineno + 1
+            )
+            return func(*args, **kwargs)
+        return new_func
+
     @property
     def zbx_host(self):
         return self._config['server']
@@ -66,10 +83,6 @@ class SenderProtocol(object):
         else:
             raise ValueError('log_level parameter must be less than 5')
 
-    # deprecated function
-    def set_host(self, value):
-        self._config['server'] = value
-
     @property
     def zbx_port(self):
         return self._config['port']
@@ -77,40 +90,6 @@ class SenderProtocol(object):
     @zbx_port.setter
     def zbx_port(self, value):
         self._config['port'] = value
-
-    # deprecated function
-    def set_port(self, value):
-        self._config['port'] = value
-
-    @property
-    def debug(self):
-        if self._config['log_level'] == 4:
-            return True
-        else:
-            return False
-
-    @debug.setter
-    def debug(self, value):
-        if value in [True, False]:
-            if value is True:
-                self._config['log_level'] = 4
-            else:
-                self._config['log_level'] = 3
-        else:
-            raise ValueError('debug parameter requires boolean')
-
-    # deprecated function
-    def set_debug(self, value):
-        if value == None:
-            value = False
-        if value:
-            self._config['log_level'] = 4
-        else:
-            self._config['log_level'] = 3
-
-    # deprecated function
-    def set_verbosity(self, value):
-        pass
 
     @property
     def dryrun(self):
@@ -122,12 +101,6 @@ class SenderProtocol(object):
             self._config['dryrun'] = value
         else:
             raise ValueError('dryrun parameter requires boolean')
-
-    # deprecated function
-    def set_dryrun(self, value):
-        if value == None:
-            value = False
-        self._config['dryrun'] = value
 
     @property
     def items_list(self):
@@ -243,3 +216,49 @@ class SenderProtocol(object):
                                                item["key"],
                                                item["value"])))
         self._result.append(result)
+
+    @deprecated
+    def set_debug(self, value):
+        if value == None:
+            value = False
+        if value:
+            self._config['log_level'] = 4
+        else:
+            self._config['log_level'] = 3
+
+    @deprecated
+    def set_verbosity(self, value):
+        pass
+
+    @deprecated
+    def set_dryrun(self, value):
+        if value == None:
+            value = False
+        self._config['dryrun'] = value
+
+    @deprecated
+    def set_host(self, value):
+        self._config['server'] = value
+
+    @deprecated
+    def set_port(self, value):
+        self._config['port'] = value
+
+    @property
+    @deprecated
+    def debug(self):
+        if self._config['log_level'] == 4:
+            return True
+        else:
+            return False
+
+    @debug.setter
+    @deprecated
+    def debug(self, value):
+        if value in [True, False]:
+            if value is True:
+                self._config['log_level'] = 4
+            else:
+                self._config['log_level'] = 3
+        else:
+            raise ValueError('debug parameter requires boolean')
