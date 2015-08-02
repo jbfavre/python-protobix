@@ -1,7 +1,8 @@
 import time
-import logging, logging.handlers
+import configobj
+import logging
 import warnings, functools
-try: import ujson as json
+try: import simplejson as json
 except ImportError: import json
 from datetime import datetime
 
@@ -40,6 +41,18 @@ else:
         return new_func
 
 from .senderprotocol import SenderProtocol
+
+def deprecated(func):
+
+    @functools.wraps(func)
+    def new_func(*args, **kwargs):
+        print ((
+            "Call to deprecated function %s" % (
+                str(func.__name__)
+            )
+        ))
+        return func(*args, **kwargs)
+    return new_func
 
 class DataContainer(SenderProtocol):
 
