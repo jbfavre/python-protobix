@@ -69,19 +69,22 @@ class ZabbixServer(object):
                   key = data['key']
                   value = data['value']
                   try:
-                      # We have an "LLD" value
+                      # Try as we had an "LLD" value
                       item = json.loads(value)
+                      print(('LLD'))
+                      if host not in REGISTERED_LLD_ITEMS or \
+                         key not in REGISTERED_LLD_ITEMS[host]:
+                          failed += 1
+                          continue
+                      processed += 1
                   except:
                       # We have an "item" value
-                      if host not in REGISTERED_ITEMS:
+                      print(('items'))
+                      if host not in REGISTERED_ITEMS or \
+                         key not in REGISTERED_ITEMS[host] or \
+                         value != REGISTERED_ITEMS[host][key]:
                           failed += 1
-                          break
-                      if key not in REGISTERED_ITEMS[host]:
-                          failed += 1
-                          break
-                      if value != REGISTERED_ITEMS[host][key]:
-                          failed += 1
-                          break
+                          continue
                       processed += 1
                       pass
               return processed, failed, total
@@ -131,8 +134,6 @@ class ZabbixServer(object):
               except:
                   raise Exception('Error while sending answer to client')
 
-          # Function for handling connections.
-          # This will be used to create client threads
           def _clientthread(self):
               start_time = datetime.datetime.now().microsecond
               try:
@@ -161,14 +162,17 @@ class ZabbixServer(object):
                   "response":result,
                   "info": info
               }
+              print((result))
               # And send back the answer to the client
               self._answer_request(result)
               # End of play, let's close connection
               self._conn.close()
 
           def run(self):
-              #socket.setdefaulttimeout(10)
               self.srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+              # Avoid bind: adress already in use error
+              # Reuse addr+port socket except if a process listens on it
+              self.srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
               #Bind socket to local host and port
               try:
                   self.srv_sock.bind((self.HOST, self.PORT))

@@ -10,7 +10,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import protobix
 
-class TestItems(unittest.TestCase):
+class TestDeprecatedItems(unittest.TestCase):
 
     data = {
         "myhost1": {
@@ -73,6 +73,7 @@ class TestItems(unittest.TestCase):
         self.zbx_container.send()
         self.assertEqual(self.zbx_container.result, [['0', '0', '4']])
         self.assertEqual(self.zbx_container.items_list, [])
+        self.zbx_container.dryrun = False
 
     def testDryrunDebugSent(self):
         self.zbx_container.data_type = self.data_type
@@ -87,6 +88,8 @@ class TestItems(unittest.TestCase):
         for result in self.zbx_container.result:
             self.assertEqual(result, ['0', '0', '1'])
         self.assertEqual(self.zbx_container.items_list, [])
+        self.zbx_container.dryrun = False
+        self.zbx_container.debug = False
 
     def testZabbixConnectionFails(self):
         self.zbx_container.zbx_port = 10052
