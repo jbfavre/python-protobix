@@ -13,8 +13,28 @@ class TestDeprecatedDataContainer(unittest.TestCase):
 
   def setUp(self):
     self.zbx_container = protobix.DataContainer()
+    self.zbx_container._items_list = []
+    self.zbx_container._config = {
+        'server': '127.0.0.1',
+        'port': 10051,
+        'log_level': 3,
+        'log_output': '/tmp/zabbix_agentd.log',
+        'dryrun': False,
+        'data_type': None,
+        'timeout': 3,
+    }
 
   def tearDown(self):
+    self.zbx_container._items_list = []
+    self.zbx_container._config = {
+        'server': '127.0.0.1',
+        'port': 10051,
+        'log_level': 3,
+        'log_output': '/tmp/zabbix_agentd.log',
+        'dryrun': False,
+        'data_type': None,
+        'timeout': 3,
+    }
     self.zbx_container = None
 
   def test_01DefaultValues(self):
@@ -40,17 +60,15 @@ class TestDeprecatedDataContainer(unittest.TestCase):
     self.assertEqual(self.zbx_container.zbx_port, 10052)
 
   def test_04Debug(self):
-    self.zbx_container.debug = False
-    self.assertEqual(self.zbx_container.debug, False)
-    self.zbx_container.debug = True
-    self.assertEqual(self.zbx_container.debug, True)
+    for value in [True, False]:
+      self.zbx_container.debug = value
+      self.assertEqual(self.zbx_container.debug, value)
     with self.assertRaises(ValueError):
       self.zbx_container.debug = 'bad'
 
   def test_05DryRun(self):
-    self.zbx_container.dryrun = False
-    self.assertEqual(self.zbx_container.dryrun, False)
-    self.zbx_container.dryrun = True
-    self.assertEqual(self.zbx_container.dryrun, True)
+    for value in [True, False]:
+      self.zbx_container.dryrun = value
+      self.assertEqual(self.zbx_container.dryrun, value)
     with self.assertRaises(ValueError):
       self.zbx_container.dryrun = 'bad'
