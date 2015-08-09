@@ -73,13 +73,6 @@ class SenderProtocol(object):
         'dryrun': False,
         'data_type': None
     }
-    LOG_LVL = [
-        logging.NOTSET,
-        logging.CRITICAL,
-        logging.ERROR,
-        logging.WARNING,
-        logging.DEBUG
-    ]
 
     @property
     def zbx_host(self):
@@ -98,6 +91,8 @@ class SenderProtocol(object):
         if isinstance(value, int) and value >= 0 and value < 5:
             self._config['log_level'] = value
         else:
+            if self._logger:
+                self._logger.error('log_level parameter must be less than 5')
             raise ValueError('log_level parameter must be less than 5')
 
     @property
@@ -110,6 +105,8 @@ class SenderProtocol(object):
            value > 0 and value < 65535:
             self._config['port'] = value
         else:
+            if self._logger:
+                self._logger.error('zbx_port requires a valid TCP port number')
             raise ValueError('zbx_port requires a valid TCP port number')
 
     @property
@@ -121,6 +118,8 @@ class SenderProtocol(object):
         if value in [True, False]:
             self._config['dryrun'] = value
         else:
+            if self._logger:
+                self._logger.error('dryrun parameter requires boolean')
             raise ValueError('dryrun parameter requires boolean')
 
     @property
@@ -131,7 +130,20 @@ class SenderProtocol(object):
     def result(self):
         return self._result
 
-    def _load_config(self,config_file):
+    @property
+    def logger(self):
+        return self._logger
+
+    @logger.setter
+    def logger(self, value):
+        if isinstance(value, logging.Logger):
+            self._logger = value
+        else:
+            if self._logger:
+                self._logger.error('logger requires a logging instance')
+            raise ValueError('logger requires a logging instance')
+
+    def _load_zabbix_config(self,config_file):
         # Load zabbix agent configuration as default values
         # Default values are set in self._config
         # - ServerActive (default: 127.0.0.1)
@@ -177,11 +189,15 @@ class SenderProtocol(object):
             # Maybe we could consider storing missed sent data for later retry
             self._items_list = []
             zbx_sock.close()
+            if self._logger:
+                self._logger.error(
+                    "Unable to connect to server %s on port %d" % \
+                    (self._config['server'], self._config['port'])
+                )
             raise SenderException(
                 "Unable to connect to server %s on port %d" % \
                 (self._config['server'], self._config['port'])
             )
-
         # Build Zabbix Sender payload
         data_length = len(data)
         data_header = struct.pack('<Q', data_length)
@@ -189,12 +205,19 @@ class SenderProtocol(object):
         # Send payload to Zabbix Server and check response header
         try:
             zbx_sock.sendall(packet)
+        except:
+            if self._logger:
+                self._logger.error('Error while sending data to Zabbix server')
+            raise SenderException('Error while sending data to Zabbix server')
+
+        try:
             # Check the 5 first bytes from answer to ensure it's well formatted
             zbx_srv_resp_hdr = zbx_sock.recv(5)
             assert(zbx_srv_resp_hdr == b(ZBX_HDR))
         except:
+            if self._logger:
+                self._logger.error('Invalid response from Zabbix server')
             raise SenderException('Invalid response from Zabbix server')
-
         # Get the 8 next bytes and unpack to get response's payload length
         zbx_srv_resp_data_hdr = zbx_sock.recv(8)
         zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_data_hdr)[0]
@@ -229,14 +252,15 @@ class SenderProtocol(object):
                 result = re.findall( ZBX_RESP_REGEX, zbx_answer.get('info'))
                 result = result[0]
         else:
-            result = ['-', '-', str(nb_item)]
-        if self._config['log_level'] == 4:
-            print(( ZBX_DBG_SEND_RESULT % (result[0],
-                                           result[1],
-                                           result[2],
-                                           item["host"],
-                                           item["key"],
-                                           item["value"])))
+            result = ['d', 'd', str(nb_item)]
+        if self._logger and item:
+            # item is only set when run in debug mode
+            self._logger.debug( ZBX_DBG_SEND_RESULT % (result[0],
+                                                      result[1],
+                                                      result[2],
+                                                      item["host"],
+                                                      item["key"],
+                                                      item["value"]))
         self._result.append(result)
 
     @deprecated

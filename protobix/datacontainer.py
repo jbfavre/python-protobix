@@ -1,8 +1,9 @@
 import time
-import logging
+import logging, logging.handlers
 import warnings, functools
 try: import ujson as json
 except ImportError: import json
+from datetime import datetime
 
 import sys
 if sys.version_info < (3,):
@@ -52,15 +53,16 @@ class DataContainer(SenderProtocol):
                        zbx_port   = None,
                        log_level  = None,
                        log_output = None,
-                       dryrun     = False):
+                       dryrun     = False,
+                       logger     = None):
 
-        # try to load config from zabbix_agentd file
-        # If no file, it loads the default _config as configuration
-        self._load_config(zbx_file)
+        # Loads config from zabbix_agentd file
+        # If no file, it uses the default _config as configuration
+        self._load_zabbix_config(zbx_file)
         # Override default values with the ones provided
         if log_level:
             self._config['log_level'] = log_level
-        if log_output:
+        if log_output != None:
             self._config['log_output'] = log_output
         self._config['dryrun'] = dryrun
         if zbx_host:
@@ -69,6 +71,7 @@ class DataContainer(SenderProtocol):
             self._config['port'] = zbx_port
         if data_type:
             self._config['data_type'] = data_type
+        self._logger = logger
 
     @property
     def data_type(self):
@@ -76,6 +79,8 @@ class DataContainer(SenderProtocol):
 
     @data_type.setter
     def data_type(self, value):
+        if self._logger:
+            self._logger.debug("Setting value %s as data_type" % value)
         if value in ['lld', 'items']:
           self._config['data_type'] = value
           # Clean _items_list & _result when changing _data_type
@@ -83,7 +88,9 @@ class DataContainer(SenderProtocol):
           self._items_list = []
           self._result = []
         else:
-            raise ValueError('Only support either "items" or "lld"')
+            if self._logger:
+                self._logger.error('data_type requires either "items" or "lld"')
+            raise ValueError('data_type requires either "items" or "lld"')
 
     @property
     def clock(self):
@@ -99,6 +106,8 @@ class DataContainer(SenderProtocol):
             item = { "host": host, "key": key, "clock": clock,
                      "value": json.dumps({"data": value}) }
         else:
+            if self._logger:
+                self._logger.error('Setup data_type before adding data')
             raise ValueError('Setup data_type before adding data')
         self._items_list.append(item)
 
