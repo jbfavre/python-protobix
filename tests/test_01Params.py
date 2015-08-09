@@ -3,12 +3,23 @@ import unittest
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import protobix
+import logging
 
-class TestParams:
+class TestParams(object):
 
     @classmethod
     def setup_class(cls):
-        cls.zbx_container = protobix.DataContainer()
+        common_log_format = '[%(name)s:%(levelname)s] %(message)s'
+        cls.logger = logging.getLogger(cls.__class__.__name__)
+        consoleHandler = logging.StreamHandler()
+        consoleFormatter = logging.Formatter(
+            fmt = common_log_format,
+            datefmt = '%Y%m%d:%H%M%S'
+        )
+        consoleHandler.setFormatter(consoleFormatter)
+        cls.logger.addHandler(consoleHandler)
+
+        cls.zbx_container = protobix.DataContainer(logger=cls.logger)
         cls.zbx_container._items_list = []
         cls.zbx_container._config = {
             'server': '127.0.0.1',
@@ -33,6 +44,7 @@ class TestParams:
             'timeout': 3,
         }
         cls.zbx_container = None
+        cls.logger = None
 
     def setup_method(self, method):
         self.zbx_container._items_list = []
@@ -158,11 +170,22 @@ class TestParams:
         with pytest.raises(ValueError):
             self.zbx_container.dryrun = 'bad'
 
+    def test_logger_param(self):
+        yan_logger = logging.getLogger('ValidLogger')
+        self.zbx_container.logger = yan_logger
+        assert self.zbx_container.logger == \
+               self.zbx_container._logger == yan_logger
+        with pytest.raises(ValueError):
+            self.zbx_container.logger = 'not_a_vlid_logger'
+
     def test_deprecated_methods(self):
         pytest.deprecated_call(self.zbx_container.set_type, 'items')
         pytest.deprecated_call(self.zbx_container.set_debug, False)
+        pytest.deprecated_call(self.zbx_container.set_debug, True)
         pytest.deprecated_call(self.zbx_container.set_verbosity, False)
         pytest.deprecated_call(self.zbx_container.set_dryrun, False)
+        pytest.deprecated_call(self.zbx_container.set_dryrun, True)
+        pytest.deprecated_call(self.zbx_container.set_dryrun, None)
         pytest.deprecated_call(self.zbx_container.set_host, '127.0.0.1')
         pytest.deprecated_call(self.zbx_container.set_port, 10051)
         #pytest.deprecated_call(self.zbx_container.debug)

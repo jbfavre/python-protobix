@@ -87,7 +87,7 @@ class TestDeprecatedItems(unittest.TestCase):
         self.assertEqual(len(self.zbx_container.items_list), 4)
         ''' Send data to zabbix '''
         self.zbx_container.send()
-        self.assertEqual(self.zbx_container.result, [['-', '-', '4']])
+        self.assertEqual(self.zbx_container.result, [['d', 'd', '4']])
         self.assertEqual(self.zbx_container.items_list, [])
 
     def testDryrunDebugSent(self):
@@ -101,7 +101,7 @@ class TestDeprecatedItems(unittest.TestCase):
         self.assertEqual(self.zbx_container.result, [])
         self.zbx_container.send()
         for result in self.zbx_container.result:
-            self.assertEqual(result, ['-', '-', '1'])
+            self.assertEqual(result, ['d', 'd', '1'])
         self.assertEqual(self.zbx_container.items_list, [])
 
     def testZabbixConnectionFails(self):

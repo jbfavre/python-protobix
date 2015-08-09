@@ -2,8 +2,9 @@ import pytest
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import protobix
+import logging
 
-class TestLLD:
+class TestLLD(object):
 
     data = {
         'myhost1': {
@@ -27,7 +28,17 @@ class TestLLD:
 
     @classmethod
     def setup_class(cls):
-        cls.zbx_container = protobix.DataContainer()
+        common_log_format = '[%(name)s:%(levelname)s] %(message)s'
+        cls.logger = logging.getLogger(cls.__class__.__name__)
+        consoleHandler = logging.StreamHandler()
+        consoleFormatter = logging.Formatter(
+            fmt = common_log_format,
+            datefmt = '%Y%m%d:%H%M%S'
+        )
+        consoleHandler.setFormatter(consoleFormatter)
+        cls.logger.addHandler(consoleHandler)
+
+        cls.zbx_container = protobix.DataContainer(logger=cls.logger)
         cls.zbx_container._items_list = []
         cls.zbx_container._config = {
             'server': '127.0.0.1',
@@ -52,6 +63,7 @@ class TestLLD:
             'timeout': 3,
         }
         cls.zbx_container = None
+        cls.logger = None
 
     def setup_method(self, method):
         self.zbx_container._items_list = []
@@ -119,7 +131,7 @@ class TestLLD:
         assert len(self.zbx_container.items_list) == 2
         ''' Send data to zabbix '''
         self.zbx_container.send()
-        assert self.zbx_container.result == [['-', '-', '2']]
+        assert self.zbx_container.result == [['d', 'd', '2']]
         assert self.zbx_container.items_list == []
 
     def testDebugDryrunSent(self):
@@ -133,7 +145,7 @@ class TestLLD:
         assert self.zbx_container.result == []
         self.zbx_container.send()
         for result in self.zbx_container.result:
-            assert result == ['-', '-', '1']
+            assert result == ['d', 'd', '1']
         assert self.zbx_container.items_list == []
 
     def testZabbixConnectionFails(self):
