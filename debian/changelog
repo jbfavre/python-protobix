@@ -1,3 +1,9 @@
+python-protobix (0.0.8.1-1~bpo80+2) stable; urgency=medium
+
+  * Release 0.0.8.1 version of protobix module
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Mon, 10 Aug 2015 20:57:08 +0200
+
 python-protobix (0.0.8.1-1~bpo80+1) stable; urgency=medium
 
   * Update README
