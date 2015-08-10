@@ -122,7 +122,7 @@ class SenderProtocol(object):
         packet = b(ZBX_HDR) + data_header + b(data)
         # Send payload to Zabbix Server and check response header
         try:
-            zbx_sock.send(packet)
+            zbx_sock.sendall(packet)
             # Check the 5 first bytes from answer to ensure it's well formatted
             zbx_srv_resp_hdr = zbx_sock.recv(5)
             assert(zbx_srv_resp_hdr == b(ZBX_HDR))
