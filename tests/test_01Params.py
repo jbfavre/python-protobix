@@ -28,7 +28,7 @@ class TestParams(object):
             'log_output': '/tmp/zabbix_agentd.log',
             'dryrun': False,
             'data_type': None,
-            'timeout': 3,
+            'timeout': 3
         }
 
     @classmethod
@@ -41,7 +41,7 @@ class TestParams(object):
             'log_output': '/tmp/zabbix_agentd.log',
             'dryrun': False,
             'data_type': None,
-            'timeout': 3,
+            'timeout': 3
         }
         cls.zbx_container = None
         cls.logger = None
@@ -55,7 +55,7 @@ class TestParams(object):
             'log_output': '/tmp/zabbix_agentd.log',
             'dryrun': False,
             'data_type': None,
-            'timeout': 3,
+            'timeout': 3
         }
 
     def teardown_method(self, method):
@@ -67,7 +67,7 @@ class TestParams(object):
             'log_output': '/tmp/zabbix_agentd.log',
             'dryrun': False,
             'data_type': None,
-            'timeout': 3,
+            'timeout': 3
         }
 
     def test_default_params(self):
@@ -89,7 +89,7 @@ class TestParams(object):
             'log_output': '/tmp/zabbix_agentd.log',
             'dryrun': False,
             'data_type': None,
-            'timeout': 3,
+            'timeout': 3
         }
 
     def test_custom_params(self):
@@ -120,7 +120,7 @@ class TestParams(object):
             'log_output': '/var/log/zabbix_agentd.log',
             'dryrun': True,
             'data_type': 'items',
-            'timeout': 3,
+            'timeout': 3
         }
 
     def test_data_type_param(self):
@@ -176,7 +176,7 @@ class TestParams(object):
         assert self.zbx_container.logger == \
                self.zbx_container._logger == yan_logger
         with pytest.raises(ValueError):
-            self.zbx_container.logger = 'not_a_vlid_logger'
+            self.zbx_container.logger = 'not_a_valid_logger'
 
     def test_deprecated_methods(self):
         pytest.deprecated_call(self.zbx_container.set_type, 'items')
@@ -188,4 +188,3 @@ class TestParams(object):
         pytest.deprecated_call(self.zbx_container.set_dryrun, None)
         pytest.deprecated_call(self.zbx_container.set_host, '127.0.0.1')
         pytest.deprecated_call(self.zbx_container.set_port, 10051)
-        #pytest.deprecated_call(self.zbx_container.debug)

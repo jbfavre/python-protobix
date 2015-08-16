@@ -110,7 +110,7 @@ class TestDeprecatedItems(unittest.TestCase):
         self.assertEqual(self.zbx_container.items_list, [])
         self.zbx_container.add(self.data)
         ''' Send data to zabbix '''
-        with self.assertRaises(protobix.SenderException):
+        with self.assertRaises(IOError):
             self.zbx_container.send()
         self.assertEqual(self.zbx_container.result, [])
         self.assertEqual(self.zbx_container.items_list, [])

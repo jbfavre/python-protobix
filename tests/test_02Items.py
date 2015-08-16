@@ -146,7 +146,7 @@ class TestItems(object):
         assert self.zbx_container.items_list == []
         self.zbx_container.add(self.data)
         ''' Send data to zabbix '''
-        with pytest.raises(protobix.SenderException):
+        with pytest.raises(IOError):
             self.zbx_container.send()
         assert self.zbx_container.result == []
         assert self.zbx_container.items_list == []

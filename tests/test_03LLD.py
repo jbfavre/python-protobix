@@ -47,7 +47,7 @@ class TestLLD(object):
             'log_output': '/tmp/zabbix_agentd.log',
             'dryrun': False,
             'data_type': None,
-            'timeout': 3,
+            'timeout': 3
         }
 
     @classmethod
@@ -60,7 +60,7 @@ class TestLLD(object):
             'log_output': '/tmp/zabbix_agentd.log',
             'dryrun': False,
             'data_type': None,
-            'timeout': 3,
+            'timeout': 3
         }
         cls.zbx_container = None
         cls.logger = None
@@ -74,7 +74,7 @@ class TestLLD(object):
             'log_output': '/tmp/zabbix_agentd.log',
             'dryrun': False,
             'data_type': None,
-            'timeout': 3,
+            'timeout': 3
         }
 
     def teardown_method(self, method):
@@ -86,7 +86,7 @@ class TestLLD(object):
             'log_output': '/tmp/zabbix_agentd.log',
             'dryrun': False,
             'data_type': None,
-            'timeout': 3,
+            'timeout': 3
         }
 
     def testAddBeforeSettingData_type(self):
@@ -154,6 +154,6 @@ class TestLLD(object):
         assert self.zbx_container.items_list == []
         self.zbx_container.add(self.data)
         ''' Send data to zabbix '''
-        with pytest.raises(protobix.SenderException):
+        with pytest.raises(IOError):
             ret = self.zbx_container.send()
         assert self.zbx_container.items_list == []
