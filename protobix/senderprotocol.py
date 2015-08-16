@@ -48,8 +48,6 @@ else:
             return func(*args, **kwargs)
         return new_func
 
-from .senderexception import SenderException
-
 ZBX_HDR = "ZBXD\1"
 ZBX_HDR_SIZE = 13
 # For both 2.0 & >2.2 Zabbix version
