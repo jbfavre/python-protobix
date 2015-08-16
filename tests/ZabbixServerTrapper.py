@@ -6,6 +6,7 @@ import sys
 import struct
 import datetime
 import logging
+import time
 
 try: import simplejson as json
 except ImportError: import json
@@ -163,15 +164,6 @@ class ZabbixServer(object):
             info = "processed: %d; failed: %d; total: %d; seconds spent: %f"              
             try:
                 processed, failed, total = self._parse_payload(payload)
-                stop_time = datetime.datetime.now().microsecond
-                time = stop_time - start_time
-                info = info % ( processed,
-                                failed,
-                                total,
-                                float(time)/1000000)
-                self.logger.info('Processed ' + str(total) + ' items, ' +
-                                 str(processed) + ' OK, ' + str(failed) +
-                                 ' failed in ' + str(float(time)/1000000) + 's')
             except Exception as e:
                 self.logger.error('Payload parsing failed')
                 # For some reason, we failed parsing payload.
@@ -179,7 +171,15 @@ class ZabbixServer(object):
                 result = "failed"
                 info   = str(e)
                 pass
-
+            stop_time = datetime.datetime.now().microsecond
+            time = stop_time - start_time
+            info = info % ( processed,
+                            failed,
+                            total,
+                            float(time)/1000000)
+            self.logger.info('Processed ' + str(total) + ' items, ' +
+                             str(processed) + ' OK, ' + str(failed) +
+                             ' failed in ' + str(float(time)/1000000) + 's')
             result = {
                 "response":result,
                 "info": info
@@ -221,7 +221,7 @@ class ZabbixServer(object):
                 sys.exit()
             self.logger.debug('Starts listening on ' + self.HOST + ':' + str(self.PORT))
             # Start listening on socket
-            self.srv_sock.listen(10)
+            self.srv_sock.listen(20)
             # Now keep talking with the client
             while 1:
                 #wait to accept a connection - blocking call
