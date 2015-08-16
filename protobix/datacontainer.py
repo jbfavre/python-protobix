@@ -106,8 +106,77 @@ class DataContainer(SenderProtocol):
             raise ValueError('data_type requires either "items" or "lld"')
 
     @property
-    def clock(self):
-        return int((time.time())/60*60)
+    def log_level(self):
+        return int(self._config['log_level'])
+
+    @log_level.setter
+    def log_level(self, value):
+        if isinstance(value, int) and value >= 0 and value < 5:
+            self._config['log_level'] = value
+        else:
+            if self._logger:
+                self._logger.error('log_level parameter must be less than 5')
+            raise ValueError('log_level parameter must be less than 5')
+
+    @property
+    def dryrun(self):
+        return self._config['dryrun']
+
+    @dryrun.setter
+    def dryrun(self, value):
+        if value in [True, False]:
+            self._config['dryrun'] = value
+        else:
+            if self._logger:
+                self._logger.error('dryrun parameter requires boolean')
+            raise ValueError('dryrun parameter requires boolean')
+
+    @property
+    def logger(self):
+        return self._logger
+
+    @logger.setter
+    def logger(self, value):
+        if isinstance(value, logging.Logger):
+            self._logger = value
+        else:
+            if self._logger:
+                self._logger.error('logger requires a logging instance')
+            raise ValueError('logger requires a logging instance')
+
+    @property
+    def log_output(self):
+        return self._config['log_output']
+
+    def _load_zabbix_config(self,config_file):
+        # Load zabbix agent configuration as default values
+        # Default values are set in self._config
+        # - ServerActive (default: 127.0.0.1)
+        # - LogFile (default: /tmp/zabbix_agentd.log)
+        # - DebugLevel (default: 3, Allowed: 0-4)
+        #               0 -> logging.NOTSET
+        #               1 -> logging.CRITICAL
+        #               2 -> logging.ERROR
+        #               3 -> logging.WARNING
+        #               4 -> logging.DEBUG
+        # - Timeout (default: 3, Allowed: 1-30)
+        tmp_config = configobj.ConfigObj(config_file)
+
+        if 'ServerActive' in tmp_config:
+            tmp_server = tmp_config['ServerActive'][0] \
+                         if isinstance(tmp_config['ServerActive'], list) \
+                         else tmp_config['ServerActive']
+            self._config['server'], self._config['port'] = tmp_server.split(':') \
+                         if ":" in tmp_server else (tmp_server, 10051)
+
+        if 'LogFile' in tmp_config:
+            self._config['log_output'] = tmp_config['LogFile']
+
+        if 'DebugLevel' in tmp_config:
+            self._config['log_level'] = int(tmp_config['DebugLevel'])
+
+        if 'Timeout' in tmp_config:
+            self._config['timeout'] = int(tmp_config['Timeout'])
 
     def add_item(self, host, key, value, clock=None):
         if clock is None:
