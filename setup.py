@@ -22,7 +22,7 @@ class PyTest(Command):
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.0.9',
+    version = '0.0.9b1',
 
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
