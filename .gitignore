@@ -2,3 +2,5 @@
 protobix/*.pyc
 protobix/__pycache__/
 tests/__pycache__/
+MANIFEST
+dist/
