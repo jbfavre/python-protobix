@@ -22,7 +22,7 @@ class PyTest(Command):
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.0.9b1',
+    version = '0.0.9-beta1',
 
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
@@ -33,7 +33,7 @@ setup(
     author_email = 'jean-baptiste.favre@blablacar.com',
     license = 'GPL',
     url='http://github.com/jbfavre/python-protobix/',
-    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.9',
+    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.9-beta1',
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
     cmdclass={'test': PyTest},
