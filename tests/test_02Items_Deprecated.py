@@ -10,7 +10,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import protobix
 
-class TestItems(unittest.TestCase):
+class TestDeprecatedItems(unittest.TestCase):
 
     data = {
         "myhost1": {
@@ -25,14 +25,32 @@ class TestItems(unittest.TestCase):
     data_type = 'items'
 
     def setUp(self):
-        self.zbx_container = protobix.DataContainer()
+      self.zbx_container = protobix.DataContainer()
+      self.zbx_container._items_list = []
+      self.zbx_container._config = {
+          'server': '127.0.0.1',
+          'port': 10051,
+          'log_level': 3,
+          'log_output': '/tmp/zabbix_agentd.log',
+          'dryrun': False,
+          'data_type': None,
+          'timeout': 3,
+      }
 
     def tearDown(self):
-        self.zbx_container = None
+      self.zbx_container._items_list = []
+      self.zbx_container._config = {
+          'server': '127.0.0.1',
+          'port': 10051,
+          'log_level': 3,
+          'log_output': '/tmp/zabbix_agentd.log',
+          'dryrun': False,
+          'data_type': None,
+          'timeout': 3,
+      }
+      self.zbx_container = None
 
     def testBulkAddAndSent(self):
-        self.zbx_container.dryrun = False
-        self.zbx_container.debug = False
         self.zbx_container.data_type = self.data_type
         self.assertEqual(self.zbx_container.items_list, [])
         self.zbx_container.add(self.data)
@@ -47,7 +65,6 @@ class TestItems(unittest.TestCase):
         self.assertEqual(self.zbx_container.items_list, [])
 
     def testDebugSent(self):
-        self.zbx_container.dryrun = False
         self.zbx_container.debug = True
         self.zbx_container.data_type = self.data_type
         self.assertEqual(self.zbx_container.items_list, [])
@@ -65,13 +82,12 @@ class TestItems(unittest.TestCase):
     def testDryrunSent(self):
         self.zbx_container.data_type = self.data_type
         self.zbx_container.dryrun = True
-        self.zbx_container.debug = False
         self.assertEqual(self.zbx_container.items_list, [])
         self.zbx_container.add(self.data)
         self.assertEqual(len(self.zbx_container.items_list), 4)
         ''' Send data to zabbix '''
         self.zbx_container.send()
-        self.assertEqual(self.zbx_container.result, [['0', '0', '4']])
+        self.assertEqual(self.zbx_container.result, [['d', 'd', '4']])
         self.assertEqual(self.zbx_container.items_list, [])
 
     def testDryrunDebugSent(self):
@@ -85,7 +101,7 @@ class TestItems(unittest.TestCase):
         self.assertEqual(self.zbx_container.result, [])
         self.zbx_container.send()
         for result in self.zbx_container.result:
-            self.assertEqual(result, ['0', '0', '1'])
+            self.assertEqual(result, ['d', 'd', '1'])
         self.assertEqual(self.zbx_container.items_list, [])
 
     def testZabbixConnectionFails(self):
@@ -94,7 +110,7 @@ class TestItems(unittest.TestCase):
         self.assertEqual(self.zbx_container.items_list, [])
         self.zbx_container.add(self.data)
         ''' Send data to zabbix '''
-        with self.assertRaises(protobix.SenderException):
+        with self.assertRaises(IOError):
             self.zbx_container.send()
         self.assertEqual(self.zbx_container.result, [])
         self.assertEqual(self.zbx_container.items_list, [])
