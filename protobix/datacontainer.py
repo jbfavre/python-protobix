@@ -2,7 +2,7 @@ import time
 import configobj
 import logging
 import warnings, functools
-try: import ujson as json
+try: import simplejson as json
 except ImportError: import json
 from datetime import datetime
 
