@@ -1,3 +1,3 @@
 from .datacontainer import DataContainer
-from .senderexception import SenderException
 from .senderprotocol import SenderProtocol
+from .sampleprobe import SampleProbe
