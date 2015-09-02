@@ -1,3 +1,15 @@
+python-protobix (0.0.9~beta1-1) unstable; urgency=medium
+
+  * Load default configuration from zabbix_agentd.conf
+  * Add deprecation warnings messages for deprecated methods
+  * Fix python3 compatibility for deprecated warnings function. Closes #2
+  * Implement logging into ZabbixTrapper server for tests
+  * Add logging feature in protobix
+  * Remove unused senderexception
+  * Add SampleProbe class to ease plugin development
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Wed, 02 Sep 2015 11:51:06 +0200
+
 python-protobix (0.0.8.1-2) unstable; urgency=medium
 
   * Release 0.0.8.1 version of protobix module
