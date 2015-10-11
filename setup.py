@@ -37,4 +37,12 @@ setup(
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
     cmdclass={'test': PyTest},
+    install_requires=[
+      'configobj',
+      'logging',
+      'functools',
+      'simplejson',
+      'optparse',
+      'traceback'
+    ]
    )
