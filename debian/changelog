@@ -1,3 +1,13 @@
+python-protobix (0.0.9~beta2-1) unstable; urgency=medium
+
+  * Disable parsing value into list when reading zabbix-agent config file.
+    Avoids parse error with some UserParameter values
+  * Update dependencies
+  * Update SenderProtocol. Default clock now returns current second. Closes #8
+  * Update setup.py for 0.0.9-beta2
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Sun, 11 Oct 2015 16:50:53 +0200
+
 python-protobix (0.0.9~beta1-1) unstable; urgency=medium
 
   * Load default configuration from zabbix_agentd.conf
