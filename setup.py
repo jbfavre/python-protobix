@@ -22,7 +22,7 @@ class PyTest(Command):
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.0.9-beta1',
+    version = '0.0.9-beta2',
 
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
@@ -37,4 +37,12 @@ setup(
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
     cmdclass={'test': PyTest},
+    install_requires=[
+      'configobj',
+      'logging',
+      'functools',
+      'simplejson',
+      'optparse',
+      'traceback'
+    ]
    )
