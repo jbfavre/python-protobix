@@ -161,6 +161,8 @@ class SenderProtocol(object):
         # Get response payload from Zabbix Server
         zbx_srv_resp_body = zbx_sock.recv(zbx_srv_resp_body_len)
         zbx_sock.close()
+        if sys.version_info[0] == 3:
+            zbx_srv_resp_body = zbx_srv_resp_body.decode()
         return json.loads(zbx_srv_resp_body)
 
     def send(self, container = None):
