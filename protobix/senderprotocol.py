@@ -116,7 +116,7 @@ class SenderProtocol(object):
                             "request": self.REQUEST,
                             "clock": self.clock })
         # Set socket options & open connection
-        socket.setdefaulttimeout(1)
+        socket.setdefaulttimeout(self._config['timeout'])
         try:
             zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             zbx_sock.connect((self._config['server'], int(self._config['port'])))
