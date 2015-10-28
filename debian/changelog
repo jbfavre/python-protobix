@@ -1,3 +1,9 @@
+python-protobix (0.0.9~beta2-2) unstable; urgency=medium
+
+  * Make socket timeout use config timeout
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Wed, 28 Oct 2015 17:03:34 +0100
+
 python-protobix (0.0.9~beta2-1) unstable; urgency=medium
 
   * Disable parsing value into list when reading zabbix-agent config file.
