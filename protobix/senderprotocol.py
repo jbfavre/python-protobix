@@ -116,7 +116,7 @@ class SenderProtocol(object):
                             "request": self.REQUEST,
                             "clock": self.clock })
         # Set socket options & open connection
-        socket.setdefaulttimeout(1)
+        socket.setdefaulttimeout(self._config['timeout'])
         try:
             zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             zbx_sock.connect((self._config['server'], int(self._config['port'])))
@@ -161,6 +161,8 @@ class SenderProtocol(object):
         # Get response payload from Zabbix Server
         zbx_srv_resp_body = zbx_sock.recv(zbx_srv_resp_body_len)
         zbx_sock.close()
+        if sys.version_info[0] == 3:
+            zbx_srv_resp_body = zbx_srv_resp_body.decode()
         return json.loads(zbx_srv_resp_body)
 
     def send(self, container = None):
