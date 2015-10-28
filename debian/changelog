@@ -1,5 +1,12 @@
 python-protobix (0.0.9~beta2-2) unstable; urgency=medium
 
+  * Fix python2\3 compatibility
+  * Make socket timeout use config timeout
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Wed, 28 Oct 2015 17:11:09 +0100
+
+python-protobix (0.0.9~beta2-2) unstable; urgency=medium
+
   * Make socket timeout use config timeout
 
  -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Wed, 28 Oct 2015 17:03:34 +0100
