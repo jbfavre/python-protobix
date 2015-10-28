@@ -1,3 +1,10 @@
+protobix (0.0.9~beta3-1~bbc78+1) stable; urgency=medium
+
+  * Fix python2\3 compatibility
+  * Make socket timeout use config timeout
+
+ -- ean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Wed, 28 Oct 2015 17:30:53 +0100
+
 protobix (0.0.9~beta2-2~bbc78+1) stable; urgency=medium
 
   * Disable parsing value into list when reading zabbix-agent config file. Avoids parse error with some UserParameter values
