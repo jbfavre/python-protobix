@@ -148,12 +148,12 @@ class DataContainer(SenderProtocol):
         #               3 -> logging.WARNING
         #               4 -> logging.DEBUG
         # - Timeout (default: 3, Allowed: 1-30)
-        tmp_config = configobj.ConfigObj(config_file)
+        tmp_config = configobj.ConfigObj(config_file, list_values=False)
 
         if 'ServerActive' in tmp_config:
             tmp_server = tmp_config['ServerActive'][0] \
                          if isinstance(tmp_config['ServerActive'], list) \
-                         else tmp_config['ServerActive']
+                         else list(tmp_config['ServerActive'])[0]
             self._config['server'], self._config['port'] = tmp_server.split(':') \
                          if ":" in tmp_server else (tmp_server, 10051)
 
