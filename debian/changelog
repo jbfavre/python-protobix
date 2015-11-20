@@ -1,3 +1,10 @@
+python-protobix (0.0.9~rc1-1) unstable; urgency=medium
+
+  * Move to setuptools. First realease candidate
+  * Update download link
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Fri, 20 Nov 2015 10:36:18 +0100
+
 python-protobix (0.0.9~beta2-2) unstable; urgency=medium
 
   * Fix python2\3 compatibility
