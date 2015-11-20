@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-from distutils.core import setup, Command
-# you can also import from setuptools
+import sys
+from setuptools import setup
+from setuptools.command.test import test as TestCommand
 
-class PyTest(Command):
+class PyTest(TestCommand):
     user_options = []
     def initialize_options(self):
         pass
@@ -22,7 +23,14 @@ class PyTest(Command):
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.0.9-beta2',
+    version = '0.0.9-rc1',
+    install_requires = [
+        'configobj',
+        'logging',
+        'functools',
+        'simplejson',
+        'traceback2'
+    ],
 
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
@@ -33,16 +41,8 @@ setup(
     author_email = 'jean-baptiste.favre@blablacar.com',
     license = 'GPL',
     url='http://github.com/jbfavre/python-protobix/',
-    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.9-beta1',
+    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.9-rc1',
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
-    cmdclass={'test': PyTest},
-    install_requires=[
-      'configobj',
-      'logging',
-      'functools',
-      'simplejson',
-      'optparse',
-      'traceback'
-    ]
+    cmdclass={'test': PyTest}
    )
