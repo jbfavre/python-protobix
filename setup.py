@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-from distutils.core import setup, Command
-# you can also import from setuptools
+import sys
+from setuptools import setup
+from setuptools.command.test import test as TestCommand
 
-class PyTest(Command):
+class PyTest(TestCommand):
     user_options = []
     def initialize_options(self):
         pass
@@ -12,15 +13,24 @@ class PyTest(Command):
         pass
 
     def run(self):
-        import subprocess
-        import sys
-        errno = subprocess.call([sys.executable, 'runtests.py'])
+        import pytest
+        options = "--cov protobix --cov-report term-missing"
+        try: import coverage
+        except ImportError: options = ""
+        errno = pytest.main(options)
         raise SystemExit(errno)
 
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.0.8.1',
+    version = '0.0.9',
+    install_requires = [
+        'configobj',
+        'logging',
+        'functools',
+        'simplejson',
+        'traceback2'
+    ],
 
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
@@ -31,8 +41,8 @@ setup(
     author_email = 'jean-baptiste.favre@blablacar.com',
     license = 'GPL',
     url='http://github.com/jbfavre/python-protobix/',
-    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.8.1',
+    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.9',
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
-    cmdclass={'test': PyTest},
+    cmdclass={'test': PyTest}
    )
