@@ -1,3 +1,9 @@
+python-protobix (0.0.9-1) unstable; urgency=medium
+
+  * Update setup.py for 0.0.9
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Sun, 22 Nov 2015 11:29:05 +0100
+
 python-protobix (0.0.9~rc1-1) unstable; urgency=medium
 
   * Move to setuptools. First realease candidate
