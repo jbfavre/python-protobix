@@ -1,3 +1,9 @@
+protobix (0.0.9-1~bbc7+1) stable; urgency=medium
+
+  * Update setup.py for 0.0.9
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Sun, 22 Nov 2015 11:30:51 +0100
+
 protobix (0.0.9~rc1-1~bbc7+1) stable; urgency=medium
 
   * Move to setuptools. First realease candidate
