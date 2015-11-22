@@ -1,3 +1,9 @@
+python-protobix (0.0.9-1~bpo80+1) stable; urgency=medium
+
+  * New upstream release 0.0.9
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Sun, 22 Nov 2015 11:40:25 +0100
+
 python-protobix (0.0.8.1-1~bpo80+2) stable; urgency=medium
 
   * Release 0.0.8.1 version of protobix module
