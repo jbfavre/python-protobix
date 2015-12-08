@@ -1,0 +1,5 @@
+python-protobix (0.0.9-1) unstable; urgency=medium
+
+  * Initial packaging (Closes: #807412)
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Tue, 8 Dec 2015 15:13:05 +0100

@@ -1,0 +1,30 @@
+Source: python-protobix
+Section: python
+Priority: optional
+Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
+Uploaders: Jean Baptiste Favre <debian@jbfavre.org>
+Build-Depends: debhelper (>= 8), python-all (>= 2.6.6-3), python-setuptools, dh-python, python3-all, python3-setuptools
+Standards-Version: 3.9.6
+Homepage: https://github.com/jbfavre/python-protobix
+Vcs-Git: git://anonscm.debian.org/python-modules/packages/python-protobix.git
+Vcs-Browser: https://anonscm.debian.org/cgit/python-modules/packages/python-protobix.git
+X-Python-Version: >= 2.6
+X-Python3-Version: >= 3.2
+
+Package: python-protobix
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Description: Implementation of Zabbix Sender protocol
+ This module implements Zabbix Sender Protocol.
+ It allows one to build list of items and send items and send them as trapper.
+ It currently supports items as well as Low Level Discovery.
+
+Package: python3-protobix
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}
+Description: Implementation of Zabbix Sender protocol
+ This module implements Zabbix Sender Protocol.
+ It allows one to build list of items and send items and send them as trapper.
+ It currently supports items as well as Low Level Discovery.
+ .
+ This is the Python 3 version of the package.

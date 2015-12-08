@@ -1,0 +1,3 @@
+version=3
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/python-protobix-$1\.tar\.gz/ \
+  https://github.com/jbfavre/python-protobix/tags .*/v?(\d\S*)\.tar\.gz
