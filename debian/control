@@ -7,7 +7,7 @@ Standards-Version: 3.9.6
 
 Package: python-protobix
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}
+Depends: ${misc:Depends}, python-simplejson, python-configobj
 Description: Implementation of Zabbix Sender protocol
  This module implements Zabbix Sender Protocol.
  It allows one to build list of items and send items and send them as trapper.
