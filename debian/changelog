@@ -1,3 +1,9 @@
+protobix (0.0.9-2~bbc7+1) stable; urgency=medium
+
+  * Update dependencies for binary package
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Tue, 02 Feb 2016 10:15:33 +0100
+
 protobix (0.0.9-1~bbc7+1) stable; urgency=medium
 
   * Update setup.py for 0.0.9
