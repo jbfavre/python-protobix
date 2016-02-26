@@ -1,3 +1,11 @@
+python-protobix (0.1.0-1) unstable; urgency=medium
+
+  * Remove useless dependencies. Fix pip install issue
+  * Update license to GPL-3+. Bump version number
+  * Update license block in d/copyright
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Fri, 26 Feb 2016 19:15:15 +0100
+
 python-protobix (0.0.9-1) unstable; urgency=medium
 
   * Update setup.py for 0.0.9
