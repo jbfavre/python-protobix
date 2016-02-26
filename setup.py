@@ -23,11 +23,9 @@ class PyTest(TestCommand):
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.0.9',
+    version = '0.1.0',
     install_requires = [
         'configobj',
-        'logging',
-        'functools',
         'simplejson',
         'traceback2'
     ],
@@ -39,7 +37,7 @@ setup(
                          'It currently supports items as well as Low Level Discovery.' ),    
     author = 'Jean Baptiste Favre',
     author_email = 'jean-baptiste.favre@blablacar.com',
-    license = 'GPL',
+    license = 'GPL-3+',
     url='http://github.com/jbfavre/python-protobix/',
     download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.9',
     keywords = ['monitoring','zabbix','trappers'],
