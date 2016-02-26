@@ -26,8 +26,6 @@ setup(
     version = '0.0.9',
     install_requires = [
         'configobj',
-        'logging',
-        'functools',
         'simplejson',
         'traceback2'
     ],
