@@ -4,5 +4,3 @@ export PYBUILD_NAME=protobix
 
 %:
 	dh $@ --with python2,python3 --buildsystem=pybuild
-
-

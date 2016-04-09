@@ -1,84 +1,13 @@
 python-protobix (0.1.0-1) unstable; urgency=medium
 
-  * Remove useless dependencies. Fix pip install issue
-  * Update license to GPL-3+. Bump version number
-  * Update license block in d/copyright
+  * Imported Upstream version 0.1.0
+  * Update d/copyright license to be consistent with upstream
+  * Bump standard version to 3.9.7
 
- -- Jean Baptiste Favre <debian@jbfavre.org>  Fri, 26 Feb 2016 19:15:15 +0100
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Fri, 26 Feb 2016 19:22:42 +0100
 
 python-protobix (0.0.9-1) unstable; urgency=medium
 
-  * Update setup.py for 0.0.9
+  * Initial packaging (Closes: #807412)
 
- -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Sun, 22 Nov 2015 11:29:05 +0100
-
-python-protobix (0.0.9~rc1-1) unstable; urgency=medium
-
-  * Move to setuptools. First realease candidate
-  * Update download link
-
- -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Fri, 20 Nov 2015 10:36:18 +0100
-
-python-protobix (0.0.9~beta2-2) unstable; urgency=medium
-
-  * Fix python2\3 compatibility
-  * Make socket timeout use config timeout
-
- -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Wed, 28 Oct 2015 17:11:09 +0100
-
-python-protobix (0.0.9~beta2-2) unstable; urgency=medium
-
-  * Make socket timeout use config timeout
-
- -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Wed, 28 Oct 2015 17:03:34 +0100
-
-python-protobix (0.0.9~beta2-1) unstable; urgency=medium
-
-  * Disable parsing value into list when reading zabbix-agent config file.
-    Avoids parse error with some UserParameter values
-  * Update dependencies
-  * Update SenderProtocol. Default clock now returns current second. Closes #8
-  * Update setup.py for 0.0.9-beta2
-
- -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Sun, 11 Oct 2015 16:50:53 +0200
-
-python-protobix (0.0.9~beta1-1) unstable; urgency=medium
-
-  * Load default configuration from zabbix_agentd.conf
-  * Add deprecation warnings messages for deprecated methods
-  * Fix python3 compatibility for deprecated warnings function. Closes #2
-  * Implement logging into ZabbixTrapper server for tests
-  * Add logging feature in protobix
-  * Remove unused senderexception
-  * Add SampleProbe class to ease plugin development
-
- -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Wed, 02 Sep 2015 11:51:06 +0200
-
-python-protobix (0.0.8.1-2) unstable; urgency=medium
-
-  * Release 0.0.8.1 version of protobix module
-
- -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Mon, 10 Aug 2015 20:54:59 +0200
-
-python-protobix (0.0.8.1-1) unstable; urgency=medium
-
-  * Update README
-  * Fix large items number send failure
-
- -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Mon, 10 Aug 2015 19:54:56 +0200
-
-python-protobix (0.0.8-1) unstable; urgency=medium
-
-  * Empty Datacontainer.items_list after sucessfull sending
-  * Fixed #4 - Add support for Zabbix 2.0 trapper response format
-  * Code cleaning & refacto
-  * Add unit tests
-  * Fix deprecated function to ensure setters got allowed value
-
- -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Fri, 31 Jul 2015 11:32:32 +0200
-
-python-protobix (0.0.5-1) unstable; urgency=medium
-
-  * Initial release. Migration from old repository
-
- -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Tue, 14 Apr 2015 15:00:34 +0200
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Tue, 8 Dec 2015 15:13:05 +0100

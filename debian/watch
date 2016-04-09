@@ -1,0 +1,3 @@
+version=3
+opts=uversionmangle=s/v?(\d)[_\.\-\+]?((RC|rc|pre|dev|beta|alpha|bpo|bbc)\d*)$/$1~$2/,filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/python-protobix-$1\.tar\.gz/ \
+  https://github.com/jbfavre/python-protobix/tags .*/archive/v?(\d\S*)\.tar\.gz
