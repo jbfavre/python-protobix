@@ -23,7 +23,7 @@ class PyTest(TestCommand):
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.1.1rc1',
+    version = '0.1.1rc2',
     install_requires = [
         'configobj',
         'simplejson',
@@ -40,7 +40,7 @@ setup(
     author_email = 'jean-baptiste.favre@blablacar.com',
     license = 'GPL-3+',
     url='http://github.com/jbfavre/python-protobix/',
-    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.9',
+    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.1.0rc2',
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
     cmdclass={'test': PyTest}
