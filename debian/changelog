@@ -1,3 +1,13 @@
+python-protobix (0.1.1~rc2-1~bpo8+1) stable; urgency=medium
+
+  * Remove useless dependencies. Fix pip install issue
+  * Update license to GPL-3+. Bump version number
+  * Fix memory leak when used in long running process
+  * Update version number
+  * Update .gitignore. Update version & download url
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Wed, 04 May 2016 10:20:50 +0200
+
 python-protobix (0.0.9-1~bpo80+1) stable; urgency=medium
 
   * New upstream release 0.0.9
