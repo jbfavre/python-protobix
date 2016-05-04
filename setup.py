@@ -23,25 +23,24 @@ class PyTest(TestCommand):
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '0.0.9',
+    version = '0.1.1rc2',
     install_requires = [
         'configobj',
-        'logging',
-        'functools',
         'simplejson',
         'traceback2'
     ],
 
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
-                         'It allows to build list of items and send items and send '
+                         'It allows to build list of items and send '
                          'them as trapper.\n'
-                         'It currently supports items as well as Low Level Discovery.' ),    
+                         'It currently supports items update as well as '
+                         'Low Level Discovery.' ),    
     author = 'Jean Baptiste Favre',
     author_email = 'jean-baptiste.favre@blablacar.com',
-    license = 'GPL',
+    license = 'GPL-3+',
     url='http://github.com/jbfavre/python-protobix/',
-    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.0.9',
+    download_url = 'http://github.com/jbfavre/python-protobix/tarball/0.1.0rc2',
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
     cmdclass={'test': PyTest}

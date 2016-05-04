@@ -4,3 +4,4 @@ protobix/__pycache__/
 tests/__pycache__/
 MANIFEST
 dist/
+*.egg-info
