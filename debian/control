@@ -1,4 +1,4 @@
-Source: protobix
+Source: python-protobix
 Maintainer: Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>
 Section: python
 Priority: optional
