@@ -1,3 +1,12 @@
+python-protobix (0.1.1~rc2-1) unstable; urgency=medium
+
+  * Fix memory leak when used in long running process
+  * Update version number
+  * Update .gitignore. Update version & download url
+  * Update debian packaging
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Wed, 04 May 2016 10:28:18 +0200
+
 python-protobix (0.1.0-1) unstable; urgency=medium
 
   * Imported Upstream version 0.1.0
