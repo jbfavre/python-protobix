@@ -61,18 +61,18 @@ ZBX_DBG_SEND_ITEM   = "[%s %s %s]"
 ZBX_SEND_ITEM   = "[%d items]"
 
 class SenderProtocol(object):
-
-    _config = {
-        'server': '127.0.0.1',
-        'port': 10051,
-        'log_output': '/tmp/zabbix_agentd.log',
-        'log_level': 3,
-        'timeout': 3,
-        'dryrun': False,
-        'data_type': None }
-    _items_list = []
-    data = None
-
+    def __init__(self):
+        self._config = {
+            'server': '127.0.0.1',
+            'port': 10051,
+            'log_output': '/tmp/zabbix_agentd.log',
+            'log_level': 3,
+            'timeout': 3,
+            'dryrun': False,
+            'data_type': None }
+        self._items_list = []
+        self.data = None
+    
     @property
     def zbx_host(self):
         return self._config['server']
