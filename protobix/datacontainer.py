@@ -56,6 +56,8 @@ class DataContainer(SenderProtocol):
                        log_output = None,
                        dryrun     = False,
                        logger     = None):
+        super(DataContainer,self).__init__()
+
 
         # Loads config from zabbix_agentd file
         # If no file, it uses the default _config as configuration
