@@ -175,7 +175,7 @@ class SenderProtocol(object):
             )
         zbx_answer = 0
         self._result = []
-        if self._config['log_level'] == 4:
+        if self._config['log_level'] >= 4:
             # Per item sent if debug mode enabled
             for item in self._items_list:
                 output =  ZBX_DBG_SEND_ITEM % (
@@ -222,7 +222,7 @@ class SenderProtocol(object):
         if zbx_answer and self.logger:
             self.logger.debug("Got [%s] as response from Zabbix server" % zbx_answer)
         nb_item = len(self._items_list)
-        if self._config['log_level'] == 4:
+        if self._config['log_level'] >= 4:
             nb_item = 1
         if zbx_answer:
             if zbx_answer.get('response') == 'success':
@@ -260,7 +260,7 @@ class SenderProtocol(object):
     @property
     @deprecated
     def debug(self):
-        if self._config['log_level'] == 4:
+        if self._config['log_level'] >= 4:
             return True
         else:
             return False
