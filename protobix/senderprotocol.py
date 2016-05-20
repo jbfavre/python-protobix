@@ -168,7 +168,7 @@ class SenderProtocol(object):
         return json.loads(zbx_srv_resp_body)
 
     def send(self, container = None):
-        if container != None:
+        if container != None and self.logger:
             # Using container argument is deprecated
             self.logger.warning(
                 'Deprecated call of send() function with container argument'
