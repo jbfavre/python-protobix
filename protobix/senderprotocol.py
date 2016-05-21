@@ -61,18 +61,18 @@ ZBX_DBG_SEND_ITEM   = "[%s %s %s]"
 ZBX_SEND_ITEM   = "[%d items]"
 
 class SenderProtocol(object):
-
-    _config = {
-        'server': '127.0.0.1',
-        'port': 10051,
-        'log_output': '/tmp/zabbix_agentd.log',
-        'log_level': 3,
-        'timeout': 3,
-        'dryrun': False,
-        'data_type': None }
-    _items_list = []
-    data = None
-
+    def __init__(self):
+        self._config = {
+            'server': '127.0.0.1',
+            'port': 10051,
+            'log_output': '/tmp/zabbix_agentd.log',
+            'log_level': 3,
+            'timeout': 3,
+            'dryrun': False,
+            'data_type': None }
+        self._items_list = []
+        self.data = None
+    
     @property
     def zbx_host(self):
         return self._config['server']
@@ -168,14 +168,14 @@ class SenderProtocol(object):
         return json.loads(zbx_srv_resp_body)
 
     def send(self, container = None):
-        if container != None:
+        if container != None and self.logger:
             # Using container argument is deprecated
             self.logger.warning(
                 'Deprecated call of send() function with container argument'
             )
         zbx_answer = 0
         self._result = []
-        if self._config['log_level'] == 4:
+        if self._config['log_level'] >= 4:
             # Per item sent if debug mode enabled
             for item in self._items_list:
                 output =  ZBX_DBG_SEND_ITEM % (
@@ -222,7 +222,7 @@ class SenderProtocol(object):
         if zbx_answer and self.logger:
             self.logger.debug("Got [%s] as response from Zabbix server" % zbx_answer)
         nb_item = len(self._items_list)
-        if self._config['log_level'] == 4:
+        if self._config['log_level'] >= 4:
             nb_item = 1
         if zbx_answer:
             if zbx_answer.get('response') == 'success':
@@ -260,7 +260,7 @@ class SenderProtocol(object):
     @property
     @deprecated
     def debug(self):
-        if self._config['log_level'] == 4:
+        if self._config['log_level'] >= 4:
             return True
         else:
             return False
