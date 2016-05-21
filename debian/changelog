@@ -1,3 +1,17 @@
+python-protobix (0.1.1~rc4-1~bpo8+1) jessie-backports; urgency=medium
+
+  [ Michael Mol ]
+  * Don't try to log without a logger
+  * Use >=, not ==, for log_level checks
+  * Fix singleton behavior of SenderProtocol
+
+  [ Jean Baptiste Favre ]
+  * Add requirements.txt to ease dependencies install
+  * Travis CI integration
+  * New upstream version 0.1.1rc4
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Sat, 21 May 2016 13:03:35 +0200
+
 python-protobix (0.1.1~rc2-1~bpo8+1) stable; urgency=medium
 
   * Remove useless dependencies. Fix pip install issue
