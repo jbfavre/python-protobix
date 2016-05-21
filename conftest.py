@@ -7,7 +7,7 @@ import time
 def start_zbx_server (request):
     zbx_cmd = [
         'python',
-        'tests/ZabbixServerTrapper.py'
+        'tests/ZabbixServerTrapper2.py'
     ]
     zbx_proc = subprocess.Popen(zbx_cmd,
         stdout=open(os.devnull),
