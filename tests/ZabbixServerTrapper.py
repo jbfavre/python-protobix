@@ -55,10 +55,14 @@ REGISTERED_LLD_ITEMS = {
 }
 
 class ZabbixServer(object):
-    class Trapper(object):
-        HOST = '127.0.0.1'
-        PORT = 10051
+    HOST = '127.0.0.1'
+    PORT = 10051
+
+    class TrapperServer():
         ZBX_HDR = "ZBXD\1"
+        def __init__(self, clientsock, logger):
+            self.clientsock = clientsock
+            self.logger = logger
 
         def _parse_payload(self, payload):
             processed = 0
@@ -93,7 +97,7 @@ class ZabbixServer(object):
                        key not in REGISTERED_ITEMS[host] or \
                        value != REGISTERED_ITEMS[host][key]:
                         self.logger.error(
-                            '        host or key not registered' + 
+                            '        host or key not registered' +
                             ' or incorrect value'
                         )
                         failed += 1
@@ -109,17 +113,17 @@ class ZabbixServer(object):
             try:
                 # Check the 5 first bytes from answer
                 # to ensure it's well formatted
-                clt_hdr = self._conn.recv(5)
+                clt_hdr = self.clientsock.recv(5)
                 output = clt_hdr
                 assert(clt_hdr == b(self.ZBX_HDR))
                 self.logger.debug('Got ZBX header')
                 # Get the 8 next bytes and unpack
                 # to get response's payload length
-                payload_hdr = self._conn.recv(8)
+                payload_hdr = self.clientsock.recv(8)
                 output += payload_hdr
                 payload_len = struct.unpack('<Q', payload_hdr)[0]
                 # Get response payload from Zabbix Server
-                payload_body = self._conn.recv(payload_len).decode('ASCII')
+                payload_body = self.clientsock.recv(payload_len).decode('ASCII')
             except:
                 self.logger.debug("Did not get ZBX header. Ok, let's try anyway")
                 # We don't have Zabbix Header which seems to be OK
@@ -129,7 +133,7 @@ class ZabbixServer(object):
             if not payload_body:
                 while True:
                     # Get data from connection
-                    output += self._conn.recv(1024)
+                    output += self.clientsock.recv(1024)
                     if len(output)<1024:
                         # If last received piece of data is shorter
                         # than buffer size, we're done
@@ -145,7 +149,7 @@ class ZabbixServer(object):
             packet = b(self.ZBX_HDR) + data_header + b(data)
             # Send payload to Zabbix Server and check response header
             try:
-                self._conn.send(packet)
+                self.clientsock.sendall(packet)
             except:
                 self.logger.error('Error while sending answer to client')
                 raise Exception('Error while sending answer to client')
@@ -156,13 +160,13 @@ class ZabbixServer(object):
                 self.logger.info('Receiving request')
                 payload = self._get_request()
             except:
-                self._conn.close()
+                self.clientsock.close()
                 self.logger.error('Error while receiveing data')
                 raise Exception('Error while receiveing data')
 
             # We got payload, let's play with it
             result = "success"
-            info = "processed: %d; failed: %d; total: %d; seconds spent: %f"              
+            info = "processed: %d; failed: %d; total: %d; seconds spent: %f"
             try:
                 processed, failed, total = self._parse_payload(payload)
             except Exception as e:
@@ -189,48 +193,48 @@ class ZabbixServer(object):
             # And send back the answer to the client
             self._answer_request(result)
             # End of play, let's close connection
-            self._conn.close()
+            self.clientsock.close()
 
-        def _setup_logging(self):
-            common_log_format = '[%(name)s:%(levelname)s] %(message)s'
-            # Enable default console logging
-            consoleHandler = logging.StreamHandler()
-            consoleFormatter = logging.Formatter(
-                fmt = common_log_format,
-                datefmt = '%Y%m%d:%H%M%S'
+    def _setup_logging(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        common_log_format = '[%(name)s:%(levelname)s] %(message)s'
+        # Enable default console logging
+        consoleHandler = logging.StreamHandler()
+        consoleFormatter = logging.Formatter(
+            fmt = common_log_format,
+            datefmt = '%Y%m%d:%H%M%S'
+        )
+        consoleHandler.setFormatter(consoleFormatter)
+        self.logger.addHandler(consoleHandler)
+        self.logger.setLevel(logging.DEBUG)
+
+    def run(self):
+        self._setup_logging()
+        self.logger.debug('Initialized ZabbixTrapper server')
+        self.srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Avoid bind: adress already in use error
+        # Reuse addr+port socket except if a process listens on it
+        self.srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Bind socket to local host and port
+        try:
+            self.logger.debug('Trying to bind ' + self.HOST + ':' + str(self.PORT))
+            self.srv_sock.bind((self.HOST, self.PORT))
+        except socket.error as msg:
+            self.logger.error(
+                'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
             )
-            consoleHandler.setFormatter(consoleFormatter)
-            self.logger.addHandler(consoleHandler)
-            self.logger.setLevel(logging.DEBUG)
+            sys.exit()
+        self.logger.debug('Starts listening on ' + self.HOST + ':' + str(self.PORT))
+        # Start listening on socket
+        self.srv_sock.listen(5)
+        # Now keep talking with the client
+        while 1:
+            # wait to accept a connection - blocking call
+            self._conn, addr = self.srv_sock.accept()
+            self.logger.debug(
+                'Connected with ' + addr[0] + ':' + str(addr[1])
+            )
+            start_new_thread(self.TrapperServer(self._conn, self.logger)._clientthread ,())
+        self.srv_sock.close()
 
-        def run(self):
-            self.logger = logging.getLogger(self.__class__.__name__)
-            self._setup_logging()
-            self.logger.debug('Initialized ZabbixTrapper server')
-            self.srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # Avoid bind: adress already in use error
-            # Reuse addr+port socket except if a process listens on it
-            self.srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # Bind socket to local host and port
-            try:
-                self.logger.debug('Trying to bind ' + self.HOST + ':' + str(self.PORT))
-                self.srv_sock.bind((self.HOST, self.PORT))
-            except socket.error as msg:
-                self.logger.error(
-                    'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
-                )
-                sys.exit()
-            self.logger.debug('Starts listening on ' + self.HOST + ':' + str(self.PORT))
-            # Start listening on socket
-            self.srv_sock.listen(50)
-            # Now keep talking with the client
-            while 1:
-                # wait to accept a connection - blocking call
-                self._conn, addr = self.srv_sock.accept()
-                self.logger.debug(
-                    'Connected with ' + addr[0] + ':' + str(addr[1])
-                )
-                start_new_thread(self._clientthread ,())
-            self.srv_sock.close()
-
-ZabbixServer.Trapper().run()
+ZabbixServer().run()
