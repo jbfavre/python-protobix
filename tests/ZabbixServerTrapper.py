@@ -13,6 +13,7 @@ except ImportError: import json
 
 try: from thread import * # python 2
 except ImportError: from _thread import * # python 3
+import threading
 
 if sys.version_info < (3,): # python 2
     def b(x):
@@ -210,7 +211,7 @@ class ZabbixServer(object):
             # Avoid bind: adress already in use error
             # Reuse addr+port socket except if a process listens on it
             self.srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            #Bind socket to local host and port
+            # Bind socket to local host and port
             try:
                 self.logger.debug('Trying to bind ' + self.HOST + ':' + str(self.PORT))
                 self.srv_sock.bind((self.HOST, self.PORT))
@@ -221,10 +222,10 @@ class ZabbixServer(object):
                 sys.exit()
             self.logger.debug('Starts listening on ' + self.HOST + ':' + str(self.PORT))
             # Start listening on socket
-            self.srv_sock.listen(20)
+            self.srv_sock.listen(50)
             # Now keep talking with the client
             while 1:
-                #wait to accept a connection - blocking call
+                # wait to accept a connection - blocking call
                 self._conn, addr = self.srv_sock.accept()
                 self.logger.debug(
                     'Connected with ' + addr[0] + ':' + str(addr[1])
