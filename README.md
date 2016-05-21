@@ -1,6 +1,7 @@
 # python-protobix
 
-[![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=dev)](https://travis-ci.org/jbfavre/python-protobix)
+dev Branch: [![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=dev)](https://travis-ci.org/jbfavre/python-protobix)
+upstream Branch: [![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=upstream)](https://travis-ci.org/jbfavre/python-protobix)
 
 Very simple python module implementing Zabbix Sender protocol.  
 It allows one to build list of items and send them as trapper.
