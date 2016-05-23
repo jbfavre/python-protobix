@@ -56,7 +56,7 @@ ZBX_HDR_SIZE = 13
 # 2.2: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 # 2.4: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? [Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
-ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for %s"
+ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for key %s item %s"
 ZBX_DBG_SEND_ITEM   = "[%s %s %s]"
 ZBX_SEND_ITEM   = "[%d items]"
 
@@ -193,7 +193,8 @@ class SenderProtocol(object):
                             result[0],
                             result[1],
                             result[2],
-                            output
+                            output,
+                            item
                         )
                     )
                 self._result.append(result)
