@@ -105,7 +105,9 @@ class SenderProtocol(object):
 
     @property
     def clock(self):
-        return time.time()
+        # Times in Zabbix *must* be integers, or the server will reject
+        # the item.
+        return int(time.time())
 
     def _send_to_zabbix(self, item):
         # Return 0 if dryrun mode enabled
