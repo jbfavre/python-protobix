@@ -211,7 +211,8 @@ class SenderProtocol(object):
                         result[0],
                         result[1],
                         result[2],
-                        output
+                        output,
+                        '(bulk)'
                     )
                 )
             self._result.append(result)
