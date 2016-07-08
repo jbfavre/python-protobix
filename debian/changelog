@@ -1,3 +1,9 @@
+python-protobix (0.1.1~rc5-1) unstable; urgency=medium
+
+  * Fix Zabbix 3.0 compatibility. RC5 release
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Fri, 08 Jul 2016 12:48:27 +0200
+
 python-protobix (0.1.1~rc4-1) unstable; urgency=medium
 
   [ Michael Mol ]
