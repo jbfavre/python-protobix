@@ -105,7 +105,7 @@ class SenderProtocol(object):
 
     @property
     def clock(self):
-        return time.time()
+        return int(time.time())
 
     def _send_to_zabbix(self, item):
         # Return 0 if dryrun mode enabled
