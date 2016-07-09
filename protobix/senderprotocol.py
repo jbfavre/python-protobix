@@ -61,16 +61,18 @@ ZBX_DBG_SEND_ITEM   = "[%s %s %s]"
 ZBX_SEND_ITEM   = "[%d items]"
 
 class SenderProtocol(object):
-
-    _config = {
-        'server': '127.0.0.1',
-        'port': 10051,
-        'log_output': '/tmp/zabbix_agentd.log',
-        'log_level': 3,
-        'timeout': 3,
-        'dryrun': False,
-        'data_type': None }
-
+    def __init__(self):
+        self._config = {
+            'server': '127.0.0.1',
+            'port': 10051,
+            'log_output': '/tmp/zabbix_agentd.log',
+            'log_level': 3,
+            'timeout': 3,
+            'dryrun': False,
+            'data_type': None }
+        self._items_list = []
+        self.data = None
+    
     @property
     def zbx_host(self):
         return self._config['server']
@@ -103,7 +105,7 @@ class SenderProtocol(object):
 
     @property
     def clock(self):
-        return time.time()
+        return int(time.time())
 
     def _send_to_zabbix(self, item):
         # Return 0 if dryrun mode enabled
@@ -112,18 +114,19 @@ class SenderProtocol(object):
         # Format data to be sent
         if type(item) is dict:
             item = [ item ]
-        data = json.dumps({ "data": item,
-                            "request": self.REQUEST,
-                            "clock": self.clock })
+        self.data = json.dumps({ "data": item,
+                                 "request": self.REQUEST,
+                                 "clock": self.clock })
         # Set socket options & open connection
         socket.setdefaulttimeout(self._config['timeout'])
         try:
-            zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            zbx_sock.connect((self._config['server'], int(self._config['port'])))
+            self.zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.zbx_sock.connect((self._config['server'], int(self._config['port'])))
         except Exception as e:
             # Maybe we could consider storing missed sent data for later retry
+            self.data = None
             self._items_list = []
-            zbx_sock.close()
+            self.zbx_sock.close()
             if self._logger:
                 self._logger.error(
                     "Unable to connect to server %s on port %d" % \
@@ -131,12 +134,12 @@ class SenderProtocol(object):
                 )
             raise
         # Build Zabbix Sender payload
-        data_length = len(data)
+        data_length = len(self.data)
         data_header = struct.pack('<Q', data_length)
-        packet = b(ZBX_HDR) + data_header + b(data)
+        packet = b(ZBX_HDR) + data_header + b(self.data)
         # Send payload to Zabbix Server and check response header
         try:
-            zbx_sock.sendall(packet)
+            self.zbx_sock.sendall(packet)
         except:
             if self._logger:
                 self._logger.error('Error while sending data to Zabbix server')
@@ -144,11 +147,8 @@ class SenderProtocol(object):
 
         try:
             # Check the 5 first bytes from answer to ensure it's well formatted
-            zbx_srv_resp_hdr = zbx_sock.recv(5)
+            zbx_srv_resp_hdr = self.zbx_sock.recv(5)
             assert(zbx_srv_resp_hdr == b(ZBX_HDR))
-        except IOError as e:
-            # Handles a socket.error exception here
-            raise
         except Exception as e:
             if self._logger:
                 self._logger.error(
@@ -156,24 +156,26 @@ class SenderProtocol(object):
                 )
             raise
         # Get the 8 next bytes and unpack to get response's payload length
-        zbx_srv_resp_data_hdr = zbx_sock.recv(8)
+        zbx_srv_resp_data_hdr = self.zbx_sock.recv(8)
         zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_data_hdr)[0]
         # Get response payload from Zabbix Server
-        zbx_srv_resp_body = zbx_sock.recv(zbx_srv_resp_body_len)
-        zbx_sock.close()
+        zbx_srv_resp_body = self.zbx_sock.recv(zbx_srv_resp_body_len)
+        self.data = None
+        self._items_list = []
+        self.zbx_sock.close()
         if sys.version_info[0] == 3:
             zbx_srv_resp_body = zbx_srv_resp_body.decode()
         return json.loads(zbx_srv_resp_body)
 
     def send(self, container = None):
-        if container != None:
+        if container != None and self.logger:
             # Using container argument is deprecated
             self.logger.warning(
                 'Deprecated call of send() function with container argument'
             )
         zbx_answer = 0
         self._result = []
-        if self._config['log_level'] == 4:
+        if self._config['log_level'] >= 4:
             # Per item sent if debug mode enabled
             for item in self._items_list:
                 output =  ZBX_DBG_SEND_ITEM % (
@@ -210,14 +212,17 @@ class SenderProtocol(object):
                     )
                 )
             self._result.append(result)
+        self.data = None
         self._items_list = []
+        if not self._config['dryrun']:
+            self.zbx_sock.close()
         self._config['data_type'] = None
 
     def _handle_response(self, zbx_answer, output):
         if zbx_answer and self.logger:
             self.logger.debug("Got [%s] as response from Zabbix server" % zbx_answer)
         nb_item = len(self._items_list)
-        if self._config['log_level'] == 4:
+        if self._config['log_level'] >= 4:
             nb_item = 1
         if zbx_answer:
             if zbx_answer.get('response') == 'success':
@@ -255,7 +260,7 @@ class SenderProtocol(object):
     @property
     @deprecated
     def debug(self):
-        if self._config['log_level'] == 4:
+        if self._config['log_level'] >= 4:
             return True
         else:
             return False
