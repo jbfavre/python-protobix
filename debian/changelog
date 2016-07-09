@@ -1,3 +1,9 @@
+python-protobix (0.1.1-1~bpo8+1) jessie-backports; urgency=medium
+
+  * Bump version for 0.1.1 release
+
+ -- Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>  Sat, 09 Jul 2016 13:41:08 +0200
+
 python-protobix (0.1.1~rc5-1~bpo8+1) jessie-backports; urgency=medium
 
   * Fix Zabbix 3.0 compatibility. RC5 release
