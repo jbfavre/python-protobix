@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 8), dh-python,
                python-all (>= 2.6.6-3), python-setuptools,
                python3-all, python3-setuptools,
                python-configobj, python3-configobj
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Homepage: https://github.com/jbfavre/python-protobix
 Vcs-Git: git://anonscm.debian.org/python-modules/packages/python-protobix.git
 Vcs-Browser: https://anonscm.debian.org/cgit/python-modules/packages/python-protobix.git
