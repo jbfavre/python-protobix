@@ -1,3 +1,10 @@
+python-protobix (0.1.1-1) unstable; urgency=medium
+
+  * New upstream version 0.1.1
+  * Update Standards version
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Sat, 09 Jul 2016 14:04:29 +0200
+
 python-protobix (0.0.9-1) unstable; urgency=medium
 
   * Initial packaging (Closes: #807412)
