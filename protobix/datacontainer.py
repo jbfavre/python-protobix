@@ -150,14 +150,19 @@ class DataContainer(SenderProtocol):
         #               3 -> logging.WARNING
         #               4 -> logging.DEBUG
         # - Timeout (default: 3, Allowed: 1-30)
+
+        # list_values=False argument bellow is needed because of UserParameter with spaces
         tmp_config = configobj.ConfigObj(config_file, list_values=False)
 
         if 'ServerActive' in tmp_config:
-            tmp_server = tmp_config['ServerActive'][0] \
-                         if isinstance(tmp_config['ServerActive'], list) \
-                         else list(tmp_config['ServerActive'])[0]
+            # Because of list_values=False above,
+            # we have to check ServerActive and make the split manually
+            tmp_server = tmp_config['ServerActive'].split(',')[0] \
+                         if "," in tmp_config['ServerActive'] \
+                         else tmp_config['ServerActive']
             self._config['server'], self._config['port'] = tmp_server.split(':') \
                          if ":" in tmp_server else (tmp_server, 10051)
+            self._config['port'] = int(self._config['port'])
 
         if 'LogFile' in tmp_config:
             self._config['log_output'] = tmp_config['LogFile']
