@@ -32,6 +32,7 @@ class SenderProtocol(object):
         self._items_list = []
         self._data = None
         self._result = None
+        self.zbx_sock = None
 
     @property
     def zbx_host(self):
@@ -95,7 +96,7 @@ class SenderProtocol(object):
         try:
             self.zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.zbx_sock.connect((self._zbx_config.server_active, self._zbx_config.server_port))
-        except Exception as e:
+        except:
             # Maybe we could consider storing missed sent data for later retry
             self._data = None
             self._items_list = []
@@ -115,7 +116,7 @@ class SenderProtocol(object):
             # Check the 5 first bytes from answer to ensure it's well formatted
             zbx_srv_resp_hdr = self.zbx_sock.recv(5)
             assert(zbx_srv_resp_hdr == b(ZBX_HDR))
-        except Exception as e:
+        except:
             raise
         # Get the 8 next bytes and unpack to get response's payload length
         zbx_srv_resp_data_hdr = self.zbx_sock.recv(8)
