@@ -69,17 +69,55 @@ class ZabbixServer(object):
             failed = 0
             total = 0
             payload = json.loads(payload)
+
+            # Check that global clock is integer
+            clock_failed = False
+            try:
+                assert isinstance(payload['clock'], int) is True
+            except:
+                self.logger.error('Global clock is not integer')
+                clock_failed = True
+                pass
+
             data_list  = payload['data']
             for data in data_list:
-                total +=1
+                self.logger.debug('Processing data: ' + str(data))
+                self.logger.debug(
+                    'processed: ' + str(processed) +
+                    ' failed: ' + str(failed) +
+                    ' total: ' + str(total)
+                )
+                total += 1
+                if clock_failed:
+                    self.logger.info('Global clock failed. Skipping')
+                    failed += 1
+                    continue
+                self.logger.debug('Global clock valid')
                 host = data['host']
                 key = data['key']
                 value = data['value']
-                self.logger.debug(
-                    'Parsing payload ' + str(total) +
-                    ' with host: ' + host +
-                    ' and key: ' + key
-                )
+                if 'clock' in data:
+                    clock = data['clock']
+                    self.logger.debug(
+                        'Parsing payload ' + str(total) +
+                        ' with host: ' + host +
+                        ' and key: ' + key +
+                        ' and clock: ' +  str(clock)
+                    )
+                else:
+                    self.logger.debug(
+                        'Parsing payload ' + str(total) +
+                        ' with host: ' + host +
+                        ' and key: ' + key
+                    )
+
+                try:
+                    assert isinstance(clock, int) is True
+                except:
+                    self.logger.error('Item clock is not integer')
+                    failed += 1
+                    continue
+
                 try:
                     # Try as we had an "LLD" value
                     item = json.loads(value)
