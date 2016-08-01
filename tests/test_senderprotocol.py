@@ -288,3 +288,28 @@ def test_clock2(mock_configobj):
 #                 'value': 1, 'clock': int(time.time())}
 #        zbx_senderprotocol._items_list.append(item)
 #        zbx_senderprotocol.send()
+
+#@mock.patch.object(protobix.ZabbixAgentConfig, '_send_to_zabbix')
+#def test_send2(mock_configobj, mock_zac_send_to_zabbix):
+#    """
+#    Test clock method
+#    """
+#    
+#    mock_configobj.side_effect = [
+#        {
+#            'LogFile': '/tmp/zabbix_agentd.log',
+#            'Server': '127.0.0.1',
+#            'ServerActive': '127.0.0.1',
+#            'Hostname': 'Zabbix server'
+#        }
+#    ]
+#    awaited_answer = json.loads(
+#        '{"info": "processed: 0; failed: 1; total: 1; seconds spent: 0.000441", "response": "success"}'
+#    )
+#    mock_zac_send_to_zabbix.return_value = awaited_answer
+#    zbx_senderprotocol = protobix.SenderProtocol()
+#    zbx_senderprotocol.data_type='item'
+#    item = { 'host': 'myhostname', 'key': 'my.item.key',
+#             'value': 1, 'clock': int(time.time())}
+#    zbx_senderprotocol._items_list.append(item)
+#    zbx_senderprotocol.send()
