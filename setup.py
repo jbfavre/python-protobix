@@ -14,10 +14,15 @@ class PyTest(TestCommand):
 
     def run(self):
         import pytest
-        options = "--cov protobix --cov-report term-missing"
+        pytest_options = '-v'
+        coverage_options = ' --cov protobix --cov-report term-missing'
+        pylint_options = ' --pylint'
+        pylint_options = ''
         try: import coverage
-        except ImportError: options = ""
-        errno = pytest.main(options)
+        except ImportError: coverage_options = ''
+        try: import pylint
+        except ImportError: pylint_options = ''
+        errno = pytest.main(pytest_options + coverage_options + pylint_options)
         raise SystemExit(errno)
 
 setup(
