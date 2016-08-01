@@ -16,9 +16,9 @@ class PyTest(TestCommand):
         import pytest
         pytest_options = '-v'
         coverage_options = ' --cov protobix --cov-report term-missing'
-        pylint_options = ' --pylint'
-        pylint_options = ''
+        pylint_options=' --pylint  --pylint-error-types=WEF'
         try: import coverage
+        pylint_options = ''
         except ImportError: coverage_options = ''
         try: import pylint
         except ImportError: pylint_options = ''
@@ -40,7 +40,7 @@ setup(
                          'It allows to build list of items and send '
                          'them as trapper.\n'
                          'It currently supports items update as well as '
-                         'Low Level Discovery.' ),    
+                         'Low Level Discovery.' ),
     author = 'Jean Baptiste Favre',
     author_email = 'jean-baptiste.favre@blablacar.com',
     license = 'GPL-3+',
