@@ -1,11 +1,7 @@
 import re
-import time
-import configobj
 import logging
-import warnings, functools
 try: import simplejson as json
 except ImportError: import json
-from datetime import datetime
 
 from .zabbixagentconfig import ZabbixAgentConfig
 
@@ -57,6 +53,7 @@ class DataContainer(SenderProtocol):
         if data_type:
             self._pbx_config['data_type'] = data_type
         self._logger = logger
+        self.data = None
 
     @property
     def data_type(self):
@@ -67,11 +64,11 @@ class DataContainer(SenderProtocol):
         if self._logger:
             self._logger.debug("Setting value %s as data_type" % value)
         if value in ['lld', 'items']:
-          self._pbx_config['data_type'] = value
-          # Clean _items_list & _result when changing _data_type
-          # Incompatible format
-          self._items_list = []
-          self._result = []
+            self._pbx_config['data_type'] = value
+            # Clean _items_list & _result when changing _data_type
+            # Incompatible format
+            self._items_list = []
+            self._result = []
         else:
             if self._logger:
                 self._logger.error('data_type requires either "items" or "lld"')
@@ -89,6 +86,10 @@ class DataContainer(SenderProtocol):
             if self._logger:
                 self._logger.error('logger requires a logging instance')
             raise ValueError('logger requires a logging instance')
+
+    @property
+    def hostname(self):
+        return self._zbx_config.hostname
 
     @property
     def log_output(self):
@@ -127,9 +128,9 @@ class DataContainer(SenderProtocol):
                     item["value"]
                 )
                 zbx_answer = self._send_to_zabbix(item)
-                result = self._handle_response(zbx_answer, output)
-                if self.logger:
-                    self.logger.debug(
+                result = self._handle_response(zbx_answer)
+                if self._logger:
+                    self._logger.debug(
                         ZBX_DBG_SEND_RESULT % (
                             result[0],
                             result[1],
@@ -144,9 +145,9 @@ class DataContainer(SenderProtocol):
                 len(self._items_list)
             )
             zbx_answer = self._send_to_zabbix(self._items_list)
-            result = self._handle_response(zbx_answer, output)
-            if self.logger:
-                self.logger.info(
+            result = self._handle_response(zbx_answer)
+            if self._logger:
+                self._logger.info(
                     ZBX_DBG_SEND_RESULT % (
                         result[0],
                         result[1],
@@ -161,9 +162,9 @@ class DataContainer(SenderProtocol):
             self.zbx_sock.close()
         self._pbx_config['data_type'] = None
 
-    def _handle_response(self, zbx_answer, output):
-        if zbx_answer and self.logger:
-            self.logger.debug("Got [%s] as response from Zabbix server" % zbx_answer)
+    def _handle_response(self, zbx_answer):
+        if zbx_answer and self._logger:
+            self._logger.debug("Got [%s] as response from Zabbix server" % zbx_answer)
         nb_item = len(self._items_list)
         if self._zbx_config.debug_level >= 4:
             nb_item = 1
