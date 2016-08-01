@@ -5,8 +5,7 @@ import sys
 import traceback
 from logging import handlers
 
-#from .datacontainer import DataContainer
-import protobix
+from .datacontainer import DataContainer
 
 class SampleProbe(object):
 
@@ -210,8 +209,3 @@ class SampleProbe(object):
             return 4
         # Everything went fine. Let's return 0 and exit
         return 0
-
-if __name__ == '__main__':
-    ret = SampleProbe().run()
-    print ret
-    sys.exit(ret)
