@@ -4,7 +4,6 @@ try: import simplejson as json
 except ImportError: import json
 
 from .zabbixagentconfig import ZabbixAgentConfig
-
 from .senderprotocol import SenderProtocol
 
 # For both 2.0 & >2.2 Zabbix version
@@ -45,13 +44,13 @@ class DataContainer(SenderProtocol):
             self._zbx_config.debug_level = log_level
         if log_output != None:
             self._zbx_config.log_file = log_output
-        self._pbx_config['dryrun'] = dryrun
         if zbx_host:
             self._zbx_config.server_active = zbx_host
         if zbx_port:
             self._zbx_config.server_port = zbx_port
         if data_type:
             self._pbx_config['data_type'] = data_type
+        self._pbx_config['dryrun'] = dryrun
         self._logger = logger
         self.data = None
 
