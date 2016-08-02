@@ -69,7 +69,6 @@ def test_send_debug_level_no_dryrun_no(mock_configobj, mock_zabbix_agent_config)
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 4
-    ''' Send data to zabbix '''
     zbx_datacontainer.send()
     assert len(zbx_datacontainer.result) == 1
     for result in zbx_datacontainer.result:
@@ -99,10 +98,9 @@ def testDebugNoDryrunSent(mock_configobj, mock_zabbix_agent_config):
     zbx_datacontainer.log_level = 4
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 4
-    ''' Send data to zabbix '''
     zbx_datacontainer.send()
     assert len(zbx_datacontainer.result) == 4
-    for result in zbx_datacontainer.result: 
+    for result in zbx_datacontainer.result:
         assert result[0] == '1'
         assert result[1] == '0'
         assert result[2] == '1'
@@ -130,7 +128,6 @@ def testNoDebugDryrunSent(mock_configobj, mock_zabbix_agent_config):
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 4
-    ''' Send data to zabbix '''
     zbx_datacontainer.send()
     assert zbx_datacontainer.result == [['d', 'd', '4']]
     assert zbx_datacontainer.items_list == []
@@ -158,7 +155,6 @@ def testDebugDryrunSent(mock_configobj, mock_zabbix_agent_config):
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 4
-    ''' Send data to zabbix '''
     assert zbx_datacontainer.result == []
     zbx_datacontainer.send()
     for result in zbx_datacontainer.result:
@@ -185,7 +181,6 @@ def testServerConnectionFails(mock_configobj, mock_zabbix_agent_config):
     zbx_datacontainer.data_type = DATA_TYPE
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
-    ''' Send data to zabbix '''
     with pytest.raises(IOError):
         zbx_datacontainer.send()
     assert zbx_datacontainer.result == []

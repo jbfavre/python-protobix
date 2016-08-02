@@ -44,12 +44,13 @@ def test_default_params(mock_configobj, \
 @mock.patch('configobj.ConfigObj')
 def test_server_active_custom(mock_configobj):
     """
-    Test setting zbx_host
+    Test setting zbx_server with custom value
     """
     mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
-    zbx_senderprotocol.zbx_host = 'myserver'
-    assert zbx_senderprotocol.zbx_host == 'myserver'
+    assert zbx_senderprotocol.zbx_host == '127.0.0.1'
+    zbx_senderprotocol.zbx_host = 'myserver.domain.tld'
+    assert zbx_senderprotocol.zbx_host == 'myserver.domain.tld'
 
 @mock.patch('configobj.ConfigObj')
 def test_server_port_custom(mock_configobj):
@@ -122,28 +123,17 @@ def test_debug_level_invalid_greater_than_5(mock_configobj):
     assert zbx_senderprotocol.log_level == 3
 
 @mock.patch('configobj.ConfigObj')
-def test_server_active_custom(mock_configobj):
-    """
-    Test setting zbx_server with custom value
-    """
-    mock_configobj.side_effect = [{}]
-    zbx_senderprotocol = protobix.SenderProtocol()
-    assert zbx_senderprotocol.zbx_host == '127.0.0.1'
-    zbx_senderprotocol.zbx_host = 'myserver.domain.tld'
-    assert zbx_senderprotocol.zbx_host == 'myserver.domain.tld'
-
-@mock.patch('configobj.ConfigObj')
 def test_dryrun_custom(mock_configobj):
     """
     Test setting dryrun with custom value
     """
     mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
-    assert zbx_senderprotocol.dryrun == False
+    assert zbx_senderprotocol.dryrun is False
     zbx_senderprotocol.dryrun = True
-    assert zbx_senderprotocol.dryrun == True
+    assert zbx_senderprotocol.dryrun is True
     zbx_senderprotocol.dryrun = False
-    assert zbx_senderprotocol.dryrun == False
+    assert zbx_senderprotocol.dryrun is False
 
 @mock.patch('configobj.ConfigObj')
 def test_dryrun_invalid(mock_configobj):
@@ -159,11 +149,11 @@ def test_dryrun_invalid(mock_configobj):
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
-    assert zbx_senderprotocol.dryrun == False
+    assert zbx_senderprotocol.dryrun is False
     with pytest.raises(ValueError) as err:
         zbx_senderprotocol.dryrun = 'invalid'
     assert str(err.value) == 'dryrun parameter requires boolean'
-    assert zbx_senderprotocol.dryrun == False
+    assert zbx_senderprotocol.dryrun is False
 
 @mock.patch('configobj.ConfigObj')
 def test_clock_integer(mock_configobj):
@@ -202,7 +192,7 @@ def test_clock_accurate(mock_configobj):
 #    """
 #    Test clock method
 #    """
-#    
+#
 #    mock_configobj.side_effect = [
 #        {
 #            'LogFile': '/tmp/zabbix_agentd.log',
@@ -227,7 +217,7 @@ def test_clock_accurate(mock_configobj):
 #    """
 #    Test clock method
 #    """
-#    
+#
 #    mock_configobj.side_effect = [
 #        {
 #            'LogFile': '/tmp/zabbix_agentd.log',
