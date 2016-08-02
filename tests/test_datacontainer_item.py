@@ -29,7 +29,7 @@ DATA_TYPE = 'items'
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def testAddBeforeSettingData_type(mock_configobj, mock_zabbix_agent_config):
+def test_items_add_before_set_data_type(mock_configobj, mock_zabbix_agent_config):
     """
     Adding data before assigning data_type should raise an Exception
     """
@@ -50,7 +50,7 @@ def testAddBeforeSettingData_type(mock_configobj, mock_zabbix_agent_config):
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def testNoDebugNoDryrunSent(mock_configobj, mock_zabbix_agent_config):
+def test_send_debug_level_no_dryrun_no(mock_configobj, mock_zabbix_agent_config):
     """
     debug_level to False
     dryrun to False

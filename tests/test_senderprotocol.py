@@ -28,13 +28,7 @@ def test_default_params(mock_configobj, \
     """
     Default configuration
     """
-    mock_configobj.side_effect = [{
-        'LogType': 'file',
-        'LogFile': '/tmp/zabbix_agentd.log',
-        'Server': '127.0.0.1',
-        'ServerActive': '127.0.0.1',
-        'Hostname': 'Zabbix server'
-    }]
+    mock_configobj.side_effect = [{}]
     mock_server_active.return_value = '127.0.0.1'
     mock_server_port.return_value = 10051
     mock_server_port.timeout.return_value = 3
@@ -48,53 +42,32 @@ def test_default_params(mock_configobj, \
     assert zbx_senderprotocol.result is None
 
 @mock.patch('configobj.ConfigObj')
-def test_set_zbx_host(mock_configobj):
+def test_server_active_custom(mock_configobj):
     """
     Test setting zbx_host
     """
-    mock_configobj.side_effect = [
-        {
-            'LogFile': '/tmp/zabbix_agentd.log',
-            'Server': '127.0.0.1',
-            'ServerActive': '127.0.0.1',
-            'Hostname': 'Zabbix server'
-        }
-    ]
+    mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     zbx_senderprotocol.zbx_host = 'myserver'
     assert zbx_senderprotocol.zbx_host == 'myserver'
 
 @mock.patch('configobj.ConfigObj')
-def test_zbx_port(mock_configobj):
+def test_server_port_custom(mock_configobj):
     """
     Test setting zbx_port with custom value
     """
-    mock_configobj.side_effect = [
-        {
-            'LogFile': '/tmp/zabbix_agentd.log',
-            'Server': '127.0.0.1',
-            'ServerActive': '127.0.0.1',
-            'Hostname': 'Zabbix server'
-        }
-    ]
+    mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     assert zbx_senderprotocol.zbx_port == 10051
     zbx_senderprotocol.zbx_port = 10052
     assert zbx_senderprotocol.zbx_port == 10052
 
 @mock.patch('configobj.ConfigObj')
-def test_zbx_port2(mock_configobj):
+def test_server_port_invalid_greater_than_32767(mock_configobj):
     """
     Test setting zbx_port with invalid value
     """
-    mock_configobj.side_effect = [
-        {
-            'LogFile': '/tmp/zabbix_agentd.log',
-            'Server': '127.0.0.1',
-            'ServerActive': '127.0.0.1',
-            'Hostname': 'Zabbix server'
-        }
-    ]
+    mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     with pytest.raises(ValueError) as err:
         zbx_senderprotocol.zbx_port = 40000
@@ -102,18 +75,11 @@ def test_zbx_port2(mock_configobj):
     assert zbx_senderprotocol.zbx_port == 10051
 
 @mock.patch('configobj.ConfigObj')
-def test_zbx_port3(mock_configobj):
+def test_server_port_invalid_lower_than_1024(mock_configobj):
     """
     Test setting zbx_port with invalid value
     """
-    mock_configobj.side_effect = [
-        {
-            'LogFile': '/tmp/zabbix_agentd.log',
-            'Server': '127.0.0.1',
-            'ServerActive': '127.0.0.1',
-            'Hostname': 'Zabbix server'
-        }
-    ]
+    mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     with pytest.raises(ValueError) as err:
         zbx_senderprotocol.zbx_port = 1000
@@ -121,36 +87,22 @@ def test_zbx_port3(mock_configobj):
     assert zbx_senderprotocol.zbx_port == 10051
 
 @mock.patch('configobj.ConfigObj')
-def test_log_level(mock_configobj):
+def test_debug_level_custom(mock_configobj):
     """
     Test setting zbx_port with custom value
     """
-    mock_configobj.side_effect = [
-        {
-            'LogFile': '/tmp/zabbix_agentd.log',
-            'Server': '127.0.0.1',
-            'ServerActive': '127.0.0.1',
-            'Hostname': 'Zabbix server'
-        }
-    ]
+    mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     assert zbx_senderprotocol.log_level == 3
     zbx_senderprotocol.log_level = 4
     assert zbx_senderprotocol.log_level == 4
 
 @mock.patch('configobj.ConfigObj')
-def test_log_level2(mock_configobj):
+def test_debug_level_invalid_lower_than_0(mock_configobj):
     """
     Test setting zbx_port with invalid value
     """
-    mock_configobj.side_effect = [
-        {
-            'LogFile': '/tmp/zabbix_agentd.log',
-            'Server': '127.0.0.1',
-            'ServerActive': '127.0.0.1',
-            'Hostname': 'Zabbix server'
-        }
-    ]
+    mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     with pytest.raises(ValueError) as err:
         zbx_senderprotocol.log_level = -1
@@ -158,18 +110,11 @@ def test_log_level2(mock_configobj):
     assert zbx_senderprotocol.log_level == 3
 
 @mock.patch('configobj.ConfigObj')
-def test_log_level3(mock_configobj):
+def test_debug_level_invalid_greater_than_5(mock_configobj):
     """
     Test setting zbx_port with invalid value
     """
-    mock_configobj.side_effect = [
-        {
-            'LogFile': '/tmp/zabbix_agentd.log',
-            'Server': '127.0.0.1',
-            'ServerActive': '127.0.0.1',
-            'Hostname': 'Zabbix server'
-        }
-    ]
+    mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     with pytest.raises(ValueError) as err:
         zbx_senderprotocol.log_level = 10
@@ -177,43 +122,31 @@ def test_log_level3(mock_configobj):
     assert zbx_senderprotocol.log_level == 3
 
 @mock.patch('configobj.ConfigObj')
-def test_zbx_server(mock_configobj):
+def test_server_active_custom(mock_configobj):
     """
     Test setting zbx_server with custom value
     """
-    mock_configobj.side_effect = [
-        {
-            'LogFile': '/tmp/zabbix_agentd.log',
-            'Server': '127.0.0.1',
-            'ServerActive': '127.0.0.1',
-            'Hostname': 'Zabbix server'
-        }
-    ]
+    mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     assert zbx_senderprotocol.zbx_host == '127.0.0.1'
     zbx_senderprotocol.zbx_host = 'myserver.domain.tld'
     assert zbx_senderprotocol.zbx_host == 'myserver.domain.tld'
 
 @mock.patch('configobj.ConfigObj')
-def test_dryrun(mock_configobj):
+def test_dryrun_custom(mock_configobj):
     """
     Test setting dryrun with custom value
     """
-    mock_configobj.side_effect = [
-        {
-            'LogFile': '/tmp/zabbix_agentd.log',
-            'Server': '127.0.0.1',
-            'ServerActive': '127.0.0.1',
-            'Hostname': 'Zabbix server'
-        }
-    ]
+    mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     assert zbx_senderprotocol.dryrun == False
     zbx_senderprotocol.dryrun = True
     assert zbx_senderprotocol.dryrun == True
+    zbx_senderprotocol.dryrun = False
+    assert zbx_senderprotocol.dryrun == False
 
 @mock.patch('configobj.ConfigObj')
-def test_dryrun2(mock_configobj):
+def test_dryrun_invalid(mock_configobj):
     """
     Test setting dryrun with invalid value
     """
@@ -233,7 +166,7 @@ def test_dryrun2(mock_configobj):
     assert zbx_senderprotocol.dryrun == False
 
 @mock.patch('configobj.ConfigObj')
-def test_clock(mock_configobj):
+def test_clock_integer(mock_configobj):
     """
     Test clock method
     """
@@ -249,7 +182,7 @@ def test_clock(mock_configobj):
     assert isinstance(zbx_senderprotocol.clock, int) is True
 
 @mock.patch('configobj.ConfigObj')
-def test_clock2(mock_configobj):
+def test_clock_accurate(mock_configobj):
     """
     Test clock method
     """
