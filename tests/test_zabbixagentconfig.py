@@ -12,7 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import protobix
 
 @mock.patch('configobj.ConfigObj')
-def test_default_config_file(mock_configobj):
+def test_config_file_default(mock_configobj):
     """
     Default Zabbix Agent configuration from Zabbix
     """
@@ -34,9 +34,16 @@ def test_default_config_file(mock_configobj):
     assert zbx_config.debug_level == 3
     assert zbx_config.timeout == 3
     assert zbx_config.hostname == 'Zabbix server'
+    assert zbx_config.tls_connect == 'unencrypted'
+    assert zbx_config.tls_ca_file is None
+    assert zbx_config.tls_cert_file is None
+    assert zbx_config.tls_crl_file is None
+    assert zbx_config.tls_key_file is None
+    assert zbx_config.tls_server_cert_issuer is None
+    assert zbx_config.tls_server_cert_subject is None
 
 @mock.patch('configobj.ConfigObj')
-def test_not_found_config_file(mock_configobj):
+def test_config_file_not_found(mock_configobj):
     """
     Not found zabbix_agentd.conf
     hostname should fallback to socket.getfqdn
@@ -46,7 +53,7 @@ def test_not_found_config_file(mock_configobj):
     ]
     with mock.patch('socket.getfqdn', return_value='myhostname'):
         zbx_config = protobix.ZabbixAgentConfig(
-            'not_found_zabbix_agentd.conf'
+            'not_found_config_file'
         )
         assert zbx_config.server_active == '127.0.0.1'
         assert zbx_config.server_port == 10051
@@ -57,14 +64,13 @@ def test_not_found_config_file(mock_configobj):
         assert zbx_config.timeout == 3
 
 @mock.patch('configobj.ConfigObj')
-def test_server_active(mock_configobj):
+def test_server_active_custom(mock_configobj):
     """
     Custom serverActive & serverPort
     """
     mock_configobj.side_effect = [
         {
             'ServerActive': 'myzabbixserver:10052,10.0.0.2:10051',
-            'LogFile': '/tmp/zabbix_agentd.log',
         }
     ]
     zbx_config = protobix.ZabbixAgentConfig(
@@ -74,7 +80,7 @@ def test_server_active(mock_configobj):
     assert zbx_config.server_port == 10052
 
 @mock.patch('configobj.ConfigObj')
-def test_server_active2(mock_configobj):
+def test_server_port_invalid_lower_than_1024(mock_configobj):
     """
     Invalid serverPort.
     Should raise an ValueError with proper message
@@ -92,7 +98,7 @@ def test_server_active2(mock_configobj):
     assert str(err.value) == 'ServerPort must be between 1024 and 32767'
 
 @mock.patch('configobj.ConfigObj')
-def test_server_active3(mock_configobj):
+def test_server_port_invalid_greater_than_32767(mock_configobj):
     """
     Invalid serverPort.
     Should raise an ValueError with proper message
@@ -110,10 +116,10 @@ def test_server_active3(mock_configobj):
     assert str(err.value) == 'ServerPort must be between 1024 and 32767'
 
 @mock.patch('configobj.ConfigObj')
-def test_log_type_log_file(mock_configobj):
+def test_log_config_custom(mock_configobj):
     """
-    LogType set to 'file' & LogFile set to '/tmp/zabbix_agentd.log'
-    LogFile is mandatory
+    LogType set to 'file'
+    LogFile set to '/tmp/zabbix_agentd.log'
     """
     mock_configobj.side_effect = [
         {
@@ -128,25 +134,25 @@ def test_log_type_log_file(mock_configobj):
     assert zbx_config.log_file == '/tmp/test_zabbix_agentd.log'
 
 @mock.patch('configobj.ConfigObj')
-def test_log_type_log_file2(mock_configobj):
+def test_log_config_fallback_log_file(mock_configobj):
     """
-    LogType set to 'file' and LogFile not defined
-    Should raise an ValueError with proper message
+    LogType set to 'file'
+    LogFile unset
+    LogFile should default to '/tmp/zabbix_agentd.log'
     """
     mock_configobj.side_effect = [
         {
             'LogType': 'file'
         }
     ]
-    with pytest.raises(ValueError) as err:
-        zbx_config = protobix.ZabbixAgentConfig(
-            'zabbix_config_with_logType_to_system_logFile_empty'
-        )
-        assert zbx_config.log_type == 'file'
-    assert str(err.value) == 'LogType set to file. LogFile is mandatory'
+    zbx_config = protobix.ZabbixAgentConfig(
+        'zabbix_config_with_logType_to_system_logFile_empty'
+    )
+    assert zbx_config.log_type == 'file'
+    assert zbx_config.log_file == '/tmp/zabbix_agentd.log'
 
 @mock.patch('configobj.ConfigObj')
-def test_log_type_log_file3(mock_configobj):
+def test_log_config_use_syslog(mock_configobj):
     """
     LogType set to 'system'
     LogFile should be None
@@ -164,9 +170,10 @@ def test_log_type_log_file3(mock_configobj):
     assert zbx_config.log_file is None
 
 @mock.patch('configobj.ConfigObj')
-def test_log_type_log_file4(mock_configobj):
+def test_log_config_use_console(mock_configobj):
     """
     LogType set to 'console'
+    LogFile set
     LogFile should be None
     """
     mock_configobj.side_effect = [
@@ -182,7 +189,7 @@ def test_log_type_log_file4(mock_configobj):
     assert zbx_config.log_file is None
 
 @mock.patch('configobj.ConfigObj')
-def test_log_type_log_file5(mock_configobj):
+def test_log_config_use_console_fallback_log_file(mock_configobj):
     """
     LogType set to 'console'
     LogFile unset
@@ -200,7 +207,7 @@ def test_log_type_log_file5(mock_configobj):
     assert zbx_config.log_file is None
 
 @mock.patch('configobj.ConfigObj')
-def test_log_type_log_file6(mock_configobj):
+def test_log_config_invalid_log_type(mock_configobj):
     """
     Invalid LogType
     Should raise an ValueError with proper message
@@ -215,7 +222,7 @@ def test_log_type_log_file6(mock_configobj):
     assert str(err.value) == 'LogType must be one of [file,system,console]'
 
 @mock.patch('configobj.ConfigObj')
-def test_log_type_log_file7(mock_configobj):
+def test_log_config_zabbix_24_compatibility(mock_configobj):
     """
     Missing LogType & LogFile set to '-'
     LogType should fallbackback to system
@@ -234,7 +241,7 @@ def test_log_type_log_file7(mock_configobj):
     assert zbx_config.log_file is None
 
 @mock.patch('configobj.ConfigObj')
-def test_hostname(mock_configobj):
+def test_hostname_custom(mock_configobj):
     """
     Custom hostname.
     Should *NOT* fallback to socket.getfqdn
@@ -252,7 +259,7 @@ def test_hostname(mock_configobj):
         assert zbx_config.hostname == 'myhostname'
 
 @mock.patch('configobj.ConfigObj')
-def test_timeout(mock_configobj):
+def test_timeout_custom(mock_configobj):
     """
     Custom Timeout.
     Should not fallbackback to 3
@@ -269,7 +276,7 @@ def test_timeout(mock_configobj):
     assert zbx_config.timeout == 5
 
 @mock.patch('configobj.ConfigObj')
-def test_timeout2(mock_configobj):
+def test_timeout_invalid_lower_than_0(mock_configobj):
     """
     Invalid Timeout.
     Should raise an ValueError with proper message
@@ -285,7 +292,7 @@ def test_timeout2(mock_configobj):
     assert str(err.value) == 'Timeout must be between 1 and 30'
 
 @mock.patch('configobj.ConfigObj')
-def test_timeout3(mock_configobj):
+def test_timeout_invalid_greater_than_30(mock_configobj):
     """
     Invalid Timeout.
     Should raise an ValueError with proper message
@@ -301,7 +308,7 @@ def test_timeout3(mock_configobj):
     assert str(err.value) == 'Timeout must be between 1 and 30'
 
 @mock.patch('configobj.ConfigObj')
-def test_debug_level(mock_configobj):
+def test_debug_level_custom(mock_configobj):
     """
     Custom DebugLevel.
     Should not fallbackback to 3
@@ -318,7 +325,7 @@ def test_debug_level(mock_configobj):
     assert zbx_config.debug_level == 4
 
 @mock.patch('configobj.ConfigObj')
-def test_debug_level2(mock_configobj):
+def test_debug_level_invalid_lower_than_0(mock_configobj):
     """
     Invalid DebugLevel.
     Should raise an ValueError with proper message
@@ -334,7 +341,7 @@ def test_debug_level2(mock_configobj):
     assert str(err.value) == 'DebugLevel must be between 0 and 5'
 
 @mock.patch('configobj.ConfigObj')
-def test_debug_level3(mock_configobj):
+def test_debug_level_invalid_greater_than_5(mock_configobj):
     """
     Invalid DebugLevel.
     Should raise an ValueError with proper message
@@ -348,3 +355,137 @@ def test_debug_level3(mock_configobj):
     with pytest.raises(ValueError) as err:
         protobix.ZabbixAgentConfig('zabbix_config_with_invalid_debugLevel')
     assert str(err.value) == 'DebugLevel must be between 0 and 5'
+
+@mock.patch('configobj.ConfigObj')
+def test_tls_default_config(mock_configobj):
+    """
+    Default TLS configuration
+    """
+    mock_configobj.side_effect = [{}]
+    zbx_config = protobix.ZabbixAgentConfig('TLS_default_configuration')
+    assert zbx_config.tls_connect == 'unencrypted'
+    assert zbx_config.tls_ca_file is None
+    assert zbx_config.tls_cert_file is None
+    assert zbx_config.tls_crl_file is None
+    assert zbx_config.tls_key_file is None
+    assert zbx_config.tls_server_cert_issuer is None
+    assert zbx_config.tls_server_cert_subject is None
+
+@mock.patch('configobj.ConfigObj')
+def test_tls_connect_unencrypted_other_custom(mock_configobj):
+    """
+    TLSConnect: 'unencrypted'
+    All other TLS parameters should default to None
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'unencrypted',
+            'TLSCAFile': '/tmp/tls_ca_file.crt',
+            'TLSCertFile': '/tmp/tls_cert_file.crt',
+            'TLSCRLFile': '/tmp/tls_crl_file.crt',
+            'TLSKeyFile': '/tmp/tls_ckey_file.crt',
+            'TLSServerCertIssuer': '/tmp/tls_server__cert_issuer.crt',
+            'TLSServerCertSubject': '/tmp/tls_server_cert_subject.crt',
+        }
+    ]
+    zbx_config = protobix.ZabbixAgentConfig('TLSConnect_unencrypted')
+    assert zbx_config.tls_connect == 'unencrypted'
+    assert zbx_config.tls_ca_file is None
+    assert zbx_config.tls_cert_file is None
+    assert zbx_config.tls_crl_file is None
+    assert zbx_config.tls_key_file is None
+    assert zbx_config.tls_server_cert_issuer is None
+    assert zbx_config.tls_server_cert_subject is None
+
+@mock.patch('configobj.ConfigObj')
+def test_tls_connect_cert_tls_cert_key_missing(mock_configobj):
+    """
+    TLSConnect: 'cert'
+    TLSCertFile unset
+    TLSKeyFile unset
+    Should raise a ValueError with appropriate message
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'cert'
+        }
+    ]
+    with pytest.raises(ValueError) as err:
+        protobix.ZabbixAgentConfig('TLSConnect_cert_without_TLSCertFile_TLSKeyFile')
+    assert str(err.value) == 'TLSConnect is enabled. TLSCertFile and TLSKeyFile are mandatory'
+
+@mock.patch('configobj.ConfigObj')
+def test_tls_connect_cert_tls_cert_key_custom(mock_configobj):
+    """
+    TLSConnect: 'cert'
+    TLSCertFile set
+    TLSKeyFile set
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'cert',
+            'TLSCertFile': '/tmp/tls_cert_file.crt',
+            'TLSKeyFile': '/tmp/tls_ckey_file.crt',
+        }
+    ]
+    zbx_config = protobix.ZabbixAgentConfig('TLSConnect_TLSCertFile_TLSKeyFile')
+    assert zbx_config.tls_connect == 'cert'
+    assert zbx_config.tls_cert_file == '/tmp/tls_cert_file.crt'
+    assert zbx_config.tls_key_file == '/tmp/tls_ckey_file.crt'
+
+
+@mock.patch('configobj.ConfigObj')
+def test_tls_connect_cert_other_custom(mock_configobj):
+    """
+    TLSConnect: 'cert'
+    Other TLS params custom
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'cert',
+            'TLSCAFile': '/tmp/tls_ca_file.crt',
+            'TLSCertFile': '/tmp/tls_cert_file.crt',
+            'TLSCRLFile': '/tmp/tls_crl_file.crt',
+            'TLSKeyFile': '/tmp/tls_key_file.crt',
+            'TLSServerCertIssuer': '/tmp/tls_server__cert_issuer.crt',
+            'TLSServerCertSubject': '/tmp/tls_server_cert_subject.crt',
+        }
+    ]
+    zbx_config = protobix.ZabbixAgentConfig('TLSConnect_TLSCertFile_TLSKeyFile')
+    assert zbx_config.tls_connect == 'cert'
+    assert zbx_config.tls_ca_file == '/tmp/tls_ca_file.crt'
+    assert zbx_config.tls_cert_file == '/tmp/tls_cert_file.crt'
+    assert zbx_config.tls_crl_file == '/tmp/tls_crl_file.crt'
+    assert zbx_config.tls_key_file == '/tmp/tls_key_file.crt'
+    assert zbx_config.tls_server_cert_issuer == '/tmp/tls_server__cert_issuer.crt'
+    assert zbx_config.tls_server_cert_subject == '/tmp/tls_server_cert_subject.crt'
+
+@mock.patch('configobj.ConfigObj')
+def test_tls_connect_invalid(mock_configobj):
+    """
+    invalid TLSConnect
+    Should raise a ValueError with appropriate message
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'invalid',
+        }
+    ]
+    with pytest.raises(ValueError) as err:
+        protobix.ZabbixAgentConfig('TLSConnect_invalid')
+    assert str(err.value) == 'TLSConnect must be one of [unencrypted,cert] (psk is not implemented)'
+
+@mock.patch('configobj.ConfigObj')
+def test_tls_connect_psk(mock_configobj):
+    """
+    TLSConnect: 'psk'
+    Should raise a NotImplementedError with appropriate message
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'psk'
+        }
+    ]
+    with pytest.raises(NotImplementedError) as err:
+        protobix.ZabbixAgentConfig('TLSConnect_psk')
+    assert str(err.value) == 'TLSConnect must be one of [unencrypted,cert] (psk is not implemented)'

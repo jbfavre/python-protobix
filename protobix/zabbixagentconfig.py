@@ -16,12 +16,19 @@ class ZabbixAgentConfig(object):
             'LogFile': '/tmp/zabbix_agentd.log',
             'DebugLevel': 3,
             'Timeout': 3,
-            'Hostname': socket.getfqdn()
+            'Hostname': socket.getfqdn(),
+            'TLSConnect': 'unencrypted',
+            'TLSCAFile': None,
+            'TLSCertFile': None,
+            'TLSCRLFile': None,
+            'TLSKeyFile': None,
+            'TLSServerCertIssuer': None,
+            'TLSServerCertSubject': None,
         }
 
-        # list_values=False argument bellow is needed because of potential
+        # list_values=False argument below is needed because of potential
         # UserParameter with spaces which breaks ConfigObj
-        # See 
+        # See
         tmp_config = configobj.ConfigObj(config_file, list_values=False)
 
         # If not config_file found or provided,
@@ -40,44 +47,60 @@ class ZabbixAgentConfig(object):
 
         # Process LogType & LogFile & ServerACtive in separate methods
         # Due to custom logic
-        self._process_server_active(tmp_config)
-        self._process_log_type(tmp_config)
-        self._process_log_file(tmp_config)
+        self._process_server_config(tmp_config)
+        self._process_log_config(tmp_config)
+        self._process_tls_config(tmp_config)
 
-    def _process_server_active(self, tmp_config):
+    def _process_server_config(self, tmp_config):
         if 'ServerActive' in tmp_config:
             # Because of list_values=False above,
             # we have to check ServerActive format
             # and extract server & port manually
+            # See  https://github.com/jbfavre/python-protobix/issues/16
             tmp_server = tmp_config['ServerActive'].split(',')[0] \
                 if "," in tmp_config['ServerActive'] else tmp_config['ServerActive']
             self.server_active, server_port = \
                 tmp_server.split(':') if ":" in tmp_server else (tmp_server, 10051)
             self.server_port = int(server_port)
 
-    def _process_log_type(self, tmp_config):
-        if 'LogType' in tmp_config:
-            if tmp_config['LogType'] in ['file', 'system', 'console']:
-                self.log_type = tmp_config['LogType']
-            else:
-                raise ValueError('LogType must be one of [file,system,console]')
-        else:
-            self.log_type = 'file'
+    def _process_log_config(self, tmp_config):
+        if 'LogType' in tmp_config and tmp_config['LogType'] in ['file', 'system', 'console']:
+            self.log_type = tmp_config['LogType']
+        elif 'LogType' in tmp_config:
+            raise ValueError('LogType must be one of [file,system,console]')
 
-    def _process_log_file(self, tmp_config):
-        if 'LogFile' in tmp_config and tmp_config['LogFile'] == '-':
+        # At this point, LogType is one of [file,system,console]
+        if  self.log_type in ['system', 'console']:
+            # If LogType if console or system, we don't need LogFile
             self.log_file = None
-            self.log_type = 'system'
-        elif 'LogFile' in tmp_config and tmp_config['LogFile'] != '-':
-            if self.log_type == 'file':
+        elif self.log_type == 'file':
+            # LogFile will be used
+            if 'LogFile' in tmp_config and tmp_config['LogFile'] == '-':
+                # Zabbix 2.4 compatibility
+                # LogFile to '-' means we want to use syslog
+                self.log_file = None
+                self.log_type = 'system'
+            elif 'LogFile' in tmp_config:
                 self.log_file = tmp_config['LogFile']
+
+    def _process_tls_config(self, tmp_config):
+        if 'TLSConnect' in tmp_config:
+            self.tls_connect = tmp_config['TLSConnect']
+
+        if self.tls_connect and self.tls_connect != 'unencrypted':
+            if 'TLSCertFile' in tmp_config and 'TLSKeyFile' in tmp_config:
+                    self.tls_cert_file = tmp_config['TLSCertFile']
+                    self.tls_key_file = tmp_config['TLSKeyFile']
             else:
-                self.log_file = None
-        else:
-            if self.log_type == 'file':
-                raise ValueError('LogType set to file. LogFile is mandatory')
-            else:
-                self.log_file = None
+                raise ValueError('TLSConnect is enabled. TLSCertFile and TLSKeyFile are mandatory')
+            if 'TLSCAFile' in tmp_config:
+                self.tls_ca_file = tmp_config['TLSCAFile']
+            if 'TLSCRLFile' in tmp_config:
+                self.tls_crl_file = tmp_config['TLSCRLFile']
+            if 'TLSServerCertIssuer' in tmp_config:
+                self.tls_server_cert_issuer = tmp_config['TLSServerCertIssuer']
+            if 'TLSServerCertSubject' in tmp_config:
+                self.tls_server_cert_subject = tmp_config['TLSServerCertSubject']
 
     @property
     def server_active(self):
@@ -154,3 +177,70 @@ class ZabbixAgentConfig(object):
     def hostname(self, value):
         if value:
             self.config['Hostname'] = value
+
+    @property
+    def tls_connect(self):
+        return self.config['TLSConnect']
+
+    @tls_connect.setter
+    def tls_connect(self, value):
+        if value in ['unencrypted', 'cert']:
+            self.config['TLSConnect'] = value
+        elif value == 'psk':
+            raise NotImplementedError('TLSConnect must be one of [unencrypted,cert] (psk is not implemented)')
+        else:
+            raise ValueError('TLSConnect must be one of [unencrypted,cert] (psk is not implemented)')
+
+    @property
+    def tls_ca_file(self):
+        return self.config['TLSCAFile']
+
+    @tls_ca_file.setter
+    def tls_ca_file(self, value):
+        if value:
+            self.config['TLSCAFile'] = value
+
+    @property
+    def tls_cert_file(self):
+        return self.config['TLSCertFile']
+
+    @tls_cert_file.setter
+    def tls_cert_file(self, value):
+        if value:
+            self.config['TLSCertFile'] = value
+
+    @property
+    def tls_crl_file(self):
+        return self.config['TLSCRLFile']
+
+    @tls_crl_file.setter
+    def tls_crl_file(self, value):
+        if value:
+            self.config['TLSCRLFile'] = value
+
+    @property
+    def tls_key_file(self):
+        return self.config['TLSKeyFile']
+
+    @tls_key_file.setter
+    def tls_key_file(self, value):
+        if value:
+            self.config['TLSKeyFile'] = value
+
+    @property
+    def tls_server_cert_issuer(self):
+        return self.config['TLSServerCertIssuer']
+
+    @tls_server_cert_issuer.setter
+    def tls_server_cert_issuer(self, value):
+        if value:
+            self.config['TLSServerCertIssuer'] = value
+
+    @property
+    def tls_server_cert_subject(self):
+        return self.config['TLSServerCertSubject']
+
+    @tls_server_cert_subject.setter
+    def tls_server_cert_subject(self, value):
+        if value:
+            self.config['TLSServerCertSubject'] = value
