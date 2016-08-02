@@ -18,18 +18,18 @@ import protobix
 DATA = {
     'myhost1': {
         'my.zabbix.lld_item1': [
-            { '{#ZBX_LLD_KEY11}': 0,
-              '{#ZBX_LLD_KEY12}': 'lld string' },
-            { '{#ZBX_LLD_KEY11}': 1,
-              '{#ZBX_LLD_KEY12}': 'another lld string' }
+            {'{#ZBX_LLD_KEY11}': 0,
+             '{#ZBX_LLD_KEY12}': 'lld string'},
+            {'{#ZBX_LLD_KEY11}': 1,
+             '{#ZBX_LLD_KEY12}': 'another lld string'}
         ]
     },
     'myhost2': {
         'my.zabbix.lld_item2': [
-            { '{#ZBX_LLD_KEY21}': 10,
-              '{#ZBX_LLD_KEY21}': 'yet an lld string' },
-            { '{#ZBX_LLD_KEY21}': 2,
-              '{#ZBX_LLD_KEY21}': 'yet another lld string' }
+            {'{#ZBX_LLD_KEY21}': 10,
+             '{#ZBX_LLD_KEY22}': 'yet an lld string'},
+            {'{#ZBX_LLD_KEY21}': 2,
+             '{#ZBX_LLD_KEY22}': 'yet another lld string'}
         ]
     }
 }
@@ -76,8 +76,7 @@ def testNoDebugNoDryrunSent(mock_configobj, mock_zabbix_agent_config):
     zbx_datacontainer.data_type = DATA_TYPE
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
-    ''' Send data to zabbix '''
-    ret = zbx_datacontainer.send()
+    zbx_datacontainer.send()
     assert zbx_datacontainer.items_list == []
     assert len(zbx_datacontainer.result) == 1
     for result in zbx_datacontainer.result:
@@ -108,8 +107,7 @@ def testDebugNoDryrunSent(mock_configobj, mock_zabbix_agent_config):
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 2
-    ''' Send data to zabbix '''
-    ret = zbx_datacontainer.send()
+    zbx_datacontainer.send()
     for result in zbx_datacontainer.result:
         assert result[0] == '1'
         assert result[1] == '0'
@@ -138,7 +136,6 @@ def testNoDebugDryrunSent(mock_configobj, mock_zabbix_agent_config):
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 2
-    ''' Send data to zabbix '''
     zbx_datacontainer.send()
     assert zbx_datacontainer.result == [['d', 'd', '2']]
     assert zbx_datacontainer.items_list == []
@@ -166,7 +163,6 @@ def testDebugDryrunSent(mock_configobj, mock_zabbix_agent_config):
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 2
-    ''' Send data to zabbix '''
     assert zbx_datacontainer.result == []
     zbx_datacontainer.send()
     for result in zbx_datacontainer.result:
@@ -193,7 +189,6 @@ def testZabbixConnectionFails(mock_configobj, mock_zabbix_agent_config):
     zbx_datacontainer.data_type = DATA_TYPE
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
-    ''' Send data to zabbix '''
     with pytest.raises(IOError):
-        ret = zbx_datacontainer.send()
+        zbx_datacontainer.send()
     assert zbx_datacontainer.items_list == []
