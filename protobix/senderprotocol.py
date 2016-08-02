@@ -2,6 +2,7 @@ import socket
 import struct
 import time
 import sys
+import ssl
 import warnings,functools
 try: import simplejson as json
 except ImportError: import json
@@ -32,7 +33,7 @@ class SenderProtocol(object):
         self._items_list = []
         self._data = None
         self._result = None
-        self.zbx_sock = None
+        self._socket = None
 
     @property
     def zbx_host(self):
@@ -91,16 +92,14 @@ class SenderProtocol(object):
         self._data = json.dumps({ "data": item,
                                  "request": self.REQUEST,
                                  "clock": self.clock })
-        # Set socket options & open connection
-        socket.setdefaulttimeout(self._zbx_config.timeout)
         try:
-            self.zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.zbx_sock.connect((self._zbx_config.server_active, self._zbx_config.server_port))
+            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.connect((self._zbx_config.server_active, self._zbx_config.server_port))
         except:
             # Maybe we could consider storing missed sent data for later retry
             self._data = None
             self._items_list = []
-            self.zbx_sock.close()
+            self._socket.close()
             raise
         # Build Zabbix Sender payload
         data_length = len(self._data)
@@ -108,24 +107,75 @@ class SenderProtocol(object):
         packet = b(ZBX_HDR) + data_header + b(self._data)
         # Send payload to Zabbix Server and check response header
         try:
-            self.zbx_sock.sendall(packet)
+            self._socket.sendall(packet)
         except:
             raise
 
         try:
             # Check the 5 first bytes from answer to ensure it's well formatted
-            zbx_srv_resp_hdr = self.zbx_sock.recv(5)
+            zbx_srv_resp_hdr = self._socket.recv(5)
             assert(zbx_srv_resp_hdr == b(ZBX_HDR))
         except:
             raise
         # Get the 8 next bytes and unpack to get response's payload length
-        zbx_srv_resp_data_hdr = self.zbx_sock.recv(8)
+        zbx_srv_resp_data_hdr = self._socket.recv(8)
         zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_data_hdr)[0]
         # Get response payload from Zabbix Server
-        zbx_srv_resp_body = self.zbx_sock.recv(zbx_srv_resp_body_len)
+        zbx_srv_resp_body = self._socket.recv(zbx_srv_resp_body_len)
         self._data = None
         self._items_list = []
-        self.zbx_sock.close()
+        self._socket.close()
         if sys.version_info[0] == 3:
             zbx_srv_resp_body = zbx_srv_resp_body.decode()
         return json.loads(zbx_srv_resp_body)
+
+    def _socket(self):
+        if self._socket is not None:
+            return self._socket
+
+        # Set socket options
+        socket.setdefaulttimeout(self._zbx_config.timeout)
+        host = self.options.server_active
+        port = self.options.server_port
+        # Connect to Zabbix server or proxy with provided config options
+        _raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _raw_socket.connect((host, port))
+
+        ssl_context = None
+        # TLS is enabled, let's set it up
+        if self.options.tls_connect != 'unencrypted':
+            from ssl import CertificateError, SSLError
+            # Create a SSLContext and configure it
+            ssl_context = ssl.SSLContext()
+
+            # If provided, use cert file & key for client authentication
+            if self._config.tls_cert_file and self._config.tls_key_file:
+                ssl_context.load_cert_chain(
+                    self._config.tls_cert_file,
+                    self._config.tls_key_file
+                )
+
+            # If provided, use CA file & enforce server certificate chek
+            if self._config.tls_ca_file:
+                ssl_context.verify_mode = ssl.CERT_REQUIRED
+                ssl_context.load_verify_locations(
+                    cafile = self._config.tls_ca_file
+                )
+
+            ## If provided enforce server cert issuer check
+            #if self._config.tls_server_cert_issuer:
+            #    ssl_context.verify_issuer
+            ## If provided enforce server cert subject check
+            #if self._config.tls_server_cert_issuer:
+            #    ssl_context.verify_issuer
+
+            try:
+                if isinstance(ssl_context, ssl.SSLContext):
+                    _raw_socket = ssl_context.wrap_socket(_raw_socket, server_hostname=host)
+            except CertificateError as e:
+                raise errors.ConnectionError('SSL: ' + e.message)
+            except SSLError as e:
+                raise errors.ConnectionError('SSL: ' + e.reason)
+
+        self._socket = _raw_socket
+        return self._socket

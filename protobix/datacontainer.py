@@ -158,7 +158,7 @@ class DataContainer(SenderProtocol):
         self.data = None
         self._items_list = []
         if not self._pbx_config['dryrun']:
-            self.zbx_sock.close()
+            self._socket.close()
         self._pbx_config['data_type'] = None
 
     def _handle_response(self, zbx_answer):
