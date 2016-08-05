@@ -116,50 +116,46 @@ class DataContainer(SenderProtocol):
                     self.add_item( host, key, data[host][key])
 
     def send(self):
-        zbx_answer = 0
-        self._result = []
-        if self._zbx_config.debug_level >= 4:
-            # Per item sent if debug mode enabled
+        if self.log_level >= 4:
+            # If debug mode enabled
+            # Sent one item at a time
             for item in self._items_list:
-                output =  ZBX_DBG_SEND_ITEM % (
-                    item["host"],
-                    item["key"],
-                    item["value"]
-                )
-                zbx_answer = self._send_to_zabbix(item)
-                result = self._handle_response(zbx_answer)
-                if self._logger:
-                    self._logger.debug(
-                        ZBX_DBG_SEND_RESULT % (
-                            result[0],
-                            result[1],
-                            result[2],
-                            output
-                        )
-                    )
-                self._result.append(result)
+                self._send_common(item)
         else:
-            # All items at once if no debug
-            output = ZBX_SEND_ITEM % (
-                len(self._items_list)
-            )
-            zbx_answer = self._send_to_zabbix(self._items_list)
-            result = self._handle_response(zbx_answer)
-            if self._logger:
-                self._logger.info(
-                    ZBX_DBG_SEND_RESULT % (
-                        result[0],
-                        result[1],
-                        result[2],
-                        output
-                    )
-                )
-            self._result.append(result)
+            # If debug mode disabled
+            # Sent all items at once
+            self._send_common(self._items_list)
+        #if not self.dryrun:
+        #    self._socket().close()
         self.data = None
         self._items_list = []
-        if not self._pbx_config['dryrun']:
-            self._socket.close()
         self._pbx_config['data_type'] = None
+
+    def _send_common(self, item):
+        zbx_answer = 0
+        output = ZBX_SEND_ITEM % (
+            len(item)
+        )
+        try:
+            self._send_to_zabbix(item)
+        except:
+            self._items_list = []
+        if self.dryrun is False:
+            zbx_answer = self._read_from_zabbix()
+        print(zbx_answer)
+        result = self._handle_response(zbx_answer)
+        if self._logger:
+            self._logger.info(
+                ZBX_DBG_SEND_RESULT % (
+                    result[0],
+                    result[1],
+                    result[2],
+                    output
+                )
+            )
+        print(result)
+        print(self._result)
+        self._result.append(result)
 
     def _handle_response(self, zbx_answer):
         if zbx_answer and self._logger:
@@ -167,7 +163,7 @@ class DataContainer(SenderProtocol):
         nb_item = len(self._items_list)
         if self._zbx_config.debug_level >= 4:
             nb_item = 1
-        if zbx_answer:
+        if zbx_answer and self.dryrun is False:
             if zbx_answer.get('response') == 'success':
                 result = re.findall( ZBX_RESP_REGEX, zbx_answer.get('info'))
                 result = result[0]
