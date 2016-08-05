@@ -50,7 +50,7 @@ def test_items_add_before_set_data_type(mock_configobj, mock_zabbix_agent_config
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def test_send_debug_level_no_dryrun_no(mock_configobj, mock_zabbix_agent_config):
+def test_debug_level_no_dryrun_no(mock_configobj, mock_zabbix_agent_config):
     """
     debug_level to False
     dryrun to False
@@ -69,6 +69,11 @@ def test_send_debug_level_no_dryrun_no(mock_configobj, mock_zabbix_agent_config)
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 4
+
+    assert zbx_datacontainer.dryrun is False
+    assert zbx_datacontainer.log_level < 4
+
+    ''' Send data to zabbix '''
     zbx_datacontainer.send()
     assert len(zbx_datacontainer.result) == 1
     for result in zbx_datacontainer.result:
@@ -79,7 +84,7 @@ def test_send_debug_level_no_dryrun_no(mock_configobj, mock_zabbix_agent_config)
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def testDebugNoDryrunSent(mock_configobj, mock_zabbix_agent_config):
+def test_debug_level_yes_dryrun_no(mock_configobj, mock_zabbix_agent_config):
     """
     debug_level to True
     dryrun to False
@@ -98,6 +103,11 @@ def testDebugNoDryrunSent(mock_configobj, mock_zabbix_agent_config):
     zbx_datacontainer.log_level = 4
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 4
+
+    assert zbx_datacontainer.dryrun is False
+    assert zbx_datacontainer.log_level >= 4
+
+    ''' Send data to zabbix '''
     zbx_datacontainer.send()
     assert len(zbx_datacontainer.result) == 4
     for result in zbx_datacontainer.result:
@@ -108,7 +118,7 @@ def testDebugNoDryrunSent(mock_configobj, mock_zabbix_agent_config):
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def testNoDebugDryrunSent(mock_configobj, mock_zabbix_agent_config):
+def test_debug_level_no_dryrun_yes(mock_configobj, mock_zabbix_agent_config):
     """
     debug_level to False
     dryrun to True
@@ -128,13 +138,18 @@ def testNoDebugDryrunSent(mock_configobj, mock_zabbix_agent_config):
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 4
+
+    assert zbx_datacontainer.dryrun is True
+    assert zbx_datacontainer.log_level < 4
+
+    ''' Send data to zabbix '''
     zbx_datacontainer.send()
     assert zbx_datacontainer.result == [['d', 'd', '4']]
     assert zbx_datacontainer.items_list == []
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def testDebugDryrunSent(mock_configobj, mock_zabbix_agent_config):
+def test_debug_level_yes_dryrun_yes(mock_configobj, mock_zabbix_agent_config):
     """
     debug_level to True
     dryrun to True
@@ -155,6 +170,11 @@ def testDebugDryrunSent(mock_configobj, mock_zabbix_agent_config):
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 4
+
+    assert zbx_datacontainer.dryrun is True
+    assert zbx_datacontainer.log_level >= 4
+
+    ''' Send data to zabbix '''
     assert zbx_datacontainer.result == []
     zbx_datacontainer.send()
     for result in zbx_datacontainer.result:
@@ -163,7 +183,7 @@ def testDebugDryrunSent(mock_configobj, mock_zabbix_agent_config):
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def testServerConnectionFails(mock_configobj, mock_zabbix_agent_config):
+def test_server_connection_fails(mock_configobj, mock_zabbix_agent_config):
     """
     Connection to Zabbix Server fails
     """
