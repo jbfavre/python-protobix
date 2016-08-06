@@ -1,6 +1,7 @@
 .coverage
 .cache
 *.pyc
+*.swp
 /__pycache__/
 MANIFEST
 dist/
