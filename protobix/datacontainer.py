@@ -12,8 +12,7 @@ from .senderprotocol import SenderProtocol
 # 2.2: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 # 2.4: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? [Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
-ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for %s"
-ZBX_DBG_SEND_ITEM   = "[%s %s %s]"
+ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for key %s item %s"
 ZBX_SEND_ITEM   = "[%d items]"
 
 class DataContainer(SenderProtocol):
@@ -52,7 +51,6 @@ class DataContainer(SenderProtocol):
             self._pbx_config['data_type'] = data_type
         self._pbx_config['dryrun'] = dryrun
         self._logger = logger
-        self.data = None
 
     @property
     def data_type(self):
@@ -116,46 +114,62 @@ class DataContainer(SenderProtocol):
                     self.add_item( host, key, data[host][key])
 
     def send(self):
+        results_list = []
         if self.log_level >= 4:
             # If debug mode enabled
             # Sent one item at a time
             for item in self._items_list:
-                self._send_common(item)
+                result = self._send_common(item)
+                results_list.append(result)
+                # In debug mode, wee need to close socket after each item sent
+                self._socket().close()
+                self.socket = None
         else:
             # If debug mode disabled
             # Sent all items at once
-            self._send_common(self._items_list)
-        #if not self.dryrun:
-        #    self._socket().close()
-        self.data = None
-        self._items_list = []
-        self._pbx_config['data_type'] = None
+            result = self._send_common(self._items_list)
+            results_list.append(result)
+        #  Every item has been send.
+        # Let's reset DataContainer
+        self._reset()
+        return results_list
 
     def _send_common(self, item):
         zbx_answer = 0
         output = ZBX_SEND_ITEM % (
             len(item)
         )
-        try:
-            self._send_to_zabbix(item)
-        except:
-            self._items_list = []
         if self.dryrun is False:
-            zbx_answer = self._read_from_zabbix()
-        print(zbx_answer)
+            try:
+                self._send_to_zabbix(item)
+                zbx_answer = self._read_from_zabbix()
+            except:
+                self._reset()
+
         result = self._handle_response(zbx_answer)
         if self._logger:
+            output_item = '(bulk)'
+            if self.log_level < 4:
+                output_item = item
             self._logger.info(
                 ZBX_DBG_SEND_RESULT % (
                     result[0],
                     result[1],
                     result[2],
-                    output
+                    output,
+                    output_item
                 )
             )
-        print(result)
-        print(self._result)
-        self._result.append(result)
+        return result
+
+    def _reset(self):
+        # Reset DataContainer to default values
+        # So that it can be reused
+        self._items_list = []
+        self._pbx_config['data_type'] = None
+        # Close & destroy socket
+        self._socket().close()
+        self.socket = None
 
     def _handle_response(self, zbx_answer):
         if zbx_answer and self._logger:

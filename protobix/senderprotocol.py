@@ -31,8 +31,6 @@ class SenderProtocol(object):
         }
         self._pbx_config['dryrun'] = False
         self._items_list = []
-        self._data = None
-        self._result = None
         self.socket = None
 
     @property
@@ -54,10 +52,6 @@ class SenderProtocol(object):
     @property
     def items_list(self):
         return self._items_list
-
-    @property
-    def result(self):
-        return self._result
 
     @property
     def dryrun(self):
@@ -90,12 +84,12 @@ class SenderProtocol(object):
         # Format data to be sent
         if type(item) is dict:
             item = [ item ]
-        self._data = json.dumps({ "data": item,
+        payload = json.dumps({ "data": item,
                                  "request": self.REQUEST,
                                  "clock": self.clock })
-        data_length = len(self._data)
+        data_length = len(payload)
         data_header = struct.pack('<Q', data_length)
-        packet = b(ZBX_HDR) + data_header + b(self._data)
+        packet = b(ZBX_HDR) + data_header + b(payload)
 
         # Send payload to Zabbix Server
         # Response header will be checked after
@@ -116,10 +110,6 @@ class SenderProtocol(object):
         zbx_srv_resp_body = self._socket().recv(zbx_srv_resp_body_len)
         if sys.version_info[0] >= 3:
             zbx_srv_resp_body = zbx_srv_resp_body.decode()
-        # Ensure socket is closed
-        # Needed to avoid issues with debug_level >= 4
-        self._socket().close()
-        self.socket = None
         # Return Zabbix Server answer as JSON
         return json.loads(zbx_srv_resp_body)
 
