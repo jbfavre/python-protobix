@@ -38,8 +38,6 @@ def test_default_params(mock_configobj, \
     assert zbx_senderprotocol.zbx_port == 10051
     assert zbx_senderprotocol.dryrun is False
     assert zbx_senderprotocol.items_list == []
-    assert zbx_senderprotocol._data is None
-    assert zbx_senderprotocol.result is None
 
 @mock.patch('configobj.ConfigObj')
 def test_server_active_custom(mock_configobj):
