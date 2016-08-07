@@ -26,26 +26,6 @@ DATA = {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 DATA_TYPE = 'items'
 
 @mock.patch('configobj.ConfigObj')
