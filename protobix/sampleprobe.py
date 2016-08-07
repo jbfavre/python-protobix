@@ -78,12 +78,13 @@ class SampleProbe(object):
         parser = self._parse_probe_args(parser)
         return parser.parse_args(args)
 
-    def _setup_logging(self, zbx_container):
+    def _setup_logging(self, log_type, log_level, log_file):
         logger = logging.getLogger(self.__class__.__name__)
+        logger.handlers = []
         common_log_format = '[%(name)s:%(levelname)s] %(message)s'
         # Enable log like Zabbix Agent does
         # Though, when we have a tty, it's convenient to use console to log
-        if zbx_container.log_type == 'console' or sys.stdout.isatty():
+        if log_type == 'console' or sys.stdout.isatty():
             consoleHandler = logging.StreamHandler()
             consoleFormatter = logging.Formatter(
                 fmt = common_log_format,
@@ -91,22 +92,17 @@ class SampleProbe(object):
             )
             consoleHandler.setFormatter(consoleFormatter)
             logger.addHandler(consoleHandler)
-        if zbx_container.log_type == 'file':
-            print ('fichier')
-            try:
-                fileHandler = logging.FileHandler(zbx_container.log_file)
-                # Use same date format as Zabbix: when logging into
-                # zabbix_agentd log file, it's easier to read & parse
-                logFormatter = logging.Formatter(
-                    fmt = '%(process)d:%(asctime)s.%(msecs)03d ' + common_log_format,
-                    datefmt = '%Y%m%d:%H%M%S'
-                )
-                fileHandler.setFormatter(logFormatter)
-                logger.addHandler(fileHandler)
-            except IOError:
-                pass
-        if zbx_container.log_type == 'system':
-            print ('syslog')
+        if log_type == 'file':
+            fileHandler = logging.FileHandler(log_file)
+            # Use same date format as Zabbix: when logging into
+            # zabbix_agentd log file, it's easier to read & parse
+            logFormatter = logging.Formatter(
+                fmt = '%(process)d:%(asctime)s.%(msecs)03d ' + common_log_format,
+                datefmt = '%Y%m%d:%H%M%S'
+            )
+            fileHandler.setFormatter(logFormatter)
+            logger.addHandler(fileHandler)
+        if log_type == 'system':
             syslogHandler = logging.handlers.SysLogHandler(
                 address = '/dev/log',
                 facility = logging.handlers.SysLogHandler.LOG_DAEMON
@@ -120,7 +116,7 @@ class SampleProbe(object):
             syslogHandler.setFormatter(logFormatter)
             logger.addHandler(syslogHandler)
         logger.setLevel(
-            self.LOG_LEVEL[zbx_container.log_level]
+            self.LOG_LEVEL[log_level]
         )
         return logger
 
@@ -138,11 +134,11 @@ class SampleProbe(object):
 
     def _get_metrics(self):
         # mandatory method
-        raise NotImplementedError('method not implemented')
+        raise NotImplementedError
 
     def _get_discovery(self):
         # mandatory method
-        raise NotImplementedError('method not implemented')
+        raise NotImplementedError
 
     def _init_probe(self):
         # non mandatory method
@@ -171,7 +167,12 @@ class SampleProbe(object):
 
         # logger init
         # we need Zabbix configuration to know how to log
-        self.logger = zbx_container.logger = self._setup_logging(zbx_container)
+        self.logger = self._setup_logging(
+                zbx_container.log_type,
+                zbx_container.log_level,
+                zbx_container.log_file
+        )
+        zbx_container.logger = self.logger
 
         # Step 1: read probe configuration
         #         initialize any needed object or connection
@@ -187,10 +188,16 @@ class SampleProbe(object):
         # Step 2: get data
         try:
             data = {}
-            if self.options.probe_mode == "update-items":
+            if self.options.probe_mode == "update":
                 data = self._get_metrics()
             elif self.options.probe_mode == "discovery":
                 data = self._get_discovery()
+        except NotImplementedError as e:
+            self.logger.error(
+                'Step 2 - Get Data failed [%s]' % str(e)
+            )
+            self.logger.debug(traceback.format_exc())
+            raise
         except Exception as e:
             self.logger.error(
                 'Step 2 - Get Data failed [%s]' % str(e)
