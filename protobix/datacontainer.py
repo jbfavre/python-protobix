@@ -147,7 +147,7 @@ class DataContainer(SenderProtocol):
                 zbx_answer = self._read_from_zabbix()
             except:
                 self._reset()
-
+                raise
         result = self._handle_response(zbx_answer)
         if self.logger:
             output_key = '(bulk)'
@@ -172,8 +172,9 @@ class DataContainer(SenderProtocol):
         self._items_list = []
         self._pbx_config['data_type'] = None
         # Close & destroy socket
-        self._socket().close()
-        self.socket = None
+        if self.socket:
+            self._socket().close()
+            self.socket = None
 
     def _handle_response(self, zbx_answer):
         if zbx_answer and self.logger:
