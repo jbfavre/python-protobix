@@ -15,6 +15,17 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import protobix
 
+try: import simplejson as json
+except ImportError: import json
+import struct
+if sys.version_info < (3,):
+    def b(x):
+        return x
+else:
+    import codecs
+    def b(x):
+        return codecs.utf_8_encode(x)[0]
+
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig.server_active')
 @mock.patch('protobix.ZabbixAgentConfig.server_port')
@@ -203,15 +214,23 @@ def test_clock_accurate(mock_configobj):
 #        '{"info": "processed: 0; failed: 1; total: 1; seconds spent: 0.000441", "response": "success"}'
 #    )
 #    mock_socket.recv.return_value = awaited_answer
-#    with mock.patch('socket.socket', return_value=mock_socket):
-#        zbx_senderprotocol = protobix.SenderProtocol()
-#        zbx_senderprotocol.data_type='item'
-#        item = { 'host': 'myhostname', 'key': 'my.item.key',
-#                 'value': 1, 'clock': int(time.time())}
-#        zbx_senderprotocol._items_list.append(item)
-#        zbx_senderprotocol._send_to_zabbix(zbx_senderprotocol._items_list)
-#        result = zbx_senderprotocol._read_from_zabbix()
-#        assert result == awaited_answer
+#    zbx_senderprotocol = protobix.SenderProtocol()
+#    zbx_senderprotocol.socket = mock.Mock(name='socket')
+#    zbx_senderprotocol.data_type='item'
+#    item = { 'host': 'myhostname', 'key': 'my.item.key',
+#             'value': 1, 'clock': int(time.time())}
+#    zbx_senderprotocol._items_list.append(item)
+#    zbx_senderprotocol._send_to_zabbix(zbx_senderprotocol._items_list)
+#    clock = zbx_senderprotocol.clock
+#    payload = json.dumps({
+#        "request": "sender data",
+#        "clock": clock,
+#        "data": [{"key": "my.item.key", "host": "myhostname","value": 1,"clock":clock}]
+#    })
+#    packet = b('ZBXD\1') + struct.pack('<Q', 136) + b(payload)
+#    zbx_senderprotocol.socket.sendall.assert_called_with(packet)
+#    #result = zbx_senderprotocol._read_from_zabbix()
+#    #assert result == awaited_answer
 
 #@mock.patch.object(protobix.ZabbixAgentConfig, '_send_to_zabbix')
 #def test_send2(mock_configobj, mock_zac_send_to_zabbix):
