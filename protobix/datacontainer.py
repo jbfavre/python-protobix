@@ -12,8 +12,7 @@ from .senderprotocol import SenderProtocol
 # 2.2: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 # 2.4: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? [Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
-ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for key %s item %s"
-ZBX_SEND_ITEM   = "[%d items]"
+ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for key [%s] item [%s]"
 
 class DataContainer(SenderProtocol):
 
@@ -40,7 +39,7 @@ class DataContainer(SenderProtocol):
         }
         # Override default values with the ones provided
         if log_level:
-            self._zbx_config.debug_level = log_level
+            self.log_level = log_level
         if log_output != None:
             self._zbx_config.log_file = log_output
         if zbx_host:
@@ -58,16 +57,18 @@ class DataContainer(SenderProtocol):
 
     @data_type.setter
     def data_type(self, value):
-        if self._logger:
-            self._logger.debug("Setting value %s as data_type" % value)
+        if self.logger:
+            self.logger.debug("Setting value %s as data_type" % value)
         if value in ['lld', 'items']:
+            if self.logger and self._pbx_config['data_type'] in ['lld', 'items']:
+                self._logger.warning('data_type has been changed. Emptying DataContainer items list')
             self._pbx_config['data_type'] = value
             # Clean _items_list & _result when changing _data_type
             # Incompatible format
             self._items_list = []
             self._result = []
         else:
-            if self._logger:
+            if self.logger:
                 self._logger.error('data_type requires either "items" or "lld"')
             raise ValueError('data_type requires either "items" or "lld"')
 
@@ -89,8 +90,12 @@ class DataContainer(SenderProtocol):
         return self._zbx_config.hostname
 
     @property
-    def log_output(self):
-        return self._pbx_config['log_output']
+    def log_file(self):
+        return self._zbx_config.log_file
+
+    @property
+    def log_type(self):
+        return self._zbx_config.log_type
 
     def add_item(self, host, key, value, clock=None):
         if clock is None:
@@ -102,8 +107,8 @@ class DataContainer(SenderProtocol):
             item = { "host": host, "key": key, "clock": clock,
                      "value": json.dumps({"data": value}) }
         else:
-            if self._logger:
-                self._logger.error('Setup data_type before adding data')
+            if self.logger:
+                self.logger.error('Setup data_type before adding data')
             raise ValueError('Setup data_type before adding data')
         self._items_list.append(item)
 
@@ -136,9 +141,6 @@ class DataContainer(SenderProtocol):
 
     def _send_common(self, item):
         zbx_answer = 0
-        output = ZBX_SEND_ITEM % (
-            len(item)
-        )
         if self.dryrun is False:
             try:
                 self._send_to_zabbix(item)
@@ -147,16 +149,18 @@ class DataContainer(SenderProtocol):
                 self._reset()
 
         result = self._handle_response(zbx_answer)
-        if self._logger:
+        if self.logger:
+            output_key = '(bulk)'
             output_item = '(bulk)'
-            if self.log_level < 4:
-                output_item = item
-            self._logger.info(
+            if self.log_level >= 4:
+                output_key = item['key']
+                output_item = item['value']
+            self.logger.info(
                 ZBX_DBG_SEND_RESULT % (
                     result[0],
                     result[1],
                     result[2],
-                    output,
+                    output_key,
                     output_item
                 )
             )
@@ -172,8 +176,8 @@ class DataContainer(SenderProtocol):
         self.socket = None
 
     def _handle_response(self, zbx_answer):
-        if zbx_answer and self._logger:
-            self._logger.debug("Got [%s] as response from Zabbix server" % zbx_answer)
+        if zbx_answer and self.logger:
+            self.logger.debug("Zabbix Server response is: [%s]" % zbx_answer)
         nb_item = len(self._items_list)
         if self._zbx_config.debug_level >= 4:
             nb_item = 1
@@ -183,4 +187,10 @@ class DataContainer(SenderProtocol):
                 result = result[0]
         else:
             result = ['d', 'd', str(nb_item)]
+        if self.logger and self._zbx_config.debug_level >= 5:
+            self.logger.debug("Zabbix server results are: Processed: " + result[0])
+            self.logger.debug("                              Failed: " + result[1])
+            self.logger.debug("                               Total: " + result[2])
+            if not self.dryrun:
+                self.logger.debug("                                Time: " + result[3])
         return result
