@@ -128,6 +128,7 @@ class DataContainer(SenderProtocol):
                     result = self._send_common(item)
                     results_list.append(result)
                     # With debug we need to reset socket after each sent
+                    # But never reset DataContainer before all items sent
                     self._socket_reset()
             else:
                 # If debug mode disabled Sent all items at once
@@ -137,10 +138,8 @@ class DataContainer(SenderProtocol):
             self._reset()
             self._socket_reset()
             raise
-        finally:
-            # Every item has been send. Let's reset DataContainer
-            self._reset()
-            self._socket_reset()
+        self._reset()
+        self._socket_reset()
         return results_list
 
     def _send_common(self, item):
