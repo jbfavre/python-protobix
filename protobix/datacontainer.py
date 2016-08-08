@@ -121,28 +121,26 @@ class DataContainer(SenderProtocol):
     def send(self):
         results_list = []
         result = 0
-        if self.log_level >= 4:
-            # If debug mode enabled
-            # Sent one item at a time
-            for item in self._items_list:
-                try:
+        try:
+            if self.log_level >= 4:
+                # If debug mode enabled Sent one item at a time
+                for item in self._items_list:
                     result = self._send_common(item)
-                finally:
-                    # In debug mode, wee need to close socket after each item sent
+                    results_list.append(result)
+                    # With debug we need to reset socket after each sent
                     self._socket_reset()
-                results_list.append(result)
-            self._reset()
-        else:
-            # If debug mode disabled
-            # Sent all items at once
-            try:
+            else:
+                # If debug mode disabled Sent all items at once
                 result = self._send_common(self._items_list)
-            finally:
-                self._socket_reset()
-                self._reset()
-            results_list.append(result)
-        #  Every item has been send.
-        # Let's reset DataContainer
+                results_list.append(result)
+        except:
+            self._reset()
+            self._socket_reset()
+            raise
+        finally:
+            # Every item has been send. Let's reset DataContainer
+            self._reset()
+            self._socket_reset()
         return results_list
 
     def _send_common(self, item):
@@ -173,8 +171,6 @@ class DataContainer(SenderProtocol):
         # So that it can be reused
         self._items_list = []
         self._pbx_config['data_type'] = None
-        # Close & destroy socket
-        self._socket_reset()
 
     def _handle_response(self, zbx_answer):
         if zbx_answer and self.logger:
