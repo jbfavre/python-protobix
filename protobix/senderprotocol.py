@@ -120,11 +120,15 @@ class SenderProtocol(object):
 
         # If not, we have to create it
         socket.setdefaulttimeout(self._zbx_config.timeout)
-        host = self._zbx_config.server_active
-        port = self._zbx_config.server_port
         # Connect to Zabbix server or proxy with provided config options
-        _raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        _raw_socket.connect((host, port))
+        try:
+            _raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            _raw_socket.connect(
+                (self._zbx_config.server_active, self._zbx_config.server_port)
+            )
+        except:
+            # If fail, connection refused error for example, destroy socket
+            _rawsocket = None
         # Manage SSL context & wrapper
         ssl_context = None
         # TLS is enabled, let's set it up

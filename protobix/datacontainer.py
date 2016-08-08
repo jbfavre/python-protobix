@@ -127,27 +127,23 @@ class DataContainer(SenderProtocol):
                 result = self._send_common(item)
                 results_list.append(result)
                 # In debug mode, wee need to close socket after each item sent
-                self._socket().close()
+                self.socket.close()
                 self.socket = None
         else:
             # If debug mode disabled
             # Sent all items at once
             result = self._send_common(self._items_list)
             results_list.append(result)
+        self._reset()
         #  Every item has been send.
         # Let's reset DataContainer
-        self._reset()
         return results_list
 
     def _send_common(self, item):
         zbx_answer = 0
         if self.dryrun is False:
-            try:
-                self._send_to_zabbix(item)
-                zbx_answer = self._read_from_zabbix()
-            except:
-                self._reset()
-                raise
+            self._send_to_zabbix(item)
+            zbx_answer = self._read_from_zabbix()
         result = self._handle_response(zbx_answer)
         if self.logger:
             output_key = '(bulk)'
