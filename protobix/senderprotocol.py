@@ -3,7 +3,8 @@ import struct
 import time
 import sys
 import ssl
-import warnings,functools
+import warnings
+import functools
 try: import simplejson as json
 except ImportError: import json
 
@@ -82,11 +83,11 @@ class SenderProtocol(object):
             return 0
 
         # Format data to be sent
-        if type(item) is dict:
-            item = [ item ]
-        payload = json.dumps({ "data": item,
-                                 "request": self.REQUEST,
-                                 "clock": self.clock })
+        if isinstance(item, dict):
+            item = [item]
+        payload = json.dumps({"data": item,
+                              "request": self.REQUEST,
+                              "clock": self.clock })
         data_length = len(payload)
         data_header = struct.pack('<Q', data_length)
         packet = b(ZBX_HDR) + data_header + b(payload)
@@ -107,7 +108,7 @@ class SenderProtocol(object):
         _buffer = None
         recv_length = None
         # Check that we have a valid Zabbix header mark
-        assert(zbx_srv_resp_data[:5] == b(ZBX_HDR))
+        assert zbx_srv_resp_data[:5] == b(ZBX_HDR)
 
         # Extract response body length from packet
         zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_data[5:ZBX_HDR_SIZE])[0]
@@ -147,35 +148,38 @@ class SenderProtocol(object):
         if self._zbx_config.tls_connect != 'unencrypted':
             from ssl import CertificateError, SSLError
             # Create a SSLContext and configure it
-            ssl_context = ssl.SSLContext()
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 
             # If provided, use cert file & key for client authentication
-            if self._config.tls_cert_file and self._config.tls_key_file:
+            if self._zbx_config.tls_cert_file and self._zbx_config.tls_key_file:
                 ssl_context.load_cert_chain(
-                    self._config.tls_cert_file,
-                    self._config.tls_key_file
+                    self._zbx_config.tls_cert_file,
+                    self._zbx_config.tls_key_file
                 )
 
             # If provided, use CA file & enforce server certificate chek
-            if self._config.tls_ca_file:
+            if self._zbx_config.tls_ca_file:
                 ssl_context.verify_mode = ssl.CERT_REQUIRED
                 ssl_context.load_verify_locations(
-                    cafile = self._config.tls_ca_file
+                    cafile=self._zbx_config.tls_ca_file
                 )
 
             ## If provided enforce server cert issuer check
-            #if self._config.tls_server_cert_issuer:
+            #if self._zbx_config.tls_server_cert_issuer:
             #    ssl_context.verify_issuer
             ## If provided enforce server cert subject check
-            #if self._config.tls_server_cert_issuer:
+            #if self._zbx_config.tls_server_cert_issuer:
             #    ssl_context.verify_issuer
 
             try:
                 if isinstance(ssl_context, ssl.SSLContext):
-                    self.socket = ssl_context.wrap_socket(_raw_socket, server_hostname=host)
-            except CertificateError as e:
-                raise errors.ConnectionError('SSL: ' + e.message)
-            except SSLError as e:
-                raise errors.ConnectionError('SSL: ' + e.reason)
+                    self.socket = ssl_context.wrap_socket(
+                        self.socket,
+                        server_hostname=self._zbx_config.server_active
+                    )
+            except CertificateError:
+                raise
+            except SSLError:
+                raise
 
         return self.socket
