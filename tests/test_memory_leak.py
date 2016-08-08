@@ -83,6 +83,10 @@ PAYLOAD = {
 }
 
 def long_run(data_type, log_level):
+    """
+    Generic long running process simulator
+    Used by tests below
+    """
     zbx_container = protobix.DataContainer(
         log_level = log_level,
     )
@@ -90,8 +94,7 @@ def long_run(data_type, log_level):
     max_run=1000
     while run <= max_run:
         zbx_container.data_type = data_type
-        payload = PAYLOAD[data_type]
-        zbx_container.add(payload)
+        zbx_container.add(PAYLOAD[data_type])
         try:
             zbx_container.send()
         except:
@@ -101,9 +104,10 @@ def long_run(data_type, log_level):
             display_memory = usage[2]*resource.getpagesize()/1000000.0
             if run == 1:
                 initial_memory = usage[2]
+                display_initial_memory = usage[2]*resource.getpagesize()/1000000.0
             final_memory = usage[2]
             print ('Run %i: ru_maxrss=%f mb - initial=%f mb' % (
-                run, (display_memory), final_memory
+                run, (display_memory), display_initial_memory
             ))
         run += 1
     return initial_memory, final_memory
@@ -122,7 +126,7 @@ def test_items_long_run_debug_no(mock_configobj, mock_zabbix_agent_config):
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def test_items_long_run_no_debug_yes(mock_configobj, mock_zabbix_agent_config):
+def test_items_long_run_debug_yes(mock_configobj, mock_zabbix_agent_config):
     """
     Simulate long running process in debug mode
     and control memory usage
@@ -146,7 +150,7 @@ def test_lld_long_run_debug_no(mock_configobj, mock_zabbix_agent_config):
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def test_lld_long_run_no_debug_yes(mock_configobj, mock_zabbix_agent_config):
+def test_lld_long_run_debug_yes(mock_configobj, mock_zabbix_agent_config):
     """
     Simulate long running process in debug mode
     and control memory usage
