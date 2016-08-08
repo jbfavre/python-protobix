@@ -104,7 +104,7 @@ class SampleProbe(object):
             logger.addHandler(fileHandler)
         if log_type == 'system':
             syslogHandler = logging.handlers.SysLogHandler(
-                address = '/dev/log',
+                address = ('localhost',514),
                 facility = logging.handlers.SysLogHandler.LOG_DAEMON
             )
             # Use same date format as Zabbix does: when logging into
