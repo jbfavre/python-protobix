@@ -1,8 +1,8 @@
-import logging
 import argparse
 import socket
 import sys
 import traceback
+import logging
 from logging import handlers
 
 from .datacontainer import DataContainer
@@ -28,51 +28,51 @@ class SampleProbe(object):
         # Parse the script arguments
         parser = argparse.ArgumentParser(
             usage='%(prog)s [options]',
-            description = 'A Protobix probe to monitor XXX with Zabbix',
-            epilog = 'Protobix - copyright 2016 - Jean Baptiste Favre (www.jbfavre.org)'
+            description='A Protobix probe to monitor XXX with Zabbix',
+            epilog='Protobix - copyright 2016 - Jean Baptiste Favre (www.jbfavre.org)'
         )
         # Probe operation mode
         probe_mode = parser.add_argument_group('Probe commands')
         probe_mode.add_argument(
-            '--update-items', action = 'store_true',
-            dest = 'update', default = False,
-            help = 'Get & send items to Zabbix. This is the default '
-                'behaviour even if option is not specified'
+            '--update-items', action='store_true',
+            dest='update', default=False,
+            help='Get & send items to Zabbix. This is the default '
+                 'behaviour even if option is not specified'
         )
         probe_mode.add_argument(
-            '--discovery', action = 'store_true',
-            dest = 'discovery', default = False,
-            help = 'If specified, will perform Zabbix Low Level '
-                'Discovery on Hadoop Cloudera Manager API. '
-                'Default is to get & send items'
+            '--discovery', action='store_true',
+            dest='discovery', default=False,
+            help='If specified, will perform Zabbix Low Level '
+                 'Discovery on Hadoop Cloudera Manager API. '
+                 'Default is to get & send items'
         )
         # Common options
         common = parser.add_argument_group('Common options')
         common.add_argument(
-            '-c', '--config', dest = 'config_file',
+            '-c', '--config', dest='config_file',
             help='Probe config file location. Can be either absolute or relative path'
         )
         common.add_argument(
-            '-d', '--dryrun', action = 'store_true', default = False,
+            '-d', '--dryrun', action='store_true', default=False,
             help='Do not send anything to Zabbix. Usefull to debug with --debug option'
         )
         common.add_argument(
-            '-D', '--debug', action = 'store_true', default = False,
+            '-D', '--debug', action='store_true', default=False,
             help='Enable debug mode. This will prevent bulk send '
-                'operations and force sending items one after the '
-                'other, displaying result for each one'
+                 'operations and force sending items one after the '
+                 'other, displaying result for each one'
         )
         # Zabbix specific options
         zabbix = parser.add_argument_group('Zabbix specific options')
         zabbix.add_argument(
-            '-z', '--zabbix-server', default = '127.0.0.1',
-            help = 'The hostname of Zabbix server or '
-                'proxy, default is 127.0.0.1.'
+            '-z', '--zabbix-server', default='127.0.0.1',
+            help='The hostname of Zabbix server or '
+                 'proxy, default is 127.0.0.1.'
         )
         zabbix.add_argument(
-            '-p', '--zabbix-port', default = 10051, type = int,
-            help = 'The port on which the Zabbix server or '
-                'proxy is running, default is 10051'
+            '-p', '--zabbix-port', default=10051, type=int,
+            help='The port on which the Zabbix server or '
+                 'proxy is running, default is 10051'
         )
         # Probe specific options
         parser = self._parse_probe_args(parser)
@@ -85,36 +85,37 @@ class SampleProbe(object):
         # Enable log like Zabbix Agent does
         # Though, when we have a tty, it's convenient to use console to log
         if log_type == 'console' or sys.stdout.isatty():
-            consoleHandler = logging.StreamHandler()
-            consoleFormatter = logging.Formatter(
-                fmt = common_log_format,
-                datefmt = '%Y%m%d:%H%M%S'
+            console_handler = logging.StreamHandler()
+            console_formatter = logging.Formatter(
+                fmt=common_log_format,
+                datefmt='%Y%m%d:%H%M%S'
             )
-            consoleHandler.setFormatter(consoleFormatter)
-            logger.addHandler(consoleHandler)
+            console_handler.setFormatter(console_formatter)
+            logger.addHandler(console_handler)
         if log_type == 'file':
-            fileHandler = logging.FileHandler(log_file)
+            file_handler = logging.FileHandler(log_file)
             # Use same date format as Zabbix: when logging into
             # zabbix_agentd log file, it's easier to read & parse
-            logFormatter = logging.Formatter(
-                fmt = '%(process)d:%(asctime)s.%(msecs)03d ' + common_log_format,
-                datefmt = '%Y%m%d:%H%M%S'
+            log_formatter = logging.Formatter(
+                fmt='%(process)d:%(asctime)s.%(msecs)03d ' + common_log_format,
+                datefmt='%Y%m%d:%H%M%S'
             )
-            fileHandler.setFormatter(logFormatter)
-            logger.addHandler(fileHandler)
+            file_handler.setFormatter(log_formatter)
+            logger.addHandler(file_handler)
         if log_type == 'system':
-            syslogHandler = logging.handlers.SysLogHandler(
-                address = ('localhost',514),
-                facility = logging.handlers.SysLogHandler.LOG_DAEMON
+            # TODO: manage syslog address as command line option
+            syslog_handler = logging.handlers.SysLogHandler(
+                address=('localhost', 514),
+                facility=logging.handlers.SysLogHandler.LOG_DAEMON
             )
             # Use same date format as Zabbix does: when logging into
             # zabbix_agentd log file, it's easier to read & parse
-            logFormatter = logging.Formatter(
-                fmt = '%(process)d:%(asctime)s.%(msecs)03d ' + common_log_format,
-                datefmt = '%Y%m%d:%H%M%S'
+            log_formatter = logging.Formatter(
+                fmt='%(process)d:%(asctime)s.%(msecs)03d ' + common_log_format,
+                datefmt='%Y%m%d:%H%M%S'
             )
-            syslogHandler.setFormatter(logFormatter)
-            logger.addHandler(syslogHandler)
+            syslog_handler.setFormatter(log_formatter)
+            logger.addHandler(syslog_handler)
         logger.setLevel(
             self.LOG_LEVEL[log_level]
         )
@@ -122,12 +123,12 @@ class SampleProbe(object):
 
     def _init_container(self):
         zbx_container = DataContainer(
-            zbx_file  = self.options.config_file,
-            zbx_host  = self.options.zabbix_server,
-            zbx_port  = int(self.options.zabbix_port),
-            log_level = 4 if self.options.debug else None,
-            dryrun    = self.options.dryrun,
-            logger    = self.logger
+            zbx_file=self.options.config_file,
+            zbx_host=self.options.zabbix_server,
+            zbx_port=int(self.options.zabbix_port),
+            log_level=4 if self.options.debug else None,
+            dryrun=self.options.dryrun,
+            logger=self.logger
         )
         return zbx_container
 
@@ -147,7 +148,7 @@ class SampleProbe(object):
         # non mandatory method
         return parser
 
-    def run(self, options = None):
+    def run(self, options=None):
         # Parse command line options
         args = sys.argv[1:]
         if isinstance(options, list):
@@ -155,7 +156,9 @@ class SampleProbe(object):
         self.options = self._parse_args(args)
         self.options.probe_mode = 'update'
         if self.options.update is True and self.options.discovery is True:
-            raise ValueError('Both --update-items & --discovery options detected. You must use only one at a time')
+            raise ValueError(
+                'You can\' use both --update-items & --discovery options'
+            )
         elif self.options.discovery is True:
             self.options.probe_mode = 'discovery'
 
@@ -167,9 +170,9 @@ class SampleProbe(object):
         # logger init
         # we need Zabbix configuration to know how to log
         self.logger = self._setup_logging(
-                zbx_container.log_type,
-                zbx_container.log_level,
-                zbx_container.log_file
+            zbx_container.log_type,
+            zbx_container.log_level,
+            zbx_container.log_file
         )
         zbx_container.logger = self.logger
 
@@ -231,7 +234,6 @@ class SampleProbe(object):
                 'Step 4 - Unknown error [%s]' % str(e)
             )
             self.logger.debug(traceback.format_exc())
-            zbx_container._reset()
             return 4
         # Everything went fine. Let's return 0 and exit
         return 0
