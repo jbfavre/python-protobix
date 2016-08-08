@@ -122,7 +122,6 @@ class SampleProbe(object):
 
     def _init_container(self):
         zbx_container = DataContainer(
-            data_type = 'items' if self.options.probe_mode == 'update_items' else 'lld',
             zbx_file  = self.options.config_file,
             zbx_host  = self.options.zabbix_server,
             zbx_port  = int(self.options.zabbix_port),
@@ -189,8 +188,10 @@ class SampleProbe(object):
         try:
             data = {}
             if self.options.probe_mode == "update":
+                zbx_container.data_type = 'items'
                 data = self._get_metrics()
             elif self.options.probe_mode == "discovery":
+                zbx_container.data_type = 'lld'
                 data = self._get_discovery()
         except NotImplementedError as e:
             self.logger.error(
@@ -213,6 +214,7 @@ class SampleProbe(object):
                 'Step 3 - Format & add Data failed [%s]' % str(e)
             )
             self.logger.debug(traceback.format_exc())
+            zbx_container._reset()
             return 3
 
         # Step 4: send data to Zabbix server
@@ -229,6 +231,7 @@ class SampleProbe(object):
                 'Step 4 - Unknown error [%s]' % str(e)
             )
             self.logger.debug(traceback.format_exc())
+            zbx_container._reset()
             return 4
         # Everything went fine. Let's return 0 and exit
         return 0
