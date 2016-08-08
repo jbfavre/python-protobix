@@ -64,7 +64,7 @@ def test_items_add_before_set_data_type(mock_configobj, mock_zabbix_agent_config
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def test_debug_level_no_dryrun_no(mock_configobj, mock_zabbix_agent_config):
+def test_debug_no_dryrun_no(mock_configobj, mock_zabbix_agent_config):
     """
     debug_level to False
     dryrun to False
@@ -95,7 +95,7 @@ def test_debug_level_no_dryrun_no(mock_configobj, mock_zabbix_agent_config):
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def test_debug_level_yes_dryrun_no(mock_configobj, mock_zabbix_agent_config):
+def test_debug_yes_dryrun_no(mock_configobj, mock_zabbix_agent_config):
     """
     debug_level to True
     dryrun to False
@@ -126,7 +126,7 @@ def test_debug_level_yes_dryrun_no(mock_configobj, mock_zabbix_agent_config):
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def test_debug_level_no_dryrun_yes(mock_configobj, mock_zabbix_agent_config):
+def test_debug_no_dryrun_yes(mock_configobj, mock_zabbix_agent_config):
     """
     debug_level to False
     dryrun to True
@@ -150,7 +150,7 @@ def test_debug_level_no_dryrun_yes(mock_configobj, mock_zabbix_agent_config):
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
-def test_debug_level_yes_dryrun_yes(mock_configobj, mock_zabbix_agent_config):
+def test_debug_yes_dryrun_yes(mock_configobj, mock_zabbix_agent_config):
     """
     debug_level to True
     dryrun to True

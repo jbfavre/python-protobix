@@ -97,7 +97,7 @@ def test_server_port_invalid_lower_than_1024(mock_configobj):
     assert zbx_senderprotocol.zbx_port == 10051
 
 @mock.patch('configobj.ConfigObj')
-def test_debug_level_custom(mock_configobj):
+def test_debug_custom(mock_configobj):
     """
     Test setting zbx_port with custom value
     """
@@ -108,7 +108,7 @@ def test_debug_level_custom(mock_configobj):
     assert zbx_senderprotocol.log_level == 4
 
 @mock.patch('configobj.ConfigObj')
-def test_debug_level_invalid_lower_than_0(mock_configobj):
+def test_debug_invalid_lower_than_0(mock_configobj):
     """
     Test setting zbx_port with invalid value
     """
@@ -120,7 +120,7 @@ def test_debug_level_invalid_lower_than_0(mock_configobj):
     assert zbx_senderprotocol.log_level == 3
 
 @mock.patch('configobj.ConfigObj')
-def test_debug_level_invalid_greater_than_5(mock_configobj):
+def test_debug_invalid_greater_than_5(mock_configobj):
     """
     Test setting zbx_port with invalid value
     """
