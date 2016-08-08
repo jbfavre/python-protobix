@@ -7,7 +7,6 @@ import mock
 import unittest
 
 import resource
-import time
 import sys
 import os
 
