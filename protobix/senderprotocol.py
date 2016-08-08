@@ -92,26 +92,41 @@ class SenderProtocol(object):
         packet = b(ZBX_HDR) + data_header + b(payload)
 
         # Send payload to Zabbix Server
-        # Response header will be checked after
         self._socket().sendall(packet)
 
     def _read_from_zabbix(self):
-        # Check the 5 first bytes from answer to ensure it's well formatted
-        host = self._zbx_config.server_active
-        port = self._zbx_config.server_port
-        zbx_srv_resp_hdr = self._socket().recv(5)
-        assert(zbx_srv_resp_hdr == b(ZBX_HDR))
+        recv_length = 4096
+        zbx_srv_resp_data = b''
 
-        # Get the 8 next bytes and unpack them to get payload's length
-        zbx_srv_resp_data_hdr = self._socket().recv(8)
-        zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_data_hdr)[0]
+        # Read Zabbix server answer
+        while recv_length >= 4096:
+            _buffer = self._socket().recv(4096)
+            zbx_srv_resp_data += _buffer
+            recv_length = len(_buffer)
 
-        # Get response payload from Zabbix Server
-        zbx_srv_resp_body = self._socket().recv(zbx_srv_resp_body_len)
+        _buffer = None
+        recv_length = None
+        # Check that we have a valid Zabbix header mark
+        assert(zbx_srv_resp_data[:5] == b(ZBX_HDR))
+
+        # Extract response body length from packet
+        zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_data[5:ZBX_HDR_SIZE])[0]
+
+        # Extract response body
+        zbx_srv_resp_body = zbx_srv_resp_data[ZBX_HDR_SIZE:ZBX_HDR_SIZE+zbx_srv_resp_body_len]
+
+        # Check that we have read the whole packet
+        assert zbx_srv_resp_data[ZBX_HDR_SIZE+zbx_srv_resp_body_len:] == b''
+
         if sys.version_info[0] >= 3:
             zbx_srv_resp_body = zbx_srv_resp_body.decode()
         # Return Zabbix Server answer as JSON
         return json.loads(zbx_srv_resp_body)
+
+    def _socket_reset(self):
+        if self.socket:
+            self.socket.close()
+            self.socket = None
 
     def _socket(self):
         # If socket already exists, use it
@@ -129,6 +144,7 @@ class SenderProtocol(object):
         except:
             # If fail, connection refused error for example, destroy socket
             _rawsocket = None
+
         # Manage SSL context & wrapper
         ssl_context = None
         # TLS is enabled, let's set it up
@@ -136,24 +152,28 @@ class SenderProtocol(object):
             from ssl import CertificateError, SSLError
             # Create a SSLContext and configure it
             ssl_context = ssl.SSLContext()
+
             # If provided, use cert file & key for client authentication
             if self._config.tls_cert_file and self._config.tls_key_file:
                 ssl_context.load_cert_chain(
                     self._config.tls_cert_file,
                     self._config.tls_key_file
                 )
+
             # If provided, use CA file & enforce server certificate chek
             if self._config.tls_ca_file:
                 ssl_context.verify_mode = ssl.CERT_REQUIRED
                 ssl_context.load_verify_locations(
                     cafile = self._config.tls_ca_file
                 )
+
             ## If provided enforce server cert issuer check
             #if self._config.tls_server_cert_issuer:
             #    ssl_context.verify_issuer
             ## If provided enforce server cert subject check
             #if self._config.tls_server_cert_issuer:
             #    ssl_context.verify_issuer
+
             try:
                 if isinstance(ssl_context, ssl.SSLContext):
                     _raw_socket = ssl_context.wrap_socket(_raw_socket, server_hostname=host)
@@ -161,5 +181,6 @@ class SenderProtocol(object):
                 raise errors.ConnectionError('SSL: ' + e.message)
             except SSLError as e:
                 raise errors.ConnectionError('SSL: ' + e.reason)
+
         self.socket = _raw_socket
         return self.socket
