@@ -506,3 +506,53 @@ def test_tls_connect_psk(mock_configobj):
     zbx_config = protobix.ZabbixAgentConfig('TLSConnect_psk')
     assert zbx_config.tls_psk_identity == 'TLS PSK Zabbix Identity'
     assert zbx_config.tls_psk_file == '/tmp/psk.file'
+
+@mock.patch('configobj.ConfigObj')
+def test_data_type(mock_configobj):
+    """
+    Test data_type. Default is None
+    """
+    mock_configobj.side_effect = [{}]
+    zbx_config = protobix.ZabbixAgentConfig('default_configuration')
+    assert zbx_config.data_type is None
+    zbx_config.data_type = 'items'
+    assert zbx_config.data_type == 'items'
+    zbx_config.data_type = 'lld'
+    assert zbx_config.data_type == 'lld'
+
+@mock.patch('configobj.ConfigObj')
+def test_data_type_invalid(mock_configobj):
+    """
+    Test data_type with invalid value
+    """
+    mock_configobj.side_effect = [{}]
+    zbx_config = protobix.ZabbixAgentConfig('default_configuration')
+    assert zbx_config.data_type is None
+    with pytest.raises(ValueError) as err:
+        zbx_config.data_type = 'invalid'
+    assert str(err.value) == 'data_type requires either "items" or "lld"'
+    assert zbx_config.data_type is None
+
+@mock.patch('configobj.ConfigObj')
+def test_dryrun(mock_configobj):
+    """
+    Test dryrun. Default is False
+    """
+    mock_configobj.side_effect = [{}]
+    zbx_config = protobix.ZabbixAgentConfig('default_configuration')
+    assert zbx_config.dryrun is False
+    zbx_config.dryrun = True
+    assert zbx_config.dryrun is True
+
+@mock.patch('configobj.ConfigObj')
+def test_dryrun_invalid(mock_configobj):
+    """
+    Test dryrun with invalid value
+    """
+    mock_configobj.side_effect = [{}]
+    zbx_config = protobix.ZabbixAgentConfig('default_configuration')
+    assert zbx_config.dryrun is False
+    with pytest.raises(ValueError) as err:
+        zbx_config.dryrun = 'invalid'
+    assert str(err.value) == 'dryrun parameter requires boolean'
+    assert zbx_config.dryrun is False

@@ -10,6 +10,10 @@ class ZabbixAgentConfig(object):
         # This property set. Default goes to server FQDN
         # We do *NOT* support HostnameItem except to fake system.hostname
         self.config = {
+            # Protobix specific options
+            'data_type': None,
+            'dryrun': False,
+            # Zabbix Agent options
             'ServerActive': '127.0.0.1',
             'ServerPort': 10051,
             'LogType': 'file',
@@ -269,3 +273,25 @@ class ZabbixAgentConfig(object):
     def tls_psk_file(self, value):
         if value:
             self.config['TLSPSKFile'] = value
+
+    @property
+    def dryrun(self):
+        return self.config['dryrun']
+
+    @dryrun.setter
+    def dryrun(self, value):
+        if value in [True, False]:
+            self.config['dryrun'] = value
+        else:
+            raise ValueError('dryrun parameter requires boolean')
+
+    @property
+    def data_type(self):
+        return self.config['data_type']
+
+    @data_type.setter
+    def data_type(self, value):
+        if value in ['lld', 'items', None]:
+            self.config['data_type'] = value
+        else:
+            raise ValueError('data_type requires either "items" or "lld"')
