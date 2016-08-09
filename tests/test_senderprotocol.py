@@ -45,9 +45,9 @@ def test_default_params(mock_configobj, \
     mock_server_port.timeout.return_value = 3
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     zbx_senderprotocol = protobix.SenderProtocol()
-    assert zbx_senderprotocol.zbx_host == '127.0.0.1'
-    assert zbx_senderprotocol.zbx_port == 10051
-    assert zbx_senderprotocol.dryrun is False
+    assert zbx_senderprotocol.server_active == '127.0.0.1'
+    assert zbx_senderprotocol.server_port == 10051
+    assert zbx_senderprotocol._config.dryrun is False
     assert zbx_senderprotocol.items_list == []
 
 @mock.patch('configobj.ConfigObj')
@@ -57,49 +57,49 @@ def test_server_active_custom(mock_configobj):
     """
     mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
-    assert zbx_senderprotocol.zbx_host == '127.0.0.1'
-    zbx_senderprotocol.zbx_host = 'myserver.domain.tld'
-    assert zbx_senderprotocol.zbx_host == 'myserver.domain.tld'
+    assert zbx_senderprotocol.server_active == '127.0.0.1'
+    zbx_senderprotocol.server_active = 'myserver.domain.tld'
+    assert zbx_senderprotocol.server_active == 'myserver.domain.tld'
 
 @mock.patch('configobj.ConfigObj')
 def test_server_port_custom(mock_configobj):
     """
-    Test setting zbx_port with custom value
+    Test setting server_port with custom value
     """
     mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
-    assert zbx_senderprotocol.zbx_port == 10051
-    zbx_senderprotocol.zbx_port = 10052
-    assert zbx_senderprotocol.zbx_port == 10052
+    assert zbx_senderprotocol.server_port == 10051
+    zbx_senderprotocol.server_port = 10052
+    assert zbx_senderprotocol.server_port == 10052
 
 @mock.patch('configobj.ConfigObj')
 def test_server_port_invalid_greater_than_32767(mock_configobj):
     """
-    Test setting zbx_port with invalid value
+    Test setting server_port with invalid value
     """
     mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     with pytest.raises(ValueError) as err:
-        zbx_senderprotocol.zbx_port = 40000
+        zbx_senderprotocol.server_port = 40000
     assert str(err.value) == 'ServerPort must be between 1024 and 32767'
-    assert zbx_senderprotocol.zbx_port == 10051
+    assert zbx_senderprotocol.server_port == 10051
 
 @mock.patch('configobj.ConfigObj')
 def test_server_port_invalid_lower_than_1024(mock_configobj):
     """
-    Test setting zbx_port with invalid value
+    Test setting server_port with invalid value
     """
     mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
     with pytest.raises(ValueError) as err:
-        zbx_senderprotocol.zbx_port = 1000
+        zbx_senderprotocol.server_port = 1000
     assert str(err.value) == 'ServerPort must be between 1024 and 32767'
-    assert zbx_senderprotocol.zbx_port == 10051
+    assert zbx_senderprotocol.server_port == 10051
 
 @mock.patch('configobj.ConfigObj')
 def test_debug_custom(mock_configobj):
     """
-    Test setting zbx_port with custom value
+    Test setting server_port with custom value
     """
     mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
@@ -110,7 +110,7 @@ def test_debug_custom(mock_configobj):
 @mock.patch('configobj.ConfigObj')
 def test_debug_invalid_lower_than_0(mock_configobj):
     """
-    Test setting zbx_port with invalid value
+    Test setting server_port with invalid value
     """
     mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
@@ -122,7 +122,7 @@ def test_debug_invalid_lower_than_0(mock_configobj):
 @mock.patch('configobj.ConfigObj')
 def test_debug_invalid_greater_than_5(mock_configobj):
     """
-    Test setting zbx_port with invalid value
+    Test setting server_port with invalid value
     """
     mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
@@ -138,11 +138,11 @@ def test_dryrun_custom(mock_configobj):
     """
     mock_configobj.side_effect = [{}]
     zbx_senderprotocol = protobix.SenderProtocol()
-    assert zbx_senderprotocol.dryrun is False
-    zbx_senderprotocol.dryrun = True
-    assert zbx_senderprotocol.dryrun is True
-    zbx_senderprotocol.dryrun = False
-    assert zbx_senderprotocol.dryrun is False
+    assert zbx_senderprotocol._config.dryrun is False
+    zbx_senderprotocol._config.dryrun = True
+    assert zbx_senderprotocol._config.dryrun is True
+    zbx_senderprotocol._config.dryrun = False
+    assert zbx_senderprotocol._config.dryrun is False
 
 @mock.patch('configobj.ConfigObj')
 def test_dryrun_invalid(mock_configobj):
@@ -158,11 +158,11 @@ def test_dryrun_invalid(mock_configobj):
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
-    assert zbx_senderprotocol.dryrun is False
+    assert zbx_senderprotocol._config.dryrun is False
     with pytest.raises(ValueError) as err:
-        zbx_senderprotocol.dryrun = 'invalid'
+        zbx_senderprotocol._config.dryrun = 'invalid'
     assert str(err.value) == 'dryrun parameter requires boolean'
-    assert zbx_senderprotocol.dryrun is False
+    assert zbx_senderprotocol._config.dryrun is False
 
 @mock.patch('configobj.ConfigObj')
 def test_clock_integer(mock_configobj):

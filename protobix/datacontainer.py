@@ -17,12 +17,11 @@ ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for key [%s] item [%s]"
 
 class DataContainer(SenderProtocol):
 
-    _data_type = None
     _items_list = []
     _result = []
 
     def __init__(self, data_type=None,
-                 zbx_file='/etc/zabbix/zabbix_agentd.conf',
+                 zbx_file=None,
                  zbx_host=None,
                  zbx_port=None,
                  debug_level=None,
@@ -30,51 +29,24 @@ class DataContainer(SenderProtocol):
                  dryrun=False,
                  logger=None):
 
-        super(DataContainer, self).__init__()
-
         # Loads config from zabbix_agentd file
         # If no file, it uses the default _config as configuration
-        self._zbx_config = ZabbixAgentConfig(zbx_file)
-        self._pbx_config = {
-            'dryrun': False,
-            'data_type': None
-        }
+        self._config = ZabbixAgentConfig(zbx_file)
         # Override default values with the ones provided
         if debug_level:
             self.debug_level = debug_level
-        if log_output != None:
-            self._zbx_config.log_file = log_output
+        if log_output is not None:
+            self._config.log_file = log_output
         if zbx_host:
-            self._zbx_config.server_active = zbx_host
+            self._config.server_active = zbx_host
         if zbx_port:
-            self._zbx_config.server_port = zbx_port
+            self._config.server_port = zbx_port
         if data_type:
-            self._pbx_config['data_type'] = data_type
-        self._pbx_config['dryrun'] = dryrun
+            self.data_type = data_type
+        self._config.dryrun = dryrun
         self._logger = logger
-
-    @property
-    def data_type(self):
-        return self._pbx_config['data_type']
-
-    @data_type.setter
-    def data_type(self, value):
-        if self.logger:
-            self.logger.debug("Setting value %s as data_type" % value)
-        if value in ['lld', 'items']:
-            if self.logger and self._pbx_config['data_type'] in ['lld', 'items']:
-                self._logger.warning(
-                    'data_type has been changed. Emptying DataContainer items list'
-                )
-            self._pbx_config['data_type'] = value
-            # Clean _items_list & _result when changing _data_type
-            # Incompatible format
-            self._items_list = []
-            self._result = []
-        else:
-            if self.logger:
-                self._logger.error('data_type requires either "items" or "lld"')
-            raise ValueError('data_type requires either "items" or "lld"')
+        self._items_list = []
+        self.socket = None
 
     @property
     def logger(self):
@@ -89,25 +61,19 @@ class DataContainer(SenderProtocol):
                 self._logger.error('logger requires a logging instance')
             raise ValueError('logger requires a logging instance')
 
-    @property
-    def hostname(self):
-        return self._zbx_config.hostname
-
-    @property
-    def log_file(self):
-        return self._zbx_config.log_file
-
-    @property
-    def log_type(self):
-        return self._zbx_config.log_type
-
     def add_item(self, host, key, value, clock=None):
+        """
+        Add a snigle items into DataContainer
+        Choose relevant format depending on data_type
+        Provides clock information if not present
+        Return nothing
+        """
         if clock is None:
             clock = self.clock
-        if self._pbx_config['data_type'] == "items":
+        if self._config.data_type == "items":
             item = {"host": host, "key": key,
                     "value": value, "clock": clock}
-        elif self._pbx_config['data_type'] == "lld":
+        elif self._config.data_type == "lld":
             item = {"host": host, "key": key, "clock": clock,
                     "value": json.dumps({"data": value})}
         else:
@@ -117,12 +83,22 @@ class DataContainer(SenderProtocol):
         self._items_list.append(item)
 
     def add(self, data):
+        """
+        Add a list of item into the container
+        Returns nothing
+        """
         for host in data:
             for key in data[host]:
                 if not data[host][key] == []:
                     self.add_item(host, key, data[host][key])
 
     def send(self):
+        """
+        Entrypoint to send data to Zabbix
+        If debug is enabled, items are sent one by one
+        If debug isn't enable, we send items in bulk
+        Returns a list of results (1 if no debug, as many as items in other case)
+        """
         results_list = []
         try:
             if self.debug_level >= 4:
@@ -146,8 +122,13 @@ class DataContainer(SenderProtocol):
         return results_list
 
     def _send_common(self, item):
+        """
+        Common part of sending operations
+        Calls SenderProtocol._send_to_zabbix
+        Returns result as provided by _handle_response
+        """
         zbx_answer = 0
-        if self.dryrun is False:
+        if self._config.dryrun is False:
             self._send_to_zabbix(item)
             zbx_answer = self._read_from_zabbix()
         result = self._handle_response(zbx_answer)
@@ -169,27 +150,90 @@ class DataContainer(SenderProtocol):
         return result
 
     def _reset(self):
+        """
+        Reset main DataContainer properties
+        Avoid mixing items with LLD
+        """
         # Reset DataContainer to default values
         # So that it can be reused
         self._items_list = []
-        self._pbx_config['data_type'] = None
+        self._config.data_type = None
 
     def _handle_response(self, zbx_answer):
+        """
+        Analyze Zabbix Server response and extract informations from JSON body
+        Returns a list with number of:
+        * processed items
+        * failed items
+        * total items
+        * time spent
+        """
         if zbx_answer and self.logger:
             self.logger.debug("Zabbix Server response is: [%s]" % zbx_answer)
         nb_item = len(self._items_list)
-        if self._zbx_config.debug_level >= 4:
+        if self._config.debug_level >= 4:
             nb_item = 1
-        if zbx_answer and self.dryrun is False:
+        if zbx_answer and self._config.dryrun is False:
             if zbx_answer.get('response') == 'success':
                 result = re.findall(ZBX_RESP_REGEX, zbx_answer.get('info'))
                 result = result[0]
         else:
             result = ['d', 'd', str(nb_item)]
-        if self.logger and self._zbx_config.debug_level >= 5:
+        if self.logger and self._config.debug_level >= 5:
             self.logger.debug("Zabbix server results are: Processed: " + result[0])
             self.logger.debug("                              Failed: " + result[1])
             self.logger.debug("                               Total: " + result[2])
-            if not self.dryrun:
+            if not self._config.dryrun:
                 self.logger.debug("                                Time: " + result[3])
         return result
+
+    # ZabbixAgentConfig getter & setter
+    # Avoid using private property _config from outside
+    @property
+    def hostname(self):
+        """
+        Returns Hostname from ZabbixConfigAgent
+        """
+        return self._config.hostname
+
+    @property
+    def log_file(self):
+        """
+        Returns LogFile from ZabbixConfigAgent
+        """
+        return self._config.log_file
+
+    @property
+    def log_type(self):
+        """
+        Returns LogTyp from ZabbixConfigAgent
+        """
+        return self._config.log_type
+
+    @property
+    def dryrun(self):
+        """
+        Returns dryrun from ZabbixConfigAgent
+        """
+        return self._config.dryrun
+
+    @dryrun.setter
+    def dryrun(self, value):
+        """
+        Set dryrun to ZabbixConfigAgent
+        """
+        self._config.dryrun = value
+
+    @property
+    def data_type(self):
+        """
+        Returns data_type from ZabbixConfigAgent
+        """
+        return self._config.dryrun
+
+    @dryrun.setter
+    def data_type(self, value):
+        """
+        Set data_type to ZabbixConfigAgent
+        """
+        self._config.data_type = value

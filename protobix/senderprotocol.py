@@ -26,52 +26,37 @@ class SenderProtocol(object):
     REQUEST = "sender data"
 
     def __init__(self):
-        self._zbx_config = ZabbixAgentConfig()
-        self._pbx_config = {
-            'timeout': self._zbx_config.timeout
-        }
-        self._pbx_config['dryrun'] = False
+        self._config = ZabbixAgentConfig()
         self._items_list = []
         self.socket = None
 
     @property
-    def zbx_host(self):
-        return self._zbx_config.server_active
+    def server_active(self):
+        return self._config.server_active
 
-    @zbx_host.setter
-    def zbx_host(self, value):
-        self._zbx_config.server_active = value
+    @server_active.setter
+    def server_active(self, value):
+        self._config.server_active = value
 
     @property
-    def zbx_port(self):
-        return self._zbx_config.server_port
+    def server_port(self):
+        return self._config.server_port
 
-    @zbx_port.setter
-    def zbx_port(self, value):
-        self._zbx_config.server_port = value
+    @server_port.setter
+    def server_port(self, value):
+        self._config.server_port = value
 
     @property
     def items_list(self):
         return self._items_list
 
     @property
-    def dryrun(self):
-        return self._pbx_config['dryrun']
-
-    @dryrun.setter
-    def dryrun(self, value):
-        if value in [True, False]:
-            self._pbx_config['dryrun'] = value
-        else:
-            raise ValueError('dryrun parameter requires boolean')
-
-    @property
     def debug_level(self):
-        return self._zbx_config.debug_level
+        return self._config.debug_level
 
     @debug_level.setter
     def debug_level(self, value):
-        self._zbx_config.debug_level = value
+        self._config.debug_level = value
 
     @property
     def clock(self):
@@ -79,7 +64,7 @@ class SenderProtocol(object):
 
     def _send_to_zabbix(self, item):
         # Return 0 if dryrun mode enabled
-        if self.dryrun:
+        if self._config.dryrun:
             return 0
 
         # Format data to be sent
@@ -135,47 +120,47 @@ class SenderProtocol(object):
             return self.socket
 
         # If not, we have to create it
-        socket.setdefaulttimeout(self._zbx_config.timeout)
+        socket.setdefaulttimeout(self._config.timeout)
         # Connect to Zabbix server or proxy with provided config options
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect(
-            (self._zbx_config.server_active, self._zbx_config.server_port)
+            (self._config.server_active, self._config.server_port)
         )
 
         # Manage SSL context & wrapper
         ssl_context = None
         # TLS is enabled, let's set it up
-        if self._zbx_config.tls_connect != 'unencrypted':
+        if self._config.tls_connect != 'unencrypted':
             from ssl import CertificateError, SSLError
             # Create a SSLContext and configure it
             ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 
             # If provided, use cert file & key for client authentication
-            if self._zbx_config.tls_cert_file and self._zbx_config.tls_key_file:
+            if self._config.tls_cert_file and self._config.tls_key_file:
                 ssl_context.load_cert_chain(
-                    self._zbx_config.tls_cert_file,
-                    self._zbx_config.tls_key_file
+                    self._config.tls_cert_file,
+                    self._config.tls_key_file
                 )
 
             # If provided, use CA file & enforce server certificate chek
-            if self._zbx_config.tls_ca_file:
+            if self._config.tls_ca_file:
                 ssl_context.verify_mode = ssl.CERT_REQUIRED
                 ssl_context.load_verify_locations(
-                    cafile=self._zbx_config.tls_ca_file
+                    cafile=self._config.tls_ca_file
                 )
 
             ## If provided enforce server cert issuer check
-            #if self._zbx_config.tls_server_cert_issuer:
+            #if self._config.tls_server_cert_issuer:
             #    ssl_context.verify_issuer
             ## If provided enforce server cert subject check
-            #if self._zbx_config.tls_server_cert_issuer:
+            #if self._config.tls_server_cert_issuer:
             #    ssl_context.verify_issuer
 
             try:
                 if isinstance(ssl_context, ssl.SSLContext):
                     self.socket = ssl_context.wrap_socket(
                         self.socket,
-                        server_hostname=self._zbx_config.server_active
+                        server_hostname=self._config.server_active
                     )
             except CertificateError:
                 raise

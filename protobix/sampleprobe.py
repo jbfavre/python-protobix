@@ -176,7 +176,7 @@ class SampleProbe(object):
         return logger
 
     def _init_container(self):
-        zbx_container = DataContainer(
+        return DataContainer(
             zbx_file=self.options.config_file,
             zbx_host=self.options.zabbix_server,
             zbx_port=int(self.options.zabbix_port),
@@ -184,7 +184,6 @@ class SampleProbe(object):
             dryrun=self.options.dryrun,
             logger=self.logger
         )
-        return zbx_container
 
     def _get_metrics(self):
         # mandatory method
