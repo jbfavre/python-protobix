@@ -58,7 +58,7 @@ def test_debug_no_dryrun_no(mock_configobj, mock_zabbix_agent_config):
     assert len(zbx_datacontainer.items_list) == 4
 
     assert zbx_datacontainer.dryrun is False
-    assert zbx_datacontainer.log_level < 4
+    assert zbx_datacontainer.debug_level < 4
 
     ''' Send data to zabbix '''
     # Allow static tests to pass
@@ -83,14 +83,14 @@ def test_debug_yes_dryrun_no(mock_configobj, mock_zabbix_agent_config):
     mock_configobj.side_effect = [{}]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     zbx_datacontainer = protobix.DataContainer()
-    zbx_datacontainer.log_level = 4
+    zbx_datacontainer.debug_level = 4
     zbx_datacontainer.data_type = DATA_TYPE
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 4
 
     assert zbx_datacontainer.dryrun is False
-    assert zbx_datacontainer.log_level >= 4
+    assert zbx_datacontainer.debug_level >= 4
 
     ''' Send data to zabbix '''
     # Allow static tests to pass
@@ -121,7 +121,7 @@ def test_debug_no_dryrun_yes(mock_configobj, mock_zabbix_agent_config):
     assert len(zbx_datacontainer.items_list) == 4
 
     assert zbx_datacontainer.dryrun is True
-    assert zbx_datacontainer.log_level < 4
+    assert zbx_datacontainer.debug_level < 4
 
     ''' Send data to zabbix '''
     results_list = zbx_datacontainer.send()
@@ -140,13 +140,13 @@ def test_debug_yes_dryrun_yes(mock_configobj, mock_zabbix_agent_config):
     zbx_datacontainer = protobix.DataContainer()
     zbx_datacontainer.data_type = DATA_TYPE
     zbx_datacontainer.dryrun = True
-    zbx_datacontainer.log_level = 4
+    zbx_datacontainer.debug_level = 4
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA)
     assert len(zbx_datacontainer.items_list) == 4
 
     assert zbx_datacontainer.dryrun is True
-    assert zbx_datacontainer.log_level >= 4
+    assert zbx_datacontainer.debug_level >= 4
 
     ''' Send data to zabbix '''
     results_list = zbx_datacontainer.send()

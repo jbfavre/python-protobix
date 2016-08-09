@@ -81,13 +81,13 @@ PAYLOAD = {
     }
 }
 
-def long_run(data_type, log_level):
+def long_run(data_type, debug_level):
     """
     Generic long running process simulator
     Used by tests below
     """
     zbx_container = protobix.DataContainer(
-        log_level = log_level,
+        debug_level = debug_level,
     )
     run=1
     max_run=1000
