@@ -25,7 +25,7 @@ class DataContainer(SenderProtocol):
                  zbx_file='/etc/zabbix/zabbix_agentd.conf',
                  zbx_host=None,
                  zbx_port=None,
-                 log_level=None,
+                 debug_level=None,
                  log_output=None,
                  dryrun=False,
                  logger=None):
@@ -40,8 +40,8 @@ class DataContainer(SenderProtocol):
             'data_type': None
         }
         # Override default values with the ones provided
-        if log_level:
-            self.log_level = log_level
+        if debug_level:
+            self.debug_level = debug_level
         if log_output != None:
             self._zbx_config.log_file = log_output
         if zbx_host:
@@ -125,7 +125,7 @@ class DataContainer(SenderProtocol):
     def send(self):
         results_list = []
         try:
-            if self.log_level >= 4:
+            if self.debug_level >= 4:
                 # If debug mode enabled Sent one item at a time
                 for item in self._items_list:
                     result = self._send_common(item)
@@ -154,7 +154,7 @@ class DataContainer(SenderProtocol):
         if self.logger:
             output_key = '(bulk)'
             output_item = '(bulk)'
-            if self.log_level >= 4:
+            if self.debug_level >= 4:
                 output_key = item['key']
                 output_item = item['value']
             self.logger.info(

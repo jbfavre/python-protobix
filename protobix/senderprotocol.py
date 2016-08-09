@@ -66,11 +66,11 @@ class SenderProtocol(object):
             raise ValueError('dryrun parameter requires boolean')
 
     @property
-    def log_level(self):
+    def debug_level(self):
         return self._zbx_config.debug_level
 
-    @log_level.setter
-    def log_level(self, value):
+    @debug_level.setter
+    def debug_level(self, value):
         self._zbx_config.debug_level = value
 
     @property

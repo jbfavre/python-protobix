@@ -1,4 +1,5 @@
 import argparse
+from argparse import RawTextHelpFormatter
 import socket
 import sys
 import traceback
@@ -28,6 +29,7 @@ class SampleProbe(object):
         # Parse the script arguments
         parser = argparse.ArgumentParser(
             usage='%(prog)s [options]',
+            formatter_class=RawTextHelpFormatter,
             description='A Protobix probe to monitor XXX with Zabbix',
             epilog='Protobix - copyright 2016 - Jean Baptiste Favre (www.jbfavre.org)'
         )
@@ -36,49 +38,101 @@ class SampleProbe(object):
         probe_mode.add_argument(
             '--update-items', action='store_true',
             dest='update', default=False,
-            help='Get & send items to Zabbix. This is the default '
-                 'behaviour even if option is not specified'
+            help="Get & send items to Zabbix.\n"
+                 "This is the default behaviour"
         )
         probe_mode.add_argument(
             '--discovery', action='store_true',
             dest='discovery', default=False,
-            help='If specified, will perform Zabbix Low Level '
-                 'Discovery on Hadoop Cloudera Manager API. '
-                 'Default is to get & send items'
+            help="If specified, will perform Zabbix Low Level Discovery."
         )
         # Common options
         common = parser.add_argument_group('Common options')
         common.add_argument(
-            '-c', '--config', dest='config_file',
-            help='Probe config file location. Can be either absolute or relative path'
-        )
-        common.add_argument(
             '-d', '--dryrun', action='store_true', default=False,
-            help='Do not send anything to Zabbix. Usefull to debug with --debug option'
+            help="Do not send anything to Zabbix. Usefull to debug with\n"
+                 "--verbose option"
         )
         common.add_argument(
-            '-D', '--debug', action='store_true', default=False,
-            help='Enable debug mode. This will prevent bulk send '
-                 'operations and force sending items one after the '
-                 'other, displaying result for each one'
+            '-v', action='count', default=0, dest='debug_level',
+            help="Enable verbose mode. Is used to setup logging level.\n"
+                 "Specifying 4 or more 'v' (-vvvv) enables Debug. Items are then\n"
+                 "sent one after the other instead of bulk"
         )
-        # Zabbix specific options
-        zabbix = parser.add_argument_group('Zabbix specific options')
-        zabbix.add_argument(
+        # Protobix specific options
+        protobix = parser.add_argument_group('Protobix specific options')
+        protobix.add_argument(
             '-z', '--zabbix-server', default='127.0.0.1',
-            help='The hostname of Zabbix server or '
-                 'proxy, default is 127.0.0.1.'
+            help="Hostname or IP address of Zabbix server. If a host is\n"
+                 "monitored by a proxy, proxy hostname or IP address\n"
+                 "should be used instead. When used together with\n"
+                 "--config, overrides the first entry of ServerActive\n"
+                 "parameter specified in agentd configuration file."
         )
-        zabbix.add_argument(
+        protobix.add_argument(
             '-p', '--zabbix-port', default=10051, type=int,
-            help='The port on which the Zabbix server or '
-                 'proxy is running, default is 10051'
+            help="Specify port number of Zabbix server trapper running on\n"
+                 "the server. Default is 10051. When used together with \n"
+                 "--config, overrides the port of first entry of\n"
+                 "ServerActive parameter specified in agentd configuration\n"
+                 "file."
+        )
+        protobix.add_argument(
+            '-c', '--config', dest='config_file',
+            help="Use config-file. Zabbix sender reads server details from\n"
+                 "the agentd configuration file. By default Protobix reads\n"
+                 "`/etc/zabbix/zabbix_agentd.conf`.\n"
+                 "Absolute path should be specified."
+        )
+        protobix.add_argument(
+            '--tls-connect', choices=['unencrypted', 'psk', 'cert'],
+            help="How to connect to server or proxy. Values:\n"
+                 "unencrypted connect without encryption\n"
+                 "psk connect using TLS and a pre-shared key\n"
+                 "cert connect using TLS and a certificate."
+        )
+        protobix.add_argument(
+            '--tls-ca-file',
+            help="Full pathname of a file containing the top-level CA(s)\n"
+                 "certificates for peer certificate verification."
+        )
+        protobix.add_argument(
+            '--tls-cert-file',
+            help="Full pathname of a file containing the certificate or\n"
+                 "certificate chain."
+        )
+        protobix.add_argument(
+            '--tls-key-file',
+            help="Full pathname of a file containing the private key."
+        )
+        protobix.add_argument(
+            '--tls-crl-file',
+            help="Full pathname of a file containing revoked certificates."
+        )
+        protobix.add_argument(
+            '--tls-server-cert-issuer',
+            help="Allowed server certificate issuer."
+        )
+        protobix.add_argument(
+            '--tls-server-cert-subject',
+            help="Allowed server certificate subject."
+        )
+        # TLS PSK is not implemented in Python
+        # https://bugs.python.org/issue19084
+        # Following options are not implemented
+        protobix.add_argument(
+            '--tls-psk-identity',
+            help="PSK-identity string."
+        )
+        protobix.add_argument(
+            '--tls-psk-file',
+            help="Full pathname of a file containing the pre-shared key."
         )
         # Probe specific options
         parser = self._parse_probe_args(parser)
         return parser.parse_args(args)
 
-    def _setup_logging(self, log_type, log_level, log_file):
+    def _setup_logging(self, log_type, debug_level, log_file):
         logger = logging.getLogger(self.__class__.__name__)
         logger.handlers = []
         common_log_format = '[%(name)s:%(levelname)s] %(message)s'
@@ -117,7 +171,7 @@ class SampleProbe(object):
             syslog_handler.setFormatter(log_formatter)
             logger.addHandler(syslog_handler)
         logger.setLevel(
-            self.LOG_LEVEL[log_level]
+            self.LOG_LEVEL[debug_level]
         )
         return logger
 
@@ -126,7 +180,7 @@ class SampleProbe(object):
             zbx_file=self.options.config_file,
             zbx_host=self.options.zabbix_server,
             zbx_port=int(self.options.zabbix_port),
-            log_level=4 if self.options.debug else None,
+            debug_level=self.options.debug_level,
             dryrun=self.options.dryrun,
             logger=self.logger
         )
@@ -154,6 +208,7 @@ class SampleProbe(object):
         if isinstance(options, list):
             args = options
         self.options = self._parse_args(args)
+        self.options.debug_level = min([4, self.options.debug_level])
         self.options.probe_mode = 'update'
         if self.options.update is True and self.options.discovery is True:
             raise ValueError(
@@ -171,7 +226,7 @@ class SampleProbe(object):
         # we need Zabbix configuration to know how to log
         self.logger = self._setup_logging(
             zbx_container.log_type,
-            zbx_container.log_level,
+            zbx_container.debug_level,
             zbx_container.log_file
         )
         zbx_container.logger = self.logger
