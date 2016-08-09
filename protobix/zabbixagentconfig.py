@@ -24,6 +24,8 @@ class ZabbixAgentConfig(object):
             'TLSKeyFile': None,
             'TLSServerCertIssuer': None,
             'TLSServerCertSubject': None,
+            'TLSPSKIdentity': None,
+            'TLSPSKFile': None,
         }
 
         # list_values=False argument below is needed because of potential
@@ -87,12 +89,12 @@ class ZabbixAgentConfig(object):
         if 'TLSConnect' in tmp_config:
             self.tls_connect = tmp_config['TLSConnect']
 
-        if self.tls_connect and self.tls_connect != 'unencrypted':
+        if self.tls_connect == 'cert':
             if 'TLSCertFile' in tmp_config and 'TLSKeyFile' in tmp_config:
                     self.tls_cert_file = tmp_config['TLSCertFile']
                     self.tls_key_file = tmp_config['TLSKeyFile']
             else:
-                raise ValueError('TLSConnect is enabled. TLSCertFile and TLSKeyFile are mandatory')
+                raise ValueError('TLSConnect is cert. TLSCertFile and TLSKeyFile are mandatory')
             if 'TLSCAFile' in tmp_config:
                 self.tls_ca_file = tmp_config['TLSCAFile']
             if 'TLSCRLFile' in tmp_config:
@@ -101,6 +103,13 @@ class ZabbixAgentConfig(object):
                 self.tls_server_cert_issuer = tmp_config['TLSServerCertIssuer']
             if 'TLSServerCertSubject' in tmp_config:
                 self.tls_server_cert_subject = tmp_config['TLSServerCertSubject']
+
+        if self.tls_connect == 'psk':
+            if 'TLSPSKIdentity' in tmp_config and 'TLSPSKFile' in tmp_config:
+                self.tls_psk_identity = tmp_config['TLSPSKIdentity']
+                self.tls_psk_file = tmp_config['TLSPSKFile']
+            else:
+                raise ValueError('TLSConnect is psk. TLSPSKIdentity and TLSPSKFile are mandatory')
 
     @property
     def server_active(self):
@@ -184,12 +193,10 @@ class ZabbixAgentConfig(object):
 
     @tls_connect.setter
     def tls_connect(self, value):
-        if value in ['unencrypted', 'cert']:
+        if value in ['unencrypted', 'psk', 'cert']:
             self.config['TLSConnect'] = value
-        elif value == 'psk':
-            raise NotImplementedError('TLSConnect must be one of [unencrypted,cert] (psk is not implemented)')
         else:
-            raise ValueError('TLSConnect must be one of [unencrypted,cert] (psk is not implemented)')
+            raise ValueError('TLSConnect must be one of [unencrypted,psk,cert]')
 
     @property
     def tls_ca_file(self):
@@ -244,3 +251,21 @@ class ZabbixAgentConfig(object):
     def tls_server_cert_subject(self, value):
         if value:
             self.config['TLSServerCertSubject'] = value
+
+    @property
+    def tls_psk_identity(self):
+        return self.config['TLSPSKIdentity']
+
+    @tls_psk_identity.setter
+    def tls_psk_identity(self, value):
+        if value:
+            self.config['TLSPSKIdentity'] = value
+
+    @property
+    def tls_psk_file(self):
+        return self.config['TLSPSKFile']
+
+    @tls_psk_file.setter
+    def tls_psk_file(self, value):
+        if value:
+            self.config['TLSPSKFile'] = value

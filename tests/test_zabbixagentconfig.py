@@ -412,7 +412,7 @@ def test_tls_connect_cert_tls_cert_key_missing(mock_configobj):
     ]
     with pytest.raises(ValueError) as err:
         protobix.ZabbixAgentConfig('TLSConnect_cert_without_TLSCertFile_TLSKeyFile')
-    assert str(err.value) == 'TLSConnect is enabled. TLSCertFile and TLSKeyFile are mandatory'
+    assert str(err.value) == 'TLSConnect is cert. TLSCertFile and TLSKeyFile are mandatory'
 
 @mock.patch('configobj.ConfigObj')
 def test_tls_connect_cert_tls_cert_key_custom(mock_configobj):
@@ -473,7 +473,7 @@ def test_tls_connect_invalid(mock_configobj):
     ]
     with pytest.raises(ValueError) as err:
         protobix.ZabbixAgentConfig('TLSConnect_invalid')
-    assert str(err.value) == 'TLSConnect must be one of [unencrypted,cert] (psk is not implemented)'
+    assert str(err.value) == 'TLSConnect must be one of [unencrypted,psk,cert]'
 
 @mock.patch('configobj.ConfigObj')
 def test_tls_connect_psk(mock_configobj):
@@ -486,6 +486,23 @@ def test_tls_connect_psk(mock_configobj):
             'TLSConnect': 'psk'
         }
     ]
-    with pytest.raises(NotImplementedError) as err:
+    with pytest.raises(ValueError) as err:
         protobix.ZabbixAgentConfig('TLSConnect_psk')
-    assert str(err.value) == 'TLSConnect must be one of [unencrypted,cert] (psk is not implemented)'
+    assert str(err.value) == 'TLSConnect is psk. TLSPSKIdentity and TLSPSKFile are mandatory'
+
+@mock.patch('configobj.ConfigObj')
+def test_tls_connect_psk(mock_configobj):
+    """
+    TLSConnect: 'psk'
+    Should raise a NotImplementedError with appropriate message
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'psk',
+            'TLSPSKIdentity': 'TLS PSK Zabbix Identity',
+            'TLSPSKFile': '/tmp/psk.file',
+        }
+    ]
+    zbx_config = protobix.ZabbixAgentConfig('TLSConnect_psk')
+    assert zbx_config.tls_psk_identity == 'TLS PSK Zabbix Identity'
+    assert zbx_config.tls_psk_file == '/tmp/psk.file'
