@@ -476,7 +476,7 @@ def test_tls_connect_invalid(mock_configobj):
     assert str(err.value) == 'TLSConnect must be one of [unencrypted,psk,cert]'
 
 @mock.patch('configobj.ConfigObj')
-def test_tls_connect_psk(mock_configobj):
+def test_tls_connect_psk_tls_msk_identity_file_missing(mock_configobj):
     """
     TLSConnect: 'psk'
     Should raise a NotImplementedError with appropriate message
