@@ -338,7 +338,7 @@ def test_debug_level_invalid_lower_than_0(mock_configobj):
     ]
     with pytest.raises(ValueError) as err:
         protobix.ZabbixAgentConfig('zabbix_config_with_invalid_debugLevel')
-    assert str(err.value) == 'DebugLevel must be between 0 and 5'
+    assert str(err.value) == 'DebugLevel must be between 0 and 5, -1 provided'
 
 @mock.patch('configobj.ConfigObj')
 def test_debug_level_invalid_greater_than_5(mock_configobj):
@@ -354,7 +354,7 @@ def test_debug_level_invalid_greater_than_5(mock_configobj):
     ]
     with pytest.raises(ValueError) as err:
         protobix.ZabbixAgentConfig('zabbix_config_with_invalid_debugLevel')
-    assert str(err.value) == 'DebugLevel must be between 0 and 5'
+    assert str(err.value) == 'DebugLevel must be between 0 and 5, 10 provided'
 
 @mock.patch('configobj.ConfigObj')
 def test_tls_default_config(mock_configobj):

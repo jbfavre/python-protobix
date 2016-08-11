@@ -73,12 +73,12 @@ def test_default_configuration():
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args([])
     assert pbx_test_probe.options.config_file is None
-    assert pbx_test_probe.options.debug_level == 0
+    assert pbx_test_probe.options.debug_level is None
     assert pbx_test_probe.options.discovery is False
     assert pbx_test_probe.options.dryrun is False
     assert pbx_test_probe.options.update is False
-    assert pbx_test_probe.options.zabbix_port == 10051
-    assert pbx_test_probe.options.zabbix_server == '127.0.0.1'
+    assert pbx_test_probe.options.server_port is None
+    assert pbx_test_probe.options.server_active is None
 
 def test_force_update():
     """
@@ -112,9 +112,10 @@ def test_force_verbosity():
     """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['-vvvv'])
+    pbx_config = pbx_test_probe._init_config()
     assert pbx_test_probe.options.debug_level == 4
-    pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['-vv'])
+    pbx_config = pbx_test_probe._init_config()
     assert pbx_test_probe.options.debug_level == 2
 
 def test_force_dryrun():
@@ -129,6 +130,117 @@ def test_force_dryrun():
     result = pbx_test_probe.run(['-d'])
     assert result == 0
     assert pbx_test_probe.options.dryrun is True
+
+def test_command_line_option_zabbix_server():
+    """
+    Check -z & --zabbix-server argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--zabbix-server', '192.168.0.1'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.server_active == '192.168.0.1'
+    pbx_test_probe.options = pbx_test_probe._parse_args(['-z', '192.168.0.2'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.server_active == '192.168.0.2'
+
+def test_command_line_option_port():
+    """
+    Check -p & --port argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--port', '10052'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.server_port == 10052
+    pbx_test_probe.options = pbx_test_probe._parse_args(['-p', '10060'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.server_port == 10060
+
+def test_command_line_option_tls_cert_file():
+    """
+    Check --tls-cert-file argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-cert-file', '/tmp/test_file.crt'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_cert_file == '/tmp/test_file.crt'
+
+def test_command_line_option_tls_key_file():
+    """
+    Check --tls-key-file argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-key-file', '/tmp/test_file.key'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_key_file == '/tmp/test_file.key'
+
+def test_command_line_option_tls_ca_file():
+    """
+    Check --tls-ca-file argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-ca-file', '/tmp/test_ca_file.crt'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_ca_file == '/tmp/test_ca_file.crt'
+
+def test_command_line_option_tls_crl_file():
+    """
+    Check --tls-crl-file argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-crl-file', '/tmp/test_file.crl'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_crl_file == '/tmp/test_file.crl'
+
+def test_command_line_option_tls_psk_file():
+    """
+    Check --tls-psk-file argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-psk-file', '/tmp/test_file.psk'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_psk_file == '/tmp/test_file.psk'
+
+def test_command_line_option_tls_psk_identity():
+    """
+    Check --tls-psk-identity argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-psk-identity', 'Zabbix TLS/PSK identity'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_psk_identity == 'Zabbix TLS/PSK identity'
+
+def test_command_line_option_tls_server_cert_issuer():
+    """
+    Check --tls-server-cert-issuer argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-server-cert-issuer', 'Zabbix TLS cert issuer'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_server_cert_issuer == 'Zabbix TLS cert issuer'
+
+def test_command_line_option_tls_server_cert_subject():
+    """
+    Check --tls-server-cert-subject argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-server-cert-subject', 'Zabbix TLS cert subject'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_server_cert_subject == 'Zabbix TLS cert subject'
+
+def test_command_line_option_tls_connect():
+    """
+    Check --tls-connect argument.
+    """
+    pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-connect', 'cert'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_connect == 'cert'
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-connect', 'psk'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_connect == 'psk'
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-connect', 'unencrypted'])
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.tls_connect == 'unencrypted'
 
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')

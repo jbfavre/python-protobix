@@ -116,7 +116,7 @@ def test_debug_invalid_lower_than_0(mock_configobj):
     zbx_senderprotocol = protobix.SenderProtocol()
     with pytest.raises(ValueError) as err:
         zbx_senderprotocol.debug_level = -1
-    assert str(err.value) == 'DebugLevel must be between 0 and 5'
+    assert str(err.value) == 'DebugLevel must be between 0 and 5, -1 provided'
     assert zbx_senderprotocol.debug_level == 3
 
 @mock.patch('configobj.ConfigObj')
@@ -128,7 +128,7 @@ def test_debug_invalid_greater_than_5(mock_configobj):
     zbx_senderprotocol = protobix.SenderProtocol()
     with pytest.raises(ValueError) as err:
         zbx_senderprotocol.debug_level = 10
-    assert str(err.value) == 'DebugLevel must be between 0 and 5'
+    assert str(err.value) == 'DebugLevel must be between 0 and 5, 10 provided'
     assert zbx_senderprotocol.debug_level == 3
 
 @mock.patch('configobj.ConfigObj')
