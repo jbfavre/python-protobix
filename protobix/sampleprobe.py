@@ -7,6 +7,7 @@ import logging
 from logging import handlers
 
 from .datacontainer import DataContainer
+from .zabbixagentconfig import ZabbixAgentConfig
 
 class SampleProbe(object):
 
@@ -36,25 +37,22 @@ class SampleProbe(object):
         # Probe operation mode
         probe_mode = parser.add_argument_group('Probe commands')
         probe_mode.add_argument(
-            '--update-items', action='store_true',
-            dest='update', default=False,
-            help="Get & send items to Zabbix.\n"
-                 "This is the default behaviour"
+            '--update-items', action='store_true', dest='update',
+            help="Get & send items to Zabbix.\nThis is the default behaviour"
         )
         probe_mode.add_argument(
             '--discovery', action='store_true',
-            dest='discovery', default=False,
             help="If specified, will perform Zabbix Low Level Discovery."
         )
         # Common options
         common = parser.add_argument_group('Common options')
         common.add_argument(
-            '-d', '--dryrun', action='store_true', default=False,
+            '-d', '--dryrun', action='store_true',
             help="Do not send anything to Zabbix. Usefull to debug with\n"
                  "--verbose option"
         )
         common.add_argument(
-            '-v', action='count', default=0, dest='debug_level',
+            '-v', action='count', dest='debug_level',
             help="Enable verbose mode. Is used to setup logging level.\n"
                  "Specifying 4 or more 'v' (-vvvv) enables Debug. Items are then\n"
                  "sent one after the other instead of bulk"
@@ -62,7 +60,7 @@ class SampleProbe(object):
         # Protobix specific options
         protobix = parser.add_argument_group('Protobix specific options')
         protobix.add_argument(
-            '-z', '--zabbix-server', default='127.0.0.1',
+            '-z', '--zabbix-server', dest='server_active',
             help="Hostname or IP address of Zabbix server. If a host is\n"
                  "monitored by a proxy, proxy hostname or IP address\n"
                  "should be used instead. When used together with\n"
@@ -70,7 +68,7 @@ class SampleProbe(object):
                  "parameter specified in agentd configuration file."
         )
         protobix.add_argument(
-            '-p', '--zabbix-port', default=10051, type=int,
+            '-p', '--port', dest='server_port',
             help="Specify port number of Zabbix server trapper running on\n"
                  "the server. Default is 10051. When used together with \n"
                  "--config, overrides the port of first entry of\n"
@@ -130,7 +128,19 @@ class SampleProbe(object):
         )
         # Probe specific options
         parser = self._parse_probe_args(parser)
-        return parser.parse_args(args)
+        # Analyze provided command line options
+        options = parser.parse_args(args)
+
+        # Check that we don't have both '--update' & '--discovery' options
+        options.probe_mode = 'update'
+        if options.update is True and options.discovery is True:
+            raise ValueError(
+                'You can\' use both --update-items & --discovery options'
+            )
+        elif options.discovery is True:
+            options.probe_mode = 'discovery'
+
+        return options
 
     def _setup_logging(self, log_type, debug_level, log_file):
         logger = logging.getLogger(self.__class__.__name__)
@@ -175,15 +185,56 @@ class SampleProbe(object):
         )
         return logger
 
-    def _init_container(self):
-        return DataContainer(
-            zbx_file=self.options.config_file,
-            zbx_host=self.options.zabbix_server,
-            zbx_port=int(self.options.zabbix_port),
-            debug_level=self.options.debug_level,
-            dryrun=self.options.dryrun,
-            logger=self.logger
-        )
+    def _init_config(self):
+        # Get config from ZabbixAgentConfig
+        zbx_config = ZabbixAgentConfig(self.options.config_file)
+
+        # And override it with provided command line options
+        if self.options.server_active:
+            zbx_config.server_active = self.options.server_active
+
+        if self.options.server_port:
+            zbx_config.server_port = int(self.options.server_port)
+
+        # tls_connect 'cert' needed options
+        if self.options.tls_cert_file:
+            zbx_config.tls_cert_file = self.options.tls_cert_file
+
+        if self.options.tls_key_file:
+            zbx_config.tls_key_file = self.options.tls_key_file
+
+        if self.options.tls_ca_file:
+            zbx_config.tls_ca_file = self.options.tls_ca_file
+
+        if self.options.tls_crl_file:
+            zbx_config.tls_crl_file = self.options.tls_crl_file
+
+        # tls_connect 'psk' needed options
+        if self.options.tls_psk_file:
+            zbx_config.tls_psk_file = self.options.tls_psk_file
+
+        if self.options.tls_psk_identity:
+            zbx_config.tls_psk_identity = self.options.tls_psk_identity
+
+        if self.options.tls_server_cert_issuer:
+            zbx_config.tls_server_cert_issuer = self.options.tls_server_cert_issuer
+
+        if self.options.tls_server_cert_subject:
+            zbx_config.tls_server_cert_subject = self.options.tls_server_cert_subject
+
+        # Set tls_connect last because it'll check above options
+        # to ensure a coherent config set
+        if self.options.tls_connect:
+            zbx_config.tls_connect = self.options.tls_connect
+
+        if self.options.debug_level:
+            zbx_config.debug_level = self.options.debug_level
+
+        zbx_config.dryrun = False
+        if self.options.dryrun:
+            zbx_config.dryrun = self.options.dryrun
+
+        return zbx_config
 
     def _get_metrics(self):
         # mandatory method
@@ -207,19 +258,15 @@ class SampleProbe(object):
         if isinstance(options, list):
             args = options
         self.options = self._parse_args(args)
-        self.options.debug_level = min([4, self.options.debug_level])
-        self.options.probe_mode = 'update'
-        if self.options.update is True and self.options.discovery is True:
-            raise ValueError(
-                'You can\' use both --update-items & --discovery options'
-            )
-        elif self.options.discovery is True:
-            self.options.probe_mode = 'discovery'
+        self.zbx_config = self._init_config()
 
         # Datacontainer init
-        zbx_container = self._init_container()
-        # Get back hostname from DataContainer
-        self.hostname = zbx_container.hostname
+        zbx_container = DataContainer(
+            config = self.zbx_config,
+            logger=self.logger
+        )
+        # Get back hostname from ZabbixAgentConfig
+        self.hostname = self.zbx_config.hostname
 
         # logger init
         # we need Zabbix configuration to know how to log
