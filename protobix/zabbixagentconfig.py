@@ -167,7 +167,7 @@ class ZabbixAgentConfig(object):
         if isinstance(value, int) and value >= 0 and value <= 5:
             self.config['DebugLevel'] = value
         else:
-            raise ValueError('DebugLevel must be between 0 and 5')
+            raise ValueError('DebugLevel must be between 0 and 5, ' + str(value) + ' provided')
 
     @property
     def timeout(self):

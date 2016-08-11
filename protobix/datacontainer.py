@@ -20,30 +20,15 @@ class DataContainer(SenderProtocol):
     _items_list = []
     _result = []
 
-    def __init__(self, data_type=None,
-                 zbx_file=None,
-                 zbx_host=None,
-                 zbx_port=None,
-                 debug_level=None,
-                 log_output=None,
-                 dryrun=False,
+    def __init__(self,
+                 config=None,
                  logger=None):
 
         # Loads config from zabbix_agentd file
         # If no file, it uses the default _config as configuration
-        self._config = ZabbixAgentConfig(zbx_file)
-        # Override default values with the ones provided
-        if debug_level:
-            self.debug_level = debug_level
-        if log_output is not None:
-            self._config.log_file = log_output
-        if zbx_host:
-            self._config.server_active = zbx_host
-        if zbx_port:
-            self._config.server_port = zbx_port
-        if data_type:
-            self.data_type = data_type
-        self._config.dryrun = dryrun
+        self._config = config
+        if config is None:
+            self._config = ZabbixAgentConfig()
         self._logger = logger
         self._items_list = []
         self.socket = None
