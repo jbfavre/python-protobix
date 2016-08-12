@@ -14,7 +14,7 @@ class PyTest(TestCommand):
 
     def run(self):
         import pytest
-        pytest_options = '-v'
+        pytest_options = '-v -k-_need_backend'
         coverage_options = ' --cov protobix --cov-report term-missing'
         pylint_options = ' --pylint  --pylint-error-types=WEF'
         pylint_options = ''
