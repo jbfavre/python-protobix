@@ -66,10 +66,10 @@ class ProtobixTestProbe(protobix.SampleProbe):
 class ProtobixTestProbe2(protobix.SampleProbe):
     __version__="0.1.2"
 
+"""
+Check default configuration of the sample probe
+"""
 def test_default_configuration():
-    """
-    Check default configuration of the sample probe
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args([])
     assert pbx_test_probe.options.config_file is None
@@ -80,36 +80,40 @@ def test_default_configuration():
     assert pbx_test_probe.options.server_port is None
     assert pbx_test_probe.options.server_active is None
 
-def test_force_update():
-    """
-    Check --update-items argument
-    """
+"""
+Check --update-items argument
+"""
+def test_command_line_option_update_items():
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--update-items'])
+    pbx_config = pbx_test_probe._init_config()
     assert pbx_test_probe.options.discovery is False
     assert pbx_test_probe.options.update is True
+    assert pbx_test_probe.options.probe_mode == 'update'
 
-def test_force_discovery():
-    """
-    Check --discovery argument
-    """
+"""
+Check --discovery argument
+"""
+def test_command_line_option_discovery():
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--discovery'])
+    pbx_config = pbx_test_probe._init_config()
     assert pbx_test_probe.options.discovery is True
     assert pbx_test_probe.options.update is False
+    assert pbx_test_probe.options.probe_mode == 'discovery'
 
+"""
+Check exception when providing both --update-items & --discovery arguments
+"""
 def test_force_both_discovery_and_update():
-    """
-    Check that we can't use both --update-items & --discovery arguments
-    """
     pbx_test_probe = ProtobixTestProbe()
     with pytest.raises(ValueError):
       result = pbx_test_probe.run(['--discovery', '--update-items'])
 
+"""
+Check -v argument. Used to set logger log level
+"""
 def test_force_verbosity():
-    """
-    Check -v argument. Used to set logger log level
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['-vvvv'])
     pbx_config = pbx_test_probe._init_config()
@@ -117,12 +121,15 @@ def test_force_verbosity():
     pbx_test_probe.options = pbx_test_probe._parse_args(['-vv'])
     pbx_config = pbx_test_probe._init_config()
     assert pbx_test_probe.options.debug_level == 2
+    pbx_test_probe.options = pbx_test_probe._parse_args(['-vvvvvvvvv'])
+    assert pbx_test_probe.options.debug_level == 9
+    pbx_config = pbx_test_probe._init_config()
+    assert pbx_config.debug_level == 4
 
+"""
+Check -d & --dryrun argument.
+"""
 def test_force_dryrun():
-    """
-    Check -d & --dryrun argument. Data are still collected but
-    not sent to Zabbix
-    """
     pbx_test_probe = ProtobixTestProbe()
     result = pbx_test_probe.run(['--dryrun'])
     assert result == 0
@@ -131,10 +138,10 @@ def test_force_dryrun():
     assert result == 0
     assert pbx_test_probe.options.dryrun is True
 
+"""
+Check -z & --zabbix-server argument.
+"""
 def test_command_line_option_zabbix_server():
-    """
-    Check -z & --zabbix-server argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--zabbix-server', '192.168.0.1'])
     pbx_config = pbx_test_probe._init_config()
@@ -143,10 +150,10 @@ def test_command_line_option_zabbix_server():
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.server_active == '192.168.0.2'
 
+"""
+Check -p & --port argument.
+"""
 def test_command_line_option_port():
-    """
-    Check -p & --port argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--port', '10052'])
     pbx_config = pbx_test_probe._init_config()
@@ -155,82 +162,82 @@ def test_command_line_option_port():
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.server_port == 10060
 
+"""
+Check --tls-cert-file argument.
+"""
 def test_command_line_option_tls_cert_file():
-    """
-    Check --tls-cert-file argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-cert-file', '/tmp/test_file.crt'])
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.tls_cert_file == '/tmp/test_file.crt'
 
+"""
+Check --tls-key-file argument.
+"""
 def test_command_line_option_tls_key_file():
-    """
-    Check --tls-key-file argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-key-file', '/tmp/test_file.key'])
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.tls_key_file == '/tmp/test_file.key'
 
+"""
+Check --tls-ca-file argument.
+"""
 def test_command_line_option_tls_ca_file():
-    """
-    Check --tls-ca-file argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-ca-file', '/tmp/test_ca_file.crt'])
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.tls_ca_file == '/tmp/test_ca_file.crt'
 
+"""
+Check --tls-crl-file argument.
+"""
 def test_command_line_option_tls_crl_file():
-    """
-    Check --tls-crl-file argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-crl-file', '/tmp/test_file.crl'])
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.tls_crl_file == '/tmp/test_file.crl'
 
+"""
+Check --tls-psk-file argument.
+"""
 def test_command_line_option_tls_psk_file():
-    """
-    Check --tls-psk-file argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-psk-file', '/tmp/test_file.psk'])
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.tls_psk_file == '/tmp/test_file.psk'
 
+"""
+Check --tls-psk-identity argument.
+"""
 def test_command_line_option_tls_psk_identity():
-    """
-    Check --tls-psk-identity argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-psk-identity', 'Zabbix TLS/PSK identity'])
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.tls_psk_identity == 'Zabbix TLS/PSK identity'
 
+"""
+Check --tls-server-cert-issuer argument.
+"""
 def test_command_line_option_tls_server_cert_issuer():
-    """
-    Check --tls-server-cert-issuer argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-server-cert-issuer', 'Zabbix TLS cert issuer'])
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.tls_server_cert_issuer == 'Zabbix TLS cert issuer'
 
+"""
+Check --tls-server-cert-subject argument.
+"""
 def test_command_line_option_tls_server_cert_subject():
-    """
-    Check --tls-server-cert-subject argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-server-cert-subject', 'Zabbix TLS cert subject'])
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.tls_server_cert_subject == 'Zabbix TLS cert subject'
 
+"""
+Check --tls-connect argument.
+"""
 def test_command_line_option_tls_connect():
-    """
-    Check --tls-connect argument.
-    """
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe.options = pbx_test_probe._parse_args(['--tls-connect', 'cert'])
     pbx_config = pbx_test_probe._init_config()
@@ -242,12 +249,12 @@ def test_command_line_option_tls_connect():
     pbx_config = pbx_test_probe._init_config()
     assert pbx_config.tls_connect == 'unencrypted'
 
+"""
+Check logger configuration in console mode
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 def test_log_console(mock_configobj, mock_zabbix_agent_config):
-    """
-    Check logger configuration in console mode
-    """
     mock_configobj.side_effect = [{ 'LogType': 'console' }]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe()
@@ -255,12 +262,12 @@ def test_log_console(mock_configobj, mock_zabbix_agent_config):
     assert len(pbx_test_probe.logger.handlers) == 1
     assert isinstance(pbx_test_probe.logger.handlers[0], logging.StreamHandler)
 
+"""
+Check logger configuration in file mode
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 def test_log_file(mock_configobj, mock_zabbix_agent_config):
-    """
-    Check logger configuration in file mode
-    """
     mock_configobj.side_effect = [{ 'LogType': 'file' }]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe()
@@ -268,14 +275,14 @@ def test_log_file(mock_configobj, mock_zabbix_agent_config):
     assert len(pbx_test_probe.logger.handlers) == 1
     assert isinstance(pbx_test_probe.logger.handlers[0], logging.FileHandler)
 
+"""
+Check logger configuration in file mode with invalid file
+Here, invalid means that id doesn't exists, or we don't have
+permission to write into
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 def test_log_file_invalid(mock_configobj, mock_zabbix_agent_config):
-    """
-    Check logger configuration in file mode with invalid file
-    Here, invalid means that id doesn't exists, or we don't have
-    permission to write into
-    """
     mock_configobj.side_effect = [
         {
             'LogType': 'file',
@@ -287,12 +294,12 @@ def test_log_file_invalid(mock_configobj, mock_zabbix_agent_config):
     with pytest.raises(IOError):
         pbx_test_probe.run([])
 
+"""
+Check logger configuration in system (syslog) mode
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 def test_log_syslog(mock_configobj, mock_zabbix_agent_config):
-    """
-    Check logger configuration in system (syslog) mode
-    """
     mock_configobj.side_effect = [{ 'LogType': 'system' }]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe()
@@ -300,36 +307,36 @@ def test_log_syslog(mock_configobj, mock_zabbix_agent_config):
     assert len(pbx_test_probe.logger.handlers) == 1
     assert isinstance(pbx_test_probe.logger.handlers[0], logging.handlers.SysLogHandler)
 
+"""
+Check a custom probe without _get_metrics method.
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 def test_not_implemented_get_metrics(mock_configobj, mock_zabbix_agent_config):
-    """
-    Check a custom probe without _get_metrics method.
-    """
     mock_configobj.side_effect = [{}]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
     with pytest.raises(NotImplementedError):
         pbx_test_probe.run([])
 
+"""
+Check a custom probe without _get_discovery method.
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 def test_not_implemented_get_discovery(mock_configobj, mock_zabbix_agent_config):
-    """
-    Check a custom probe without _get_discovery method.
-    """
     mock_configobj.side_effect = [{}]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
     with pytest.raises(NotImplementedError):
         pbx_test_probe.run(['--discovery'])
 
+"""
+Check that sample probe correctly catches exception from _init_probe
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 def test_init_probe_exception(mock_configobj, mock_zabbix_agent_config):
-    """
-    Check that sample probe correctly catches exception from _init_probe
-    """
     mock_configobj.side_effect = [{}]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
@@ -338,12 +345,12 @@ def test_init_probe_exception(mock_configobj, mock_zabbix_agent_config):
         result = pbx_test_probe.run([])
         assert result == 1
 
+"""
+Check that sample probe correctly catches exception from _get_metrics
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 def test_get_metrics_exception(mock_configobj, mock_zabbix_agent_config):
-    """
-    Check that sample probe correctly catches exception from _get_metrics
-    """
     mock_configobj.side_effect = [{}]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
@@ -352,12 +359,12 @@ def test_get_metrics_exception(mock_configobj, mock_zabbix_agent_config):
         result = pbx_test_probe.run([])
         assert result == 2
 
+"""
+Check that sample probe correctly catches exception from _get_discovery
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 def test_get_discovery_exception(mock_configobj, mock_zabbix_agent_config):
-    """
-    Check that sample probe correctly catches exception from _get_discovery
-    """
     mock_configobj.side_effect = [{}]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
@@ -366,13 +373,13 @@ def test_get_discovery_exception(mock_configobj, mock_zabbix_agent_config):
         result = pbx_test_probe.run(['--discovery'])
         assert result == 2
 
+"""
+Check that sample probe correctly catches exception from DataContainer add method
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 @mock.patch('protobix.SampleProbe._get_metrics')
 def test_datacontainer_add_exception(mock_configobj, mock_zabbix_agent_config, mock_get_metrics):
-    """
-    Check that sample probe correctly catches exception from DataContainer add method
-    """
     mock_configobj.side_effect = [{}]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
@@ -382,13 +389,13 @@ def test_datacontainer_add_exception(mock_configobj, mock_zabbix_agent_config, m
         result = pbx_test_probe.run([])
         assert result == 3
 
+"""
+Check that sample probe correctly catches exception from DataContainer send method
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 @mock.patch('protobix.SampleProbe._get_metrics')
 def test_datacontainer_send_exception(mock_configobj, mock_zabbix_agent_config, mock_get_metrics):
-    """
-    Check that sample probe correctly catches exception from DataContainer send method
-    """
     mock_configobj.side_effect = [{}]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
@@ -398,13 +405,13 @@ def test_datacontainer_send_exception(mock_configobj, mock_zabbix_agent_config, 
         result = pbx_test_probe.run([])
         assert result == 4
 
+"""
+Check that sample probe correctly catches socket exception from DataContainer send method
+"""
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 @mock.patch('protobix.SampleProbe._get_metrics')
 def test_datacontainer_send_socket_error(mock_configobj, mock_zabbix_agent_config, mock_get_metrics):
-    """
-    Check that sample probe correctly catches socket exception from DataContainer send method
-    """
     mock_configobj.side_effect = [{}]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
