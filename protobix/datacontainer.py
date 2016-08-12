@@ -19,6 +19,9 @@ class DataContainer(SenderProtocol):
 
     _items_list = []
     _result = []
+    _logger = None
+    _config = None
+    socket = None
 
     def __init__(self,
                  config=None,
@@ -29,29 +32,18 @@ class DataContainer(SenderProtocol):
         self._config = config
         if config is None:
             self._config = ZabbixAgentConfig()
-        self._logger = logger
+        if logger:
+            self._logger = logger
         self._items_list = []
-        self.socket = None
-
-    @property
-    def logger(self):
-        return self._logger
-
-    @logger.setter
-    def logger(self, value):
-        if isinstance(value, logging.Logger):
-            self._logger = value
-        else:
-            if self._logger:
-                self._logger.error('logger requires a logging instance')
-            raise ValueError('logger requires a logging instance')
 
     def add_item(self, host, key, value, clock=None):
         """
-        Add a snigle items into DataContainer
-        Choose relevant format depending on data_type
-        Provides clock information if not present
-        Return nothing
+        Add a single item into DataContainer
+
+        :host: hostname to which item will be linked to
+        :key: item key as defined in Zabbix
+        :value: item value
+        :clock: timestemp as integer. If not provided self.clock()) will be used
         """
         if clock is None:
             clock = self.clock
@@ -70,7 +62,8 @@ class DataContainer(SenderProtocol):
     def add(self, data):
         """
         Add a list of item into the container
-        Returns nothing
+
+        :data: dict of items & value per hostname
         """
         for host in data:
             for key in data[host]:
@@ -111,6 +104,8 @@ class DataContainer(SenderProtocol):
         Common part of sending operations
         Calls SenderProtocol._send_to_zabbix
         Returns result as provided by _handle_response
+
+        :item: either a list or a single item depending on debug_level
         """
         zbx_answer = 0
         if self._config.dryrun is False:
@@ -137,7 +132,6 @@ class DataContainer(SenderProtocol):
     def _reset(self):
         """
         Reset main DataContainer properties
-        Avoid mixing items with LLD
         """
         # Reset DataContainer to default values
         # So that it can be reused
@@ -146,12 +140,14 @@ class DataContainer(SenderProtocol):
 
     def _handle_response(self, zbx_answer):
         """
-        Analyze Zabbix Server response and extract informations from JSON body
+        Analyze Zabbix Server response
         Returns a list with number of:
         * processed items
         * failed items
         * total items
         * time spent
+
+        :zbx_answer: Zabbix server response as JSON object
         """
         if zbx_answer and self.logger:
             self.logger.debug("Zabbix Server response is: [%s]" % zbx_answer)
@@ -172,53 +168,72 @@ class DataContainer(SenderProtocol):
                 self.logger.debug("                                Time: " + result[3])
         return result
 
+    @property
+    def logger(self):
+        """
+        Returns logger instance
+        """
+        return self._logger
+
+    @logger.setter
+    def logger(self, value):
+        """
+        Set logger instance for the class
+        """
+        if isinstance(value, logging.Logger):
+            self._logger = value
+        else:
+            if self._logger:
+                self._logger.error('logger requires a logging instance')
+            raise ValueError('logger requires a logging instance')
+
     # ZabbixAgentConfig getter & setter
     # Avoid using private property _config from outside
     @property
     def hostname(self):
         """
-        Returns Hostname from ZabbixConfigAgent
+        Returns Hostname
         """
         return self._config.hostname
 
     @property
     def log_file(self):
         """
-        Returns LogFile from ZabbixConfigAgent
+        Returns LogFile
         """
         return self._config.log_file
 
     @property
     def log_type(self):
         """
-        Returns LogTyp from ZabbixConfigAgent
+        Returns LogType
         """
         return self._config.log_type
 
     @property
     def dryrun(self):
         """
-        Returns dryrun from ZabbixConfigAgent
+        Returns dryrun
         """
         return self._config.dryrun
 
     @dryrun.setter
     def dryrun(self, value):
         """
-        Set dryrun to ZabbixConfigAgent
+        Set dryrun
         """
         self._config.dryrun = value
 
     @property
     def data_type(self):
         """
-        Returns data_type from ZabbixConfigAgent
+        Returns data_type
         """
         return self._config.dryrun
 
     @dryrun.setter
     def data_type(self, value):
         """
-        Set data_type to ZabbixConfigAgent
+        Set data_type
         """
         self._config.data_type = value
