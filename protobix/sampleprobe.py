@@ -228,6 +228,7 @@ class SampleProbe(object):
             zbx_config.tls_connect = self.options.tls_connect
 
         if self.options.debug_level:
+            self.options.debug_level = min(4, self.options.debug_level)
             zbx_config.debug_level = self.options.debug_level
 
         zbx_config.dryrun = False
