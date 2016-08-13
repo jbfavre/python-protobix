@@ -131,31 +131,7 @@ class SenderProtocol(object):
         ssl_context = None
         # TLS is enabled, let's set it up
         if self._config.tls_connect != 'unencrypted':
-            from ssl import CertificateError, SSLError
-            # Create a SSLContext and configure it
-            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-
-            # If provided, use cert file & key for client authentication
-            if self._config.tls_cert_file and self._config.tls_key_file:
-                ssl_context.load_cert_chain(
-                    self._config.tls_cert_file,
-                    self._config.tls_key_file
-                )
-
-            # If provided, use CA file & enforce server certificate chek
-            if self._config.tls_ca_file:
-                ssl_context.verify_mode = ssl.CERT_REQUIRED
-                ssl_context.load_verify_locations(
-                    cafile=self._config.tls_ca_file
-                )
-
-            ## If provided enforce server cert issuer check
-            #if self._config.tls_server_cert_issuer:
-            #    ssl_context.verify_issuer
-            ## If provided enforce server cert subject check
-            #if self._config.tls_server_cert_issuer:
-            #    ssl_context.verify_issuer
-
+            ssl_context = self._init_ssl(self)
             try:
                 if isinstance(ssl_context, ssl.SSLContext):
                     self.socket = ssl_context.wrap_socket(
@@ -168,3 +144,30 @@ class SenderProtocol(object):
                 raise
 
         return self.socket
+
+    def _init_ssl(self):
+        from ssl import CertificateError, SSLError
+        # Create a SSLContext and configure it
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+
+        # If provided, use cert file & key for client authentication
+        if self._config.tls_cert_file and self._config.tls_key_file:
+            print(ssl_context)
+            ssl_context.load_cert_chain(
+                self._config.tls_cert_file,
+                self._config.tls_key_file
+            )
+
+        # If provided, use CA file & enforce server certificate chek
+        if self._config.tls_ca_file:
+            ssl_context.verify_mode = ssl.CERT_REQUIRED
+            ssl_context.load_verify_locations(
+                cafile=self._config.tls_ca_file
+            )
+
+        ## If provided enforce server cert issuer check
+        #if self._config.tls_server_cert_issuer:
+        #    ssl_context.verify_issuer
+        ## If provided enforce server cert subject check
+        #if self._config.tls_server_cert_issuer:
+        #    ssl_context.verify_issuer
