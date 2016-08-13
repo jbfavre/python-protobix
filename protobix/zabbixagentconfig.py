@@ -94,13 +94,14 @@ class ZabbixAgentConfig(object):
             self.tls_connect = tmp_config['TLSConnect']
 
         if self.tls_connect == 'cert':
-            if 'TLSCertFile' in tmp_config and 'TLSKeyFile' in tmp_config:
+            if 'TLSCertFile' in tmp_config and \
+               'TLSKeyFile' in tmp_config and \
+               'TLSCAFile' in tmp_config:
                     self.tls_cert_file = tmp_config['TLSCertFile']
                     self.tls_key_file = tmp_config['TLSKeyFile']
+                    self.tls_ca_file = tmp_config['TLSCAFile']
             else:
-                raise ValueError('TLSConnect is cert. TLSCertFile and TLSKeyFile are mandatory')
-            if 'TLSCAFile' in tmp_config:
-                self.tls_ca_file = tmp_config['TLSCAFile']
+                raise ValueError('TLSConnect is cert. TLSCertFile, TLSKeyFile and TLSCAFile are mandatory')
             if 'TLSCRLFile' in tmp_config:
                 self.tls_crl_file = tmp_config['TLSCRLFile']
             if 'TLSServerCertIssuer' in tmp_config:
