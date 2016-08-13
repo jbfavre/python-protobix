@@ -6,14 +6,14 @@ import ssl
 import warnings
 import functools
 try: import simplejson as json
-except ImportError: import json
+except ImportError: import json   # pragma: no cover
 
 from .zabbixagentconfig import ZabbixAgentConfig
 
-if sys.version_info < (3,):
+if sys.version_info < (3,):   # pragma: no cover
     def b(x):
         return x
-else:
+else:   # pragma: no cover
     import codecs
     def b(x):
         return codecs.utf_8_encode(x)[0]
@@ -131,7 +131,8 @@ class SenderProtocol(object):
         ssl_context = None
         # TLS is enabled, let's set it up
         if self._config.tls_connect != 'unencrypted':
-            ssl_context = self._init_ssl(self)
+            from ssl import CertificateError, SSLError
+            ssl_context = self._init_ssl()
             try:
                 if isinstance(ssl_context, ssl.SSLContext):
                     self.socket = ssl_context.wrap_socket(
@@ -152,7 +153,6 @@ class SenderProtocol(object):
 
         # If provided, use cert file & key for client authentication
         if self._config.tls_cert_file and self._config.tls_key_file:
-            print(ssl_context)
             ssl_context.load_cert_chain(
                 self._config.tls_cert_file,
                 self._config.tls_key_file
@@ -171,3 +171,4 @@ class SenderProtocol(object):
         ## If provided enforce server cert subject check
         #if self._config.tls_server_cert_issuer:
         #    ssl_context.verify_issuer
+        return ssl_context
