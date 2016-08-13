@@ -426,8 +426,8 @@ def test_tls_connect_cert_tls_cert_key_missing(mock_configobj):
         }
     ]
     with pytest.raises(ValueError) as err:
-        protobix.ZabbixAgentConfig('TLSConnect_cert_without_TLSCertFile_TLSKeyFile')
-    assert str(err.value) == 'TLSConnect is cert. TLSCertFile and TLSKeyFile are mandatory'
+        protobix.ZabbixAgentConfig('TLSConnect_cert_without_TLSCertFile_TLSKeyFile_TLSCAFile')
+    assert str(err.value) == 'TLSConnect is cert. TLSCertFile, TLSKeyFile and TLSCAFile are mandatory'
 
 @mock.patch('configobj.ConfigObj')
 def test_tls_connect_cert_tls_cert_key_custom(mock_configobj):
@@ -439,14 +439,16 @@ def test_tls_connect_cert_tls_cert_key_custom(mock_configobj):
     mock_configobj.side_effect = [
         {
             'TLSConnect': 'cert',
-            'TLSCertFile': '/tmp/tls_cert_file.crt',
-            'TLSKeyFile': '/tmp/tls_ckey_file.crt',
+            'TLSCertFile': '/tmp/tls_cert_file.pem',
+            'TLSKeyFile': '/tmp/tls_key_file.pem',
+            'TLSCAFile': '/tmp/tls_ca_file.pem',
         }
     ]
     zbx_config = protobix.ZabbixAgentConfig('TLSConnect_TLSCertFile_TLSKeyFile')
     assert zbx_config.tls_connect == 'cert'
-    assert zbx_config.tls_cert_file == '/tmp/tls_cert_file.crt'
-    assert zbx_config.tls_key_file == '/tmp/tls_ckey_file.crt'
+    assert zbx_config.tls_cert_file == '/tmp/tls_cert_file.pem'
+    assert zbx_config.tls_key_file == '/tmp/tls_key_file.pem'
+    assert zbx_config.tls_ca_file == '/tmp/tls_ca_file.pem'
 
 
 @mock.patch('configobj.ConfigObj')

@@ -302,10 +302,8 @@ def test_read_from_zabbix(mock_socket, mock_configobj):
 
 #@mock.patch('configobj.ConfigObj')
 #@mock.patch('socket.socket', return_value=mock.MagicMock(name='socket', spec=socket.socket))
-#@mock.patch('ssl.SSLContext', return_value=mock.MagicMock(name='ssl.SSLContext', spec=ssl.SSLContext))
-#@mock.patch('protobix.ZabbixAgentConfig', return_value=mock.MagicMock(name='protobix.ZabbixAgentConfig', spec=protobix.ZabbixAgentConfig))
-#def test_init_ssl(mock_zabbix_agent_config,
-#                  mock_ssl_context,
+#@mock.patch('ssl.SSLContext', return_value=mock.MagicMock(spec=ssl.SSLContext))
+#def test_init_ssl(mock_ssl_context,
 #                  mock_socket,
 #                  mock_configobj):
 #    """
@@ -319,17 +317,11 @@ def test_read_from_zabbix(mock_socket, mock_configobj):
 #            'TLSKeyFile': '/tmp/tls_cert_file.key'
 #        }
 #    ]
-#    mock_zabbix_agent_config.tls_connect = 'cert'
-#    mock_zabbix_agent_config.tls_cert_file.return_value = '/tmp/tls_cert_file.crt'
-#    mock_zabbix_agent_config.tls_key_file.return_value = '/tmp/tls_cert_file.key'
 #    zbx_senderprotocol = protobix.SenderProtocol()
-#    print(zbx_senderprotocol._config)
-#    #zbx_senderprotocol.socket = mock_socket
-#    ssl_context = zbx_senderprotocol._init_ssl()
+#    ssl_socket = zbx_senderprotocol._socket()
+#    mock_socket.connect.assert_called_with(('127.0.0.1', 10051))
 #    mock_ssl_context.assert_called_with(ssl.PROTOCOL_TLSv1_2)
 #    mock_ssl_context.load_cert_chain.assert_called_with(
 #        '/tmp/tls_cert_file.crt',
 #        '/tmp/tls_cert_file.key'
 #    )
-#
-#    assert ssl_context is None
