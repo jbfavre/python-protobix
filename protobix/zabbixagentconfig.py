@@ -1,6 +1,5 @@
 import configobj
 import socket
-import logging
 
 class ZabbixAgentConfig(object):
 

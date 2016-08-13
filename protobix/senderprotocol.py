@@ -1,10 +1,9 @@
-import socket
 import struct
-import time
 import sys
+import time
+
+import socket
 import ssl
-import warnings
-import functools
 try: import simplejson as json
 except ImportError: import json # pragma: no cover
 
