@@ -40,7 +40,7 @@ class SenderProtocol(object):
     def server_active(self, value):
         if self._logger: # pragma: no cover
             self._logger.debug(
-                "["+__class__.__name__+"] Replacing server_active  '%s' with '%s'" %
+                "Replacing server_active  '%s' with '%s'" %
                 (self._config.server_active, value)
             )
         self._config.server_active = value
@@ -53,7 +53,7 @@ class SenderProtocol(object):
     def server_port(self, value):
         if self._logger: # pragma: no cover
             self._logger.debug(
-                "["+__class__.__name__+"] Replacing server_port  '%s' with '%s'" %
+                "Replacing server_port  '%s' with '%s'" %
                 (self._config.server_port, value)
             )
         self._config.server_port = value
@@ -66,7 +66,7 @@ class SenderProtocol(object):
     def debug_level(self, value):
         if self._logger: # pragma: no cover
             self._logger.debug(
-                "["+__class__.__name__+"] Replacing debug_level  '%s' with '%s'" %
+                "Replacing debug_level  '%s' with '%s'" %
                 (self._config.debug_level, value)
             )
         self._config.debug_level = value
@@ -84,18 +84,18 @@ class SenderProtocol(object):
         if self._config.dryrun:
             if self._logger: # pragma: no cover
                 self._logger.info(
-                    "["+__class__.__name__+"] dryrun mode enabled. Nothing to do"
+                    "dryrun mode enabled. Nothing to do"
                 )
             return 0
         if self._logger: # pragma: no cover
             self._logger.info(
-                "["+__class__.__name__+"] Send data to Zabbix Server"
+                "Send data to Zabbix Server"
             )
 
         # Format data to be sent
         if self._logger: # pragma: no cover
             self._logger.debug(
-                "["+__class__.__name__+"] Building packet to be sent to Zabbix Server"
+                "Building packet to be sent to Zabbix Server"
             )
         if isinstance(item, dict):
             item = [item]
@@ -107,7 +107,7 @@ class SenderProtocol(object):
         packet = b(ZBX_HDR) + data_header + b(payload)
         if self._logger: # pragma: no cover
             self._logger.debug(
-                "["+__class__.__name__+"] Sending packet to Zabbix Server"
+                "Sending packet to Zabbix Server"
             )
         # Send payload to Zabbix Server
         self._socket().sendall(packet)
@@ -119,7 +119,7 @@ class SenderProtocol(object):
         # Read Zabbix server answer
         if self._logger: # pragma: no cover
             self._logger.info(
-                "["+__class__.__name__+"] Reading Zabbix Server's answer"
+                "Reading Zabbix Server's answer"
             )
         while recv_length >= 4096:
             _buffer = self._socket().recv(4096)
@@ -131,7 +131,7 @@ class SenderProtocol(object):
         # Check that we have a valid Zabbix header mark
         if self._logger: # pragma: no cover
             self._logger.debug(
-                "["+__class__.__name__+"] Checking Zabbix headers"
+                "Checking Zabbix headers"
             )
         assert zbx_srv_resp_data[:5] == b(ZBX_HDR)
 
@@ -141,7 +141,7 @@ class SenderProtocol(object):
         # Extract response body
         if self._logger: # pragma: no cover
             self._logger.debug(
-                "["+__class__.__name__+"] Extracting answer's body"
+                "Extracting answer's body"
             )
         body_offset=ZBX_HDR_SIZE+zbx_srv_resp_body_len
         zbx_srv_resp_body = zbx_srv_resp_data[ZBX_HDR_SIZE:body_offset]
@@ -151,7 +151,7 @@ class SenderProtocol(object):
 
         if self._logger: # pragma: no cover
             self._logger.debug(
-                "["+__class__.__name__+"] Building JSON object to be analyzed"
+                "Building JSON object to be analyzed"
             )
         if sys.version_info[0] >= 3: # pragma: no cover
             zbx_srv_resp_body = zbx_srv_resp_body.decode()
@@ -162,7 +162,7 @@ class SenderProtocol(object):
         if self.socket:
             if self._logger: # pragma: no cover
                 self._logger.info(
-                    "["+__class__.__name__+"] Reset socket"
+                    "Reset socket"
                 )
             self.socket.close()
             self.socket = None
@@ -172,20 +172,20 @@ class SenderProtocol(object):
         if self.socket is not None:
             if self._logger: # pragma: no cover
                 self._logger.info(
-                    "["+__class__.__name__+"] Using existing socket"
+                    "Using existing socket"
                 )
             return self.socket
 
         # If not, we have to create it
         if self._logger: # pragma: no cover
             self._logger.debug(
-                "["+__class__.__name__+"] Setting socket options"
+                "Setting socket options"
             )
         socket.setdefaulttimeout(self._config.timeout)
         # Connect to Zabbix server or proxy with provided config options
         if self._logger: # pragma: no cover
             self._logger.info(
-                "["+__class__.__name__+"] Creating new socket"
+                "Creating new socket"
             )
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect(
@@ -198,7 +198,7 @@ class SenderProtocol(object):
         if self._config.tls_connect != 'unencrypted':
             if self._logger: # pragma: no cover
                 self._logger.debug(
-                    "["+__class__.__name__+"] TLS enabled to %s" % str(self._config.tls_connect)
+                    "TLS enabled to %s" % str(self._config.tls_connect)
                 )
             ssl_context = self._init_ssl()
             try:
@@ -217,7 +217,7 @@ class SenderProtocol(object):
     def _init_tls(self):
         if self._logger: # pragma: no cover
             self._logger.info(
-                "["+__class__.__name__+"] Initialize TLS context"
+                "Initialize TLS context"
             )
         # Create a SSLContext and configure it
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
@@ -226,10 +226,10 @@ class SenderProtocol(object):
         if self._config.tls_cert_file and self._config.tls_key_file:
             if self._logger: # pragma: no cover
                 self._logger.debug(
-                    "["+__class__.__name__+"] Using provided TLSCertFile %s" % self._config.tls_cert_file
+                    "Using provided TLSCertFile %s" % self._config.tls_cert_file
                 )
                 self._logger.debug(
-                    "["+__class__.__name__+"] Using provided TLSKeyFile %s" % self._config.tls_key_file
+                    "Using provided TLSKeyFile %s" % self._config.tls_key_file
                 )
             ssl_context.load_cert_chain(
                 self._config.tls_cert_file,
@@ -240,7 +240,7 @@ class SenderProtocol(object):
         if self._config.tls_ca_file:
             if self._logger: # pragma: no cover
                 self._logger.debug(
-                    "["+__class__.__name__+"] Using provided TLSCAFile %s" % self._config.tls_ca_file
+                    "Using provided TLSCAFile %s" % self._config.tls_ca_file
                 )
             ssl_context.verify_mode = ssl.CERT_REQUIRED
             ssl_context.load_verify_locations(

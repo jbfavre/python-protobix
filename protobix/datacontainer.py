@@ -55,7 +55,7 @@ class DataContainer(SenderProtocol):
                     "value": json.dumps({"data": value})}
         else:
             if self.logger: # pragma: no cover
-                self.logger.error("["+__class__.__name__+"] Setup data_type before adding data")
+                self.logger.error("Setup data_type before adding data")
             raise ValueError('Setup data_type before adding data')
         self._items_list.append(item)
 
@@ -119,7 +119,7 @@ class DataContainer(SenderProtocol):
                 output_key = item['key']
                 output_item = item['value']
             self.logger.info(
-                "["+__class__.__name__+"] " +
+                "" +
                 ZBX_DBG_SEND_RESULT % (
                     result[0],
                     result[1],
@@ -137,7 +137,7 @@ class DataContainer(SenderProtocol):
         # Reset DataContainer to default values
         # So that it can be reused
         if self.logger: # pragma: no cover
-            self.logger.info("["+__class__.__name__+"] Reset DataContainer")
+            self.logger.info("Reset DataContainer")
         self._items_list = []
         self._config.data_type = None
 
@@ -154,10 +154,10 @@ class DataContainer(SenderProtocol):
         """
         if self.logger: # pragma: no cover
             self.logger.info(
-                "["+__class__.__name__+"] Anaylizing Zabbix Server's answer"
+                "Anaylizing Zabbix Server's answer"
             )
             if zbx_answer:
-                self.logger.debug("["+__class__.__name__+"] Zabbix Server response is: [%s]" % zbx_answer)
+                self.logger.debug("Zabbix Server response is: [%s]" % zbx_answer)
         # Default items number in length of th storage list
         nb_item = len(self._items_list)
         if self._config.debug_level >= 4:
@@ -189,7 +189,7 @@ class DataContainer(SenderProtocol):
             self._logger = value
         else:
             if self._logger: # pragma: no cover
-                self._logger.error("["+__class__.__name__+"] logger requires a logging instance")
+                self._logger.error("logger requires a logging instance")
             raise ValueError('logger requires a logging instance')
 
     # ZabbixAgentConfig getter & setter

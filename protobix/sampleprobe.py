@@ -29,7 +29,7 @@ class SampleProbe(object):
     def _parse_args(self, args):
         if self.logger:
             self.logger.info(
-                "["+__class__.__name__+"] Read command line options"
+                "Read command line options"
             )
         # Parse the script arguments
         parser = argparse.ArgumentParser(
@@ -154,7 +154,7 @@ class SampleProbe(object):
     def _setup_logging(self, log_type, debug_level, log_file):
         if self.logger:
             self.logger.info(
-                "["+__class__.__name__+"] Initialize logging"
+                "Initialize logging"
             )
         # Enable log like Zabbix Agent does
         # Though, when we have a tty, it's convenient to use console to log
@@ -198,7 +198,7 @@ class SampleProbe(object):
     def _init_config(self):
         if self.logger:
             self.logger.info(
-                "["+__class__.__name__+"] Get configuration"
+                "Get configuration"
             )
         # Get config from ZabbixAgentConfig
         zbx_config = ZabbixAgentConfig(self.options.config_file)
@@ -302,7 +302,7 @@ class SampleProbe(object):
         except:
             if self.logger:
                 self.logger.critical(
-                    "["+__class__.__name__+"] Step 1 - Read probe configuration failed"
+                    "Step 1 - Read probe configuration failed"
                 )
             self.logger.debug(traceback.format_exc())
             return 1
@@ -319,14 +319,14 @@ class SampleProbe(object):
         except NotImplementedError as e:
             if self.logger:
                 self.logger.critical(
-                    "["+__class__.__name__+"] Step 2 - Get Data failed [%s]" % str(e)
+                    "Step 2 - Get Data failed [%s]" % str(e)
                 )
                 self.logger.debug(traceback.format_exc())
             raise
         except Exception as e:
             if self.logger:
                 self.logger.critical(
-                    "["+__class__.__name__+"] Step 2 - Get Data failed [%s]" % str(e)
+                    "Step 2 - Get Data failed [%s]" % str(e)
                 )
                 self.logger.debug(traceback.format_exc())
             return 2
@@ -337,7 +337,7 @@ class SampleProbe(object):
         except Exception as e:
             if self.logger:
                 self.logger.critical(
-                    "["+__class__.__name__+"] Step 3 - Format & add Data failed [%s]" % str(e)
+                    "Step 3 - Format & add Data failed [%s]" % str(e)
                 )
                 self.logger.debug(traceback.format_exc())
             zbx_container._reset()
@@ -349,14 +349,14 @@ class SampleProbe(object):
         except socket.error as e:
             if self.logger:
                 self.logger.critical(
-                    "["+__class__.__name__+"] Step 4 - Sent to Zabbix Server failed [%s]" % str(e)
+                    "Step 4 - Sent to Zabbix Server failed [%s]" % str(e)
                 )
                 self.logger.debug(traceback.format_exc())
             return 4
         except Exception as e:
             if self.logger:
                 self.logger.critical(
-                    "["+__class__.__name__+"] Step 4 - Unknown error [%s]" % str(e)
+                    "Step 4 - Unknown error [%s]" % str(e)
                 )
                 self.logger.debug(traceback.format_exc())
             return 4
