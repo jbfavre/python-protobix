@@ -27,11 +27,14 @@ class SampleProbe(object):
     options = None
 
     def _parse_args(self, args):
+        if self.logger:
+            self.logger.info(
+                "["+__class__.__name__+"] Read command line options"
+            )
         # Parse the script arguments
         parser = argparse.ArgumentParser(
             usage='%(prog)s [options]',
             formatter_class=RawTextHelpFormatter,
-            description='A Protobix probe to monitor XXX with Zabbix',
             epilog='Protobix - copyright 2016 - Jean Baptiste Favre (www.jbfavre.org)'
         )
         # Probe operation mode
@@ -142,12 +145,20 @@ class SampleProbe(object):
 
         return options
 
-    def _setup_logging(self, log_type, debug_level, log_file):
+    def _init_logging(self):
         logger = logging.getLogger(self.__class__.__name__)
         logger.handlers = []
-        common_log_format = '[%(name)s:%(levelname)s] %(message)s'
+        logger.setLevel(logging.NOTSET)
+        self.logger = logger
+
+    def _setup_logging(self, log_type, debug_level, log_file):
+        if self.logger:
+            self.logger.info(
+                "["+__class__.__name__+"] Initialize logging"
+            )
         # Enable log like Zabbix Agent does
         # Though, when we have a tty, it's convenient to use console to log
+        common_log_format = '[%(name)s:%(levelname)s] %(message)s'
         if log_type == 'console' or sys.stdout.isatty():
             console_handler = logging.StreamHandler()
             console_formatter = logging.Formatter(
@@ -155,7 +166,7 @@ class SampleProbe(object):
                 datefmt='%Y%m%d:%H%M%S'
             )
             console_handler.setFormatter(console_formatter)
-            logger.addHandler(console_handler)
+            self.logger.addHandler(console_handler)
         if log_type == 'file':
             file_handler = logging.FileHandler(log_file)
             # Use same date format as Zabbix: when logging into
@@ -165,7 +176,7 @@ class SampleProbe(object):
                 datefmt='%Y%m%d:%H%M%S'
             )
             file_handler.setFormatter(log_formatter)
-            logger.addHandler(file_handler)
+            self.logger.addHandler(file_handler)
         if log_type == 'system':
             # TODO: manage syslog address as command line option
             syslog_handler = logging.handlers.SysLogHandler(
@@ -179,13 +190,16 @@ class SampleProbe(object):
                 datefmt='%Y%m%d:%H%M%S'
             )
             syslog_handler.setFormatter(log_formatter)
-            logger.addHandler(syslog_handler)
-        logger.setLevel(
+            self.logger.addHandler(syslog_handler)
+        self.logger.setLevel(
             self.LOG_LEVEL[debug_level]
         )
-        return logger
 
     def _init_config(self):
+        if self.logger:
+            self.logger.info(
+                "["+__class__.__name__+"] Get configuration"
+            )
         # Get config from ZabbixAgentConfig
         zbx_config = ZabbixAgentConfig(self.options.config_file)
 
@@ -254,12 +268,24 @@ class SampleProbe(object):
         return parser
 
     def run(self, options=None):
+        # Init logging with default values since we don't have real config yet
+        self._init_logging()
+
         # Parse command line options
         args = sys.argv[1:]
         if isinstance(options, list):
             args = options
         self.options = self._parse_args(args)
+
+        # Get configuration
         self.zbx_config = self._init_config()
+
+        # Update logger with configuration
+        self._setup_logging(
+            self.zbx_config.log_type,
+            self.zbx_config.debug_level,
+            self.zbx_config.log_file
+        )
 
         # Datacontainer init
         zbx_container = DataContainer(
@@ -269,23 +295,15 @@ class SampleProbe(object):
         # Get back hostname from ZabbixAgentConfig
         self.hostname = self.zbx_config.hostname
 
-        # logger init
-        # we need Zabbix configuration to know how to log
-        self.logger = self._setup_logging(
-            zbx_container.log_type,
-            zbx_container.debug_level,
-            zbx_container.log_file
-        )
-        zbx_container.logger = self.logger
-
         # Step 1: read probe configuration
         #         initialize any needed object or connection
         try:
             self._init_probe()
         except:
-            self.logger.error(
-                'Step 1 - Read probe configuration failed'
-            )
+            if self.logger:
+                self.logger.critical(
+                    "["+__class__.__name__+"] Step 1 - Read probe configuration failed"
+                )
             self.logger.debug(traceback.format_exc())
             return 1
 
@@ -299,26 +317,29 @@ class SampleProbe(object):
                 zbx_container.data_type = 'lld'
                 data = self._get_discovery()
         except NotImplementedError as e:
-            self.logger.error(
-                'Step 2 - Get Data failed [%s]' % str(e)
-            )
-            self.logger.debug(traceback.format_exc())
+            if self.logger:
+                self.logger.critical(
+                    "["+__class__.__name__+"] Step 2 - Get Data failed [%s]" % str(e)
+                )
+                self.logger.debug(traceback.format_exc())
             raise
         except Exception as e:
-            self.logger.error(
-                'Step 2 - Get Data failed [%s]' % str(e)
-            )
-            self.logger.debug(traceback.format_exc())
+            if self.logger:
+                self.logger.critical(
+                    "["+__class__.__name__+"] Step 2 - Get Data failed [%s]" % str(e)
+                )
+                self.logger.debug(traceback.format_exc())
             return 2
 
         # Step 3: add data to container
         try:
             zbx_container.add(data)
         except Exception as e:
-            self.logger.error(
-                'Step 3 - Format & add Data failed [%s]' % str(e)
-            )
-            self.logger.debug(traceback.format_exc())
+            if self.logger:
+                self.logger.critical(
+                    "["+__class__.__name__+"] Step 3 - Format & add Data failed [%s]" % str(e)
+                )
+                self.logger.debug(traceback.format_exc())
             zbx_container._reset()
             return 3
 
@@ -326,16 +347,18 @@ class SampleProbe(object):
         try:
             zbx_container.send()
         except socket.error as e:
-            self.logger.error(
-                'Step 4 - Sent to Zabbix Server failed [%s]' % str(e)
-            )
-            self.logger.debug(traceback.format_exc())
+            if self.logger:
+                self.logger.critical(
+                    "["+__class__.__name__+"] Step 4 - Sent to Zabbix Server failed [%s]" % str(e)
+                )
+                self.logger.debug(traceback.format_exc())
             return 4
         except Exception as e:
-            self.logger.error(
-                'Step 4 - Unknown error [%s]' % str(e)
-            )
-            self.logger.debug(traceback.format_exc())
+            if self.logger:
+                self.logger.critical(
+                    "["+__class__.__name__+"] Step 4 - Unknown error [%s]" % str(e)
+                )
+                self.logger.debug(traceback.format_exc())
             return 4
         # Everything went fine. Let's return 0 and exit
         return 0
