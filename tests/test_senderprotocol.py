@@ -219,8 +219,9 @@ def test_init_tls(mock_configobj):
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
-    tls_context = zbx_senderprotocol._init_tls()
-    assert isinstance(tls_context, ssl.SSLContext)
+    with pytest.raises(IOError) as err:
+        tls_context = zbx_senderprotocol._init_tls()
+    #assert isinstance(tls_context, ssl.SSLContext)
 
 #@mock.patch('configobj.ConfigObj')
 #def test_init_tls_no_tls(mock_configobj):
