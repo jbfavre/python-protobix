@@ -5,14 +5,16 @@ import configobj
 import pytest
 import mock
 import unittest
+import logging
 
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import protobix
 
+@mock.patch('protobix.ZabbixAgentConfig._logger')
 @mock.patch('configobj.ConfigObj')
-def test_config_file_default(mock_configobj):
+def test_config_file_default(mock_configobj, mock_logger):
     """
     Default Zabbix Agent configuration from Zabbix
     """
@@ -24,8 +26,10 @@ def test_config_file_default(mock_configobj):
             'Hostname': 'Zabbix server'
         }
     ]
+    print(mock_logger)
     zbx_config = protobix.ZabbixAgentConfig(
-        'default_zabbix_agentd.conf'
+        config_file='default_zabbix_agentd.conf',
+        logger=mock_logger
     )
     assert zbx_config.data_type is None
     assert zbx_config.dryrun is False
@@ -45,9 +49,11 @@ def test_config_file_default(mock_configobj):
     assert zbx_config.tls_server_cert_subject is None
     assert zbx_config.tls_psk_identity is None
     assert zbx_config.tls_psk_file is None
+    mock_logger.info.assert_called_with('[ZabbixAgentConfig] Initializing')
 
+@mock.patch('protobix.ZabbixAgentConfig._logger')
 @mock.patch('configobj.ConfigObj')
-def test_config_file_not_found(mock_configobj):
+def test_config_file_not_found(mock_configobj, mock_logger):
     """
     Not found zabbix_agentd.conf
     hostname should fallback to socket.getfqdn
@@ -57,7 +63,8 @@ def test_config_file_not_found(mock_configobj):
     ]
     with mock.patch('socket.getfqdn', return_value='myhostname'):
         zbx_config = protobix.ZabbixAgentConfig(
-            'not_found_config_file'
+            config_file='not_found_config_file',
+            logger=mock_logger
         )
         assert zbx_config.data_type is None
         assert zbx_config.dryrun is False
@@ -77,6 +84,9 @@ def test_config_file_not_found(mock_configobj):
         assert zbx_config.tls_server_cert_subject is None
         assert zbx_config.tls_psk_identity is None
         assert zbx_config.tls_psk_file is None
+        mock_logger.info.assert_called_with('[ZabbixAgentConfig] Initializing')
+        mock_logger.debug.assert_called_with("[ZabbixAgentConfig] Reading Zabbix Agent configuration file not_found_config_file")
+        mock_logger.warn.assert_called_with('[ZabbixAgentConfig] Not configuration found')
 
 @mock.patch('configobj.ConfigObj')
 def test_server_active_custom(mock_configobj):

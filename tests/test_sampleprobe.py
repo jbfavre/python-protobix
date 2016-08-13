@@ -131,11 +131,11 @@ Check -d & --dryrun argument.
 """
 def test_force_dryrun():
     pbx_test_probe = ProtobixTestProbe()
-    result = pbx_test_probe.run(['--dryrun'])
-    assert result == 0
+    pbx_test_probe.options = pbx_test_probe._parse_args(['--dryrun'])
+    pbx_config = pbx_test_probe._init_config()
     assert pbx_test_probe.options.dryrun is True
-    result = pbx_test_probe.run(['-d'])
-    assert result == 0
+    pbx_test_probe.options = pbx_test_probe._parse_args(['-d'])
+    pbx_config = pbx_test_probe._init_config()
     assert pbx_test_probe.options.dryrun is True
 
 """
@@ -255,56 +255,50 @@ Check logger configuration in console mode
 @mock.patch('configobj.ConfigObj')
 @mock.patch('protobix.ZabbixAgentConfig')
 def test_log_console(mock_configobj, mock_zabbix_agent_config):
-    mock_configobj.side_effect = [{ 'LogType': 'console' }]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe()
-    pbx_test_probe.run([])
+    pbx_test_probe._init_logging()
+    assert isinstance(pbx_test_probe.logger, logging.Logger)
+    pbx_test_probe._setup_logging('console', 4, '/tmp/log_file')
     assert len(pbx_test_probe.logger.handlers) == 1
+    assert pbx_test_probe.logger.level == logging.DEBUG
     assert isinstance(pbx_test_probe.logger.handlers[0], logging.StreamHandler)
 
 """
-Check logger configuration in file mode
+Check logger configuration in file mode & debug
 """
-@mock.patch('configobj.ConfigObj')
-@mock.patch('protobix.ZabbixAgentConfig')
-def test_log_file(mock_configobj, mock_zabbix_agent_config):
-    mock_configobj.side_effect = [{ 'LogType': 'file' }]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
+def test_log_file():
     pbx_test_probe = ProtobixTestProbe()
-    pbx_test_probe.run([])
+    pbx_test_probe._init_logging()
+    assert isinstance(pbx_test_probe.logger, logging.Logger)
+    pbx_test_probe._setup_logging('file', 4, '/tmp/log_file')
     assert len(pbx_test_probe.logger.handlers) == 1
+    assert pbx_test_probe.logger.level == logging.DEBUG
     assert isinstance(pbx_test_probe.logger.handlers[0], logging.FileHandler)
 
 """
 Check logger configuration in file mode with invalid file
-Here, invalid means that id doesn't exists, or we don't have
+Here, invalid means that it doesn't exists, or we don't have
 permission to write into
 """
-@mock.patch('configobj.ConfigObj')
-@mock.patch('protobix.ZabbixAgentConfig')
-def test_log_file_invalid(mock_configobj, mock_zabbix_agent_config):
-    mock_configobj.side_effect = [
-        {
-            'LogType': 'file',
-            'LogFile': '/do_not_have_permission'
-        }
-    ]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
+def test_log_file_invalid():
     pbx_test_probe = ProtobixTestProbe()
+    pbx_test_probe._init_logging()
+    assert isinstance(pbx_test_probe.logger, logging.Logger)
     with pytest.raises(IOError):
-        pbx_test_probe.run([])
+        pbx_test_probe._setup_logging('file', 4, '/do_not_have_permission')
+    assert pbx_test_probe.logger.level == logging.NOTSET
+    assert len(pbx_test_probe.logger.handlers) == 0
 
 """
 Check logger configuration in system (syslog) mode
 """
-@mock.patch('configobj.ConfigObj')
-@mock.patch('protobix.ZabbixAgentConfig')
-def test_log_syslog(mock_configobj, mock_zabbix_agent_config):
-    mock_configobj.side_effect = [{ 'LogType': 'system' }]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
+def test_log_syslog():
     pbx_test_probe = ProtobixTestProbe()
-    pbx_test_probe.run([])
+    pbx_test_probe._init_logging()
+    assert isinstance(pbx_test_probe.logger, logging.Logger)
+    pbx_test_probe._setup_logging('system', 3, None)
     assert len(pbx_test_probe.logger.handlers) == 1
+    assert pbx_test_probe.logger.level == logging.INFO
     assert isinstance(pbx_test_probe.logger.handlers[0], logging.handlers.SysLogHandler)
 
 """
@@ -317,7 +311,7 @@ def test_not_implemented_get_metrics(mock_configobj, mock_zabbix_agent_config):
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
     with pytest.raises(NotImplementedError):
-        pbx_test_probe.run([])
+        pbx_test_probe._get_metrics()
 
 """
 Check a custom probe without _get_discovery method.
@@ -329,7 +323,7 @@ def test_not_implemented_get_discovery(mock_configobj, mock_zabbix_agent_config)
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
     with pytest.raises(NotImplementedError):
-        pbx_test_probe.run(['--discovery'])
+        pbx_test_probe._get_discovery()
 
 """
 Check that sample probe correctly catches exception from _init_probe
@@ -355,7 +349,7 @@ def test_get_metrics_exception(mock_configobj, mock_zabbix_agent_config):
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
     with mock.patch('protobix.SampleProbe._get_metrics') as mock_get_metrics:
-        mock_get_metrics.side_effect = Exception('Something went wrong')
+        mock_get_metrics.side_effect = Exception('Something went wrong in _get_metrics')
         result = pbx_test_probe.run([])
         assert result == 2
 
@@ -369,23 +363,25 @@ def test_get_discovery_exception(mock_configobj, mock_zabbix_agent_config):
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
     with mock.patch('protobix.SampleProbe._get_discovery') as mock_get_discovery:
-        mock_get_discovery.side_effect = Exception('Something went wrong')
+        mock_get_discovery.side_effect = Exception('Something went wrong in _get_discovery')
         result = pbx_test_probe.run(['--discovery'])
         assert result == 2
 
 """
 Check that sample probe correctly catches exception from DataContainer add method
 """
-@mock.patch('configobj.ConfigObj')
-@mock.patch('protobix.ZabbixAgentConfig')
 @mock.patch('protobix.SampleProbe._get_metrics')
+@mock.patch('protobix.ZabbixAgentConfig')
+@mock.patch('configobj.ConfigObj')
 def test_datacontainer_add_exception(mock_configobj, mock_zabbix_agent_config, mock_get_metrics):
+    print('config.ConfigObj ' + mock_configobj)
     mock_configobj.side_effect = [{}]
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     pbx_test_probe = ProtobixTestProbe2()
     mock_get_metrics.side_effect = None
     with mock.patch('protobix.DataContainer.add') as mock_datacontainer_add:
-        mock_datacontainer_add.side_effect = Exception('Something went wrong')
+        mock_DC = mock.MagicMock(spec=protobix.DataContainer)
+        mock_datacontainer_add.side_effect = Exception('Something went wrong in DataContainer.add')
         result = pbx_test_probe.run([])
         assert result == 3
 

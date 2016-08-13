@@ -300,28 +300,33 @@ def test_read_from_zabbix(mock_socket, mock_configobj):
     result = zbx_senderprotocol._read_from_zabbix()
     assert result == answer_awaited
 
+@mock.patch('configobj.ConfigObj')
+def test_init_tls(mock_configobj):
+    """
+    Test TLS context initialization
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'cert',
+            'TLSCAFile': '/tmp/tls_cert_file.pem',
+            'TLSCertFile': '/tmp/tls_cert_file.pem',
+            'TLSKeyFile': '/tmp/tls_key_file.pem'
+        }
+    ]
+    zbx_senderprotocol = protobix.SenderProtocol()
+    tls_context = zbx_senderprotocol._init_tls()
+    assert isinstance(tls_context, ssl.SSLContext)
+
 #@mock.patch('configobj.ConfigObj')
-#@mock.patch('socket.socket', return_value=mock.MagicMock(name='socket', spec=socket.socket))
-#@mock.patch('ssl.SSLContext', return_value=mock.MagicMock(spec=ssl.SSLContext))
-#def test_init_ssl(mock_ssl_context,
-#                  mock_socket,
-#                  mock_configobj):
+#def test_init_tls_no_tls(mock_configobj):
 #    """
 #    Test SSL context initialization
 #    """
 #    mock_configobj.side_effect = [
 #        {
-#            'TLSConnect': 'cert',
-#            'TLSCAFile': '/tmp/tls_ca_file.crt',
-#            'TLSCertFile': '/tmp/tls_cert_file.crt',
-#            'TLSKeyFile': '/tmp/tls_cert_file.key'
+#            'TLSConnect': 'unencrypted',
 #        }
 #    ]
 #    zbx_senderprotocol = protobix.SenderProtocol()
-#    ssl_socket = zbx_senderprotocol._socket()
-#    mock_socket.connect.assert_called_with(('127.0.0.1', 10051))
-#    mock_ssl_context.assert_called_with(ssl.PROTOCOL_TLSv1_2)
-#    mock_ssl_context.load_cert_chain.assert_called_with(
-#        '/tmp/tls_cert_file.crt',
-#        '/tmp/tls_cert_file.key'
-#    )
+#    _socket = zbx_senderprotocol._socket()
+#    assert isinstance(_socket, socket.socket)
