@@ -27,6 +27,8 @@ def test_config_file_default(mock_configobj):
     zbx_config = protobix.ZabbixAgentConfig(
         'default_zabbix_agentd.conf'
     )
+    assert zbx_config.data_type is None
+    assert zbx_config.dryrun is False
     assert zbx_config.server_active == '127.0.0.1'
     assert zbx_config.server_port == 10051
     assert zbx_config.log_type == 'file'
@@ -41,6 +43,8 @@ def test_config_file_default(mock_configobj):
     assert zbx_config.tls_key_file is None
     assert zbx_config.tls_server_cert_issuer is None
     assert zbx_config.tls_server_cert_subject is None
+    assert zbx_config.tls_psk_identity is None
+    assert zbx_config.tls_psk_file is None
 
 @mock.patch('configobj.ConfigObj')
 def test_config_file_not_found(mock_configobj):
@@ -55,13 +59,24 @@ def test_config_file_not_found(mock_configobj):
         zbx_config = protobix.ZabbixAgentConfig(
             'not_found_config_file'
         )
+        assert zbx_config.data_type is None
+        assert zbx_config.dryrun is False
         assert zbx_config.server_active == '127.0.0.1'
         assert zbx_config.server_port == 10051
-        assert zbx_config.hostname == 'myhostname'
         assert zbx_config.log_type == 'file'
         assert zbx_config.log_file == '/tmp/zabbix_agentd.log'
         assert zbx_config.debug_level == 3
         assert zbx_config.timeout == 3
+        assert zbx_config.hostname == 'myhostname'
+        assert zbx_config.tls_connect == 'unencrypted'
+        assert zbx_config.tls_ca_file is None
+        assert zbx_config.tls_cert_file is None
+        assert zbx_config.tls_crl_file is None
+        assert zbx_config.tls_key_file is None
+        assert zbx_config.tls_server_cert_issuer is None
+        assert zbx_config.tls_server_cert_subject is None
+        assert zbx_config.tls_psk_identity is None
+        assert zbx_config.tls_psk_file is None
 
 @mock.patch('configobj.ConfigObj')
 def test_server_active_custom(mock_configobj):

@@ -9,6 +9,7 @@ import time
 try: import simplejson as json
 except ImportError: import json
 import socket
+import ssl
 
 import sys
 import os
@@ -26,25 +27,23 @@ else:
     def b(x):
         return codecs.utf_8_encode(x)[0]
 
-@mock.patch('configobj.ConfigObj')
-@mock.patch('protobix.ZabbixAgentConfig.server_active')
-@mock.patch('protobix.ZabbixAgentConfig.server_port')
-@mock.patch('protobix.ZabbixAgentConfig.timeout')
 @mock.patch('protobix.ZabbixAgentConfig')
+@mock.patch('configobj.ConfigObj')
 def test_default_params(mock_configobj, \
-                        mock_server_active, \
-                        mock_server_port, \
-                        mock_timeout, \
                         mock_zabbix_agent_config):
     """
     Default configuration
     """
+    print('ConfigObj ' + str(mock_configobj))
+    print('ZabbixAgentConfig ' + str(mock_zabbix_agent_config))
+
     mock_configobj.side_effect = [{}]
-    mock_server_active.return_value = '127.0.0.1'
-    mock_server_port.return_value = 10051
-    mock_server_port.timeout.return_value = 3
     mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
+    mock_zabbix_agent_config.server_active.return_value = '127.0.0.1'
+    mock_zabbix_agent_config.server_port.return_value = 10051
+    mock_zabbix_agent_config.server_port.timeout.return_value = 3
     zbx_senderprotocol = protobix.SenderProtocol()
+
     assert zbx_senderprotocol.server_active == '127.0.0.1'
     assert zbx_senderprotocol.server_port == 10051
     assert zbx_senderprotocol._config.dryrun is False
@@ -271,3 +270,66 @@ def test_read_from_zabbix(mock_configobj, mock_socket):
     zbx_senderprotocol.socket = mock_socket
     result = zbx_senderprotocol._read_from_zabbix()
     assert result == answer_awaited
+
+@mock.patch('configobj.ConfigObj')
+@mock.patch('socket.socket', return_value=mock.MagicMock(name='socket', spec=socket.socket))
+def test_read_from_zabbix(mock_socket, mock_configobj):
+    """
+    Test sending data to Zabbix Server
+    """
+    mock_configobj.side_effect = [
+        {
+            'LogFile': '/tmp/zabbix_agentd.log',
+            'Server': '127.0.0.1',
+            'ServerActive': '127.0.0.1',
+            'Hostname': 'Zabbix server',
+            'TLSConnect': 'cert',
+            'TLSCAFile': '/tmp/tls_ca_file.crt',
+            'TLSCertFile': '/tmp/tls_cert_file.crt',
+            'TLSKeyFile': '/tmp/tls_key_file.key'
+        }
+    ]
+    answer_payload = '{"info": "processed: 0; failed: 1; total: 1; seconds spent: 0.000441", "response": "success"}'
+    answer_packet = b('ZBXD\1') + struct.pack('<Q', 93) + b(answer_payload)
+    mock_socket.recv.return_value = answer_packet
+    answer_awaited = json.loads(answer_payload)
+
+    zbx_senderprotocol = protobix.SenderProtocol()
+    zbx_senderprotocol.data_type='item'
+    zbx_senderprotocol.socket = mock_socket
+    result = zbx_senderprotocol._read_from_zabbix()
+    assert result == answer_awaited
+
+#@mock.patch('configobj.ConfigObj')
+#@mock.patch('socket.socket', return_value=mock.MagicMock(name='socket', spec=socket.socket))
+#@mock.patch('ssl.SSLContext', return_value=mock.MagicMock(name='ssl.SSLContext', spec=ssl.SSLContext))
+#@mock.patch('protobix.ZabbixAgentConfig', return_value=mock.MagicMock(name='protobix.ZabbixAgentConfig', spec=protobix.ZabbixAgentConfig))
+#def test_init_ssl(mock_zabbix_agent_config,
+#                  mock_ssl_context,
+#                  mock_socket,
+#                  mock_configobj):
+#    """
+#    Test SSL context initialization
+#    """
+#    mock_configobj.side_effect = [
+#        {
+#            'TLSConnect': 'cert',
+#            'TLSCAFile': '/tmp/tls_ca_file.crt',
+#            'TLSCertFile': '/tmp/tls_cert_file.crt',
+#            'TLSKeyFile': '/tmp/tls_cert_file.key'
+#        }
+#    ]
+#    mock_zabbix_agent_config.tls_connect = 'cert'
+#    mock_zabbix_agent_config.tls_cert_file.return_value = '/tmp/tls_cert_file.crt'
+#    mock_zabbix_agent_config.tls_key_file.return_value = '/tmp/tls_cert_file.key'
+#    zbx_senderprotocol = protobix.SenderProtocol()
+#    print(zbx_senderprotocol._config)
+#    #zbx_senderprotocol.socket = mock_socket
+#    ssl_context = zbx_senderprotocol._init_ssl()
+#    mock_ssl_context.assert_called_with(ssl.PROTOCOL_TLSv1_2)
+#    mock_ssl_context.load_cert_chain.assert_called_with(
+#        '/tmp/tls_cert_file.crt',
+#        '/tmp/tls_cert_file.key'
+#    )
+#
+#    assert ssl_context is None
