@@ -110,50 +110,18 @@ def long_run(data_type, debug_level):
         run += 1
     return initial_memory, final_memory
 
-@mock.patch('configobj.ConfigObj')
-@mock.patch('protobix.ZabbixAgentConfig')
-def test_items_long_run_debug_no(mock_configobj, mock_zabbix_agent_config):
+pytest_params = (
+    ('items', 2),
+    ('items', 4),
+    ('lld', 2),
+    ('lld', 4)
+)
+
+@pytest.mark.parametrize('data_type,debug_level', pytest_params)
+def test_long_run_for_memory_leak(data_type, debug_level):
     """
     Simulate long running process without debug
     and control memory usage
     """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
-    initial_memory, final_memory = long_run('items', 2)
-    assert initial_memory == final_memory
-
-@mock.patch('configobj.ConfigObj')
-@mock.patch('protobix.ZabbixAgentConfig')
-def test_items_long_run_debug_yes(mock_configobj, mock_zabbix_agent_config):
-    """
-    Simulate long running process in debug mode
-    and control memory usage
-    """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
-    initial_memory, final_memory = long_run('items', 4)
-    assert initial_memory == final_memory
-
-@mock.patch('configobj.ConfigObj')
-@mock.patch('protobix.ZabbixAgentConfig')
-def test_lld_long_run_debug_no(mock_configobj, mock_zabbix_agent_config):
-    """
-    Simulate long running process without debug
-    and control memory usage
-    """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
-    initial_memory, final_memory = long_run('lld', 2)
-    assert initial_memory == final_memory
-
-@mock.patch('configobj.ConfigObj')
-@mock.patch('protobix.ZabbixAgentConfig')
-def test_lld_long_run_debug_yes(mock_configobj, mock_zabbix_agent_config):
-    """
-    Simulate long running process in debug mode
-    and control memory usage
-    """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
-    initial_memory, final_memory = long_run('lld', 4)
+    initial_memory, final_memory = long_run(data_type, debug_level)
     assert initial_memory == final_memory

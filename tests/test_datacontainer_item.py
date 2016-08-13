@@ -63,15 +63,19 @@ pytest_params = (
     'items',
     'lld'
 )
-@pytest.mark.parametrize('data_type', pytest_params)
-@mock.patch('protobix.ZabbixAgentConfig')
-@mock.patch('configobj.ConfigObj')
-def test_items_add_before_set_data_type(mock_configobj, mock_zabbix_agent_config, data_type):
+def test_invalid_logger():
     """
     Adding data before assigning data_type should raise an Exception
     """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
+    with pytest.raises(ValueError) as err:
+        zbx_datacontainer = protobix.DataContainer(logger='invalid')
+    assert str(err.value) == 'logger requires a logging instance'
+
+@pytest.mark.parametrize('data_type', pytest_params)
+def test_items_add_before_set_data_type(data_type):
+    """
+    Adding data before assigning data_type should raise an Exception
+    """
     zbx_datacontainer = protobix.DataContainer()
     assert zbx_datacontainer.items_list == []
     with pytest.raises(ValueError):
@@ -82,15 +86,11 @@ def test_items_add_before_set_data_type(mock_configobj, mock_zabbix_agent_config
     assert len(zbx_datacontainer.items_list) == 4
 
 @pytest.mark.parametrize('data_type', pytest_params)
-@mock.patch('protobix.ZabbixAgentConfig')
-@mock.patch('configobj.ConfigObj')
-def test_debug_no_dryrun_yes(mock_configobj, mock_zabbix_agent_config, data_type):
+def test_debug_no_dryrun_yes(data_type):
     """
     debug_level to False
     dryrun to True
     """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     zbx_datacontainer = protobix.DataContainer()
     zbx_datacontainer.data_type = data_type
     zbx_datacontainer.dryrun = True
@@ -107,15 +107,11 @@ def test_debug_no_dryrun_yes(mock_configobj, mock_zabbix_agent_config, data_type
     assert zbx_datacontainer.items_list == []
 
 @pytest.mark.parametrize('data_type', pytest_params)
-@mock.patch('protobix.ZabbixAgentConfig')
-@mock.patch('configobj.ConfigObj')
-def test_debug_yes_dryrun_yes(mock_configobj, mock_zabbix_agent_config, data_type):
+def test_debug_yes_dryrun_yes(data_type):
     """
     debug_level to True
     dryrun to True
     """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     zbx_datacontainer = protobix.DataContainer()
     zbx_datacontainer.data_type = data_type
     zbx_datacontainer.dryrun = True
@@ -134,15 +130,11 @@ def test_debug_yes_dryrun_yes(mock_configobj, mock_zabbix_agent_config, data_typ
     assert zbx_datacontainer.items_list == []
 
 @pytest.mark.parametrize('data_type', pytest_params)
-@mock.patch('protobix.ZabbixAgentConfig')
-@mock.patch('configobj.ConfigObj')
-def test_debug_no_dryrun_no(mock_configobj, mock_zabbix_agent_config, data_type):
+def test_debug_no_dryrun_no(data_type):
     """
     debug_level to False
     dryrun to False
     """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     zbx_datacontainer = protobix.DataContainer()
     # Force a Zabbix port so that test fails even if backend is present
     zbx_datacontainer.server_port = 10060
@@ -159,15 +151,11 @@ def test_debug_no_dryrun_no(mock_configobj, mock_zabbix_agent_config, data_type)
         results_list = zbx_datacontainer.send()
 
 @pytest.mark.parametrize('data_type', pytest_params)
-@mock.patch('protobix.ZabbixAgentConfig')
-@mock.patch('configobj.ConfigObj')
-def test_debug_yes_dryrun_no(mock_configobj, mock_zabbix_agent_config, data_type):
+def test_debug_yes_dryrun_no(data_type):
     """
     debug_level to True
     dryrun to False
     """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     zbx_datacontainer = protobix.DataContainer()
     zbx_datacontainer.debug_level = 4
     # Force a Zabbix port so that test fails even if backend is present
@@ -185,15 +173,11 @@ def test_debug_yes_dryrun_no(mock_configobj, mock_zabbix_agent_config, data_type
         results_list = zbx_datacontainer.send()
 
 @pytest.mark.parametrize('data_type', pytest_params)
-@mock.patch('protobix.ZabbixAgentConfig')
-@mock.patch('configobj.ConfigObj')
-def test_need_backend_debug_no_dryrun_no(mock_configobj, mock_zabbix_agent_config, data_type):
+def test_need_backend_debug_no_dryrun_no(data_type):
     """
     debug_level to False
     dryrun to False
     """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     zbx_datacontainer = protobix.DataContainer()
     zbx_datacontainer.data_type = data_type
     assert zbx_datacontainer.items_list == []
@@ -214,15 +198,11 @@ def test_need_backend_debug_no_dryrun_no(mock_configobj, mock_zabbix_agent_confi
     assert zbx_datacontainer.items_list == []
 
 @pytest.mark.parametrize('data_type', pytest_params)
-@mock.patch('protobix.ZabbixAgentConfig')
-@mock.patch('configobj.ConfigObj')
-def test_need_backend_debug_yes_dryrun_no(mock_configobj, mock_zabbix_agent_config, data_type):
+def test_need_backend_debug_yes_dryrun_no(data_type):
     """
     debug_level to True
     dryrun to False
     """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     zbx_datacontainer = protobix.DataContainer()
     zbx_datacontainer.debug_level = 4
     zbx_datacontainer.data_type = data_type
@@ -243,14 +223,10 @@ def test_need_backend_debug_yes_dryrun_no(mock_configobj, mock_zabbix_agent_conf
     assert zbx_datacontainer.items_list == []
 
 @pytest.mark.parametrize('data_type', pytest_params)
-@mock.patch('protobix.ZabbixAgentConfig')
-@mock.patch('configobj.ConfigObj')
-def test_server_connection_fails(mock_configobj, mock_zabbix_agent_config, data_type):
+def test_server_connection_fails(data_type):
     """
     Connection to Zabbix Server fails
     """
-    mock_configobj.side_effect = [{}]
-    mock_zabbix_agent_config.return_value = protobix.ZabbixAgentConfig()
     zbx_datacontainer = protobix.DataContainer()
     zbx_datacontainer.server_port = 10060
     zbx_datacontainer.data_type = data_type
