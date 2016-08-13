@@ -6,10 +6,10 @@ class ZabbixAgentConfig(object):
     _logger = None
 
     def __init__(self, config_file='/etc/zabbix/zabbix_agentd.conf', logger=None):
-        if logger:
+        if logger: # pragma: no cover
             self._logger = logger
 
-        if self._logger:
+        if self._logger: # pragma: no cover
             self._logger.info(
                 "["+__class__.__name__+"] Initializing"
             )
@@ -44,7 +44,7 @@ class ZabbixAgentConfig(object):
         # list_values=False argument below is needed because of potential
         # UserParameter with spaces which breaks ConfigObj
         # See
-        if self._logger:
+        if self._logger: # pragma: no cover
             self._logger.debug(
                 "["+__class__.__name__+"] Reading Zabbix Agent configuration file %s" %
                 config_file
@@ -54,13 +54,13 @@ class ZabbixAgentConfig(object):
         # If not config_file found or provided,
         # we should fallback to the default
         if tmp_config == {}:
-            if self._logger:
+            if self._logger: # pragma: no cover
                 self._logger.warn(
                     "["+__class__.__name__+"] Not configuration found"
                 )
             return
 
-        if self._logger:
+        if self._logger: # pragma: no cover
             self._logger.debug(
                 "["+__class__.__name__+"] Setting configuration"
             )
@@ -80,7 +80,7 @@ class ZabbixAgentConfig(object):
         self._process_tls_config(tmp_config)
 
     def _process_server_config(self, tmp_config):
-        if self._logger:
+        if self._logger: # pragma: no cover
             self._logger.debug(
                 "["+__class__.__name__+"] Processing server config"
             )
@@ -96,7 +96,7 @@ class ZabbixAgentConfig(object):
             self.server_port = int(server_port)
 
     def _process_log_config(self, tmp_config):
-        if self._logger:
+        if self._logger: # pragma: no cover
             self._logger.debug(
                 "["+__class__.__name__+"] Processing log config"
             )
@@ -120,7 +120,7 @@ class ZabbixAgentConfig(object):
                 self.log_file = tmp_config['LogFile']
 
     def _process_tls_config(self, tmp_config):
-        if self._logger:
+        if self._logger: # pragma: no cover
             self._logger.debug(
                 "["+__class__.__name__+"] Processing tls config"
             )

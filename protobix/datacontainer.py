@@ -54,7 +54,7 @@ class DataContainer(SenderProtocol):
             item = {"host": host, "key": key, "clock": clock,
                     "value": json.dumps({"data": value})}
         else:
-            if self.logger:
+            if self.logger: # pragma: no cover
                 self.logger.error("["+__class__.__name__+"] Setup data_type before adding data")
             raise ValueError('Setup data_type before adding data')
         self._items_list.append(item)
@@ -112,7 +112,7 @@ class DataContainer(SenderProtocol):
             self._send_to_zabbix(item)
             zbx_answer = self._read_from_zabbix()
         result = self._handle_response(zbx_answer)
-        if self.logger:
+        if self.logger: # pragma: no cover
             output_key = '(bulk)'
             output_item = '(bulk)'
             if self.debug_level >= 4:
@@ -136,7 +136,7 @@ class DataContainer(SenderProtocol):
         """
         # Reset DataContainer to default values
         # So that it can be reused
-        if self.logger:
+        if self.logger: # pragma: no cover
             self.logger.info("["+__class__.__name__+"] Reset DataContainer")
         self._items_list = []
         self._config.data_type = None
@@ -152,7 +152,7 @@ class DataContainer(SenderProtocol):
 
         :zbx_answer: Zabbix server response as JSON object
         """
-        if self.logger:
+        if self.logger: # pragma: no cover
             self.logger.info(
                 "["+__class__.__name__+"] Anaylizing Zabbix Server's answer"
             )
@@ -188,33 +188,12 @@ class DataContainer(SenderProtocol):
         if isinstance(value, logging.Logger):
             self._logger = value
         else:
-            if self._logger:
+            if self._logger: # pragma: no cover
                 self._logger.error("["+__class__.__name__+"] logger requires a logging instance")
             raise ValueError('logger requires a logging instance')
 
     # ZabbixAgentConfig getter & setter
     # Avoid using private property _config from outside
-    @property
-    def hostname(self):
-        """
-        Returns Hostname
-        """
-        return self._config.hostname
-
-    @property
-    def log_file(self):
-        """
-        Returns LogFile
-        """
-        return self._config.log_file
-
-    @property
-    def log_type(self):
-        """
-        Returns LogType
-        """
-        return self._config.log_type
-
     @property
     def dryrun(self):
         """
@@ -228,13 +207,6 @@ class DataContainer(SenderProtocol):
         Set dryrun
         """
         self._config.dryrun = value
-
-    @property
-    def data_type(self):
-        """
-        Returns data_type
-        """
-        return self._config.dryrun
 
     @dryrun.setter
     def data_type(self, value):
