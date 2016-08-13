@@ -1,7 +1,7 @@
 import re
 import logging
 try: import simplejson as json
-except ImportError: import json
+except ImportError: import json # pragma: no cover
 
 from .zabbixagentconfig import ZabbixAgentConfig
 from .senderprotocol import SenderProtocol
@@ -33,7 +33,7 @@ class DataContainer(SenderProtocol):
         if config is None:
             self._config = ZabbixAgentConfig()
         if logger:
-            self._logger = logger
+            self.logger = logger
         self._items_list = []
 
     def add_item(self, host, key, value, clock=None):
@@ -55,7 +55,7 @@ class DataContainer(SenderProtocol):
                     "value": json.dumps({"data": value})}
         else:
             if self.logger:
-                self.logger.error('Setup data_type before adding data')
+                self.logger.error("["+__class__.__name__+"] Setup data_type before adding data")
             raise ValueError('Setup data_type before adding data')
         self._items_list.append(item)
 
@@ -119,6 +119,7 @@ class DataContainer(SenderProtocol):
                 output_key = item['key']
                 output_item = item['value']
             self.logger.info(
+                "["+__class__.__name__+"] " +
                 ZBX_DBG_SEND_RESULT % (
                     result[0],
                     result[1],
@@ -135,6 +136,8 @@ class DataContainer(SenderProtocol):
         """
         # Reset DataContainer to default values
         # So that it can be reused
+        if self.logger:
+            self.logger.info("["+__class__.__name__+"] Reset DataContainer")
         self._items_list = []
         self._config.data_type = None
 
@@ -149,23 +152,25 @@ class DataContainer(SenderProtocol):
 
         :zbx_answer: Zabbix server response as JSON object
         """
-        if zbx_answer and self.logger:
-            self.logger.debug("Zabbix Server response is: [%s]" % zbx_answer)
+        if self.logger:
+            self.logger.info(
+                "["+__class__.__name__+"] Anaylizing Zabbix Server's answer"
+            )
+            if zbx_answer:
+                self.logger.debug("["+__class__.__name__+"] Zabbix Server response is: [%s]" % zbx_answer)
+        # Default items number in length of th storage list
         nb_item = len(self._items_list)
         if self._config.debug_level >= 4:
+            # If debug enabled, force it to 1
             nb_item = 1
         if zbx_answer and self._config.dryrun is False:
+            # If dryrun is disabled, we can process answer
             if zbx_answer.get('response') == 'success':
                 result = re.findall(ZBX_RESP_REGEX, zbx_answer.get('info'))
                 result = result[0]
         else:
-            result = ['d', 'd', str(nb_item)]
-        if self.logger and self._config.debug_level >= 5:
-            self.logger.debug("Zabbix server results are: Processed: " + result[0])
-            self.logger.debug("                              Failed: " + result[1])
-            self.logger.debug("                               Total: " + result[2])
-            if not self._config.dryrun:
-                self.logger.debug("                                Time: " + result[3])
+            # If dryrun is enabled, just force result
+            result = ['d', 'd', str(nb_item), 'd']
         return result
 
     @property
@@ -184,7 +189,7 @@ class DataContainer(SenderProtocol):
             self._logger = value
         else:
             if self._logger:
-                self._logger.error('logger requires a logging instance')
+                self._logger.error("["+__class__.__name__+"] logger requires a logging instance")
             raise ValueError('logger requires a logging instance')
 
     # ZabbixAgentConfig getter & setter

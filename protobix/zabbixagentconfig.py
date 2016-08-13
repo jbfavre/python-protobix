@@ -1,9 +1,19 @@
 import configobj
 import socket
+import logging
 
 class ZabbixAgentConfig(object):
 
-    def __init__(self, config_file='/etc/zabbix/zabbix_agentd.conf'):
+    _logger = None
+
+    def __init__(self, config_file='/etc/zabbix/zabbix_agentd.conf', logger=None):
+        if logger:
+            self._logger = logger
+
+        if self._logger:
+            self._logger.info(
+                "["+__class__.__name__+"] Initializing"
+            )
 
         # Set default config value from sample zabbix_agentd.conf
         # Only exception is hostname. While non mandatory, we must have
@@ -35,13 +45,26 @@ class ZabbixAgentConfig(object):
         # list_values=False argument below is needed because of potential
         # UserParameter with spaces which breaks ConfigObj
         # See
+        if self._logger:
+            self._logger.debug(
+                "["+__class__.__name__+"] Reading Zabbix Agent configuration file %s" %
+                config_file
+            )
         tmp_config = configobj.ConfigObj(config_file, list_values=False)
 
         # If not config_file found or provided,
         # we should fallback to the default
         if tmp_config == {}:
+            if self._logger:
+                self._logger.warn(
+                    "["+__class__.__name__+"] Not configuration found"
+                )
             return
 
+        if self._logger:
+            self._logger.debug(
+                "["+__class__.__name__+"] Setting configuration"
+            )
         if 'DebugLevel' in tmp_config:
             self.debug_level = int(tmp_config['DebugLevel'])
 
@@ -58,6 +81,10 @@ class ZabbixAgentConfig(object):
         self._process_tls_config(tmp_config)
 
     def _process_server_config(self, tmp_config):
+        if self._logger:
+            self._logger.debug(
+                "["+__class__.__name__+"] Processing server config"
+            )
         if 'ServerActive' in tmp_config:
             # Because of list_values=False above,
             # we have to check ServerActive format
@@ -70,6 +97,10 @@ class ZabbixAgentConfig(object):
             self.server_port = int(server_port)
 
     def _process_log_config(self, tmp_config):
+        if self._logger:
+            self._logger.debug(
+                "["+__class__.__name__+"] Processing log config"
+            )
         if 'LogType' in tmp_config and tmp_config['LogType'] in ['file', 'system', 'console']:
             self.log_type = tmp_config['LogType']
         elif 'LogType' in tmp_config:
@@ -90,6 +121,10 @@ class ZabbixAgentConfig(object):
                 self.log_file = tmp_config['LogFile']
 
     def _process_tls_config(self, tmp_config):
+        if self._logger:
+            self._logger.debug(
+                "["+__class__.__name__+"] Processing tls config"
+            )
         if 'TLSConnect' in tmp_config:
             self.tls_connect = tmp_config['TLSConnect']
 
@@ -133,7 +168,6 @@ class ZabbixAgentConfig(object):
     def server_port(self, value):
         # Must between 1024-32767 like ListenPort for Server & Proxy
         # https://www.zabbix.com/documentation/3.0/manual/appendix/config/zabbix_server
-        # https://www.zabbix.com/documentation/3.0/manual/appendix/config/zabbix_proxy
         if isinstance(value, int) and value >= 1024 and value <= 32767:
             self.config['ServerPort'] = value
         else:
