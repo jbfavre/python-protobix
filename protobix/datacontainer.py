@@ -14,6 +14,7 @@ from .senderprotocol import SenderProtocol
 ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? ' + \
                  r'[Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
 ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for key [%s] item [%s]"
+ZBX_TRAPPER_MAX_VALUE = 250
 
 class DataContainer(SenderProtocol):
 
@@ -77,27 +78,60 @@ class DataContainer(SenderProtocol):
         If debug isn't enable, we send items in bulk
         Returns a list of results (1 if no debug, as many as items in other case)
         """
-        results_list = []
+        if self.logger: # pragma: no cover
+            self.logger.info("Starting to send %d items" % len(self._items_list))
         try:
+            # Zabbix trapper send a maximum of 250 items in bulk
+            # We have to respect that, in case of enforcement on zabbix server side
+            # Special case if debug is enabled: we need to send items one by one
+            max_value = ZBX_TRAPPER_MAX_VALUE
             if self.debug_level >= 4:
-                # If debug mode enabled Sent one item at a time
-                for item in self._items_list:
-                    result = self._send_common(item)
-                    results_list.append(result)
-                    # With debug we need to reset socket after each sent
-                    # But never reset DataContainer before all items sent
-                    self._socket_reset()
+                max_value = 1
+                if self.logger: # pragma: no cover
+                    self.logger.debug("Bulk limit is %d items" % max_value)
             else:
-                # If debug mode disabled Sent all items at once
-                result = self._send_common(self._items_list)
-                results_list.append(result)
+                if self.logger: # pragma: no cover
+                    self.logger.info("Bulk limit is %d items" % max_value)
+            # Initialize offsets & counters
+            max_offset = len(self._items_list)
+            run = 1
+            start_offset = 0
+            stop_offset = min(start_offset + max_value, max_offset+1)
+            processed = failed = total = time = 0
+            while start_offset < max_offset:
+                if self.logger:
+                    self.logger.info("run %d: start_offset is %d, stop_offset is %d" % (run, start_offset, stop_offset))
+                # Extract items to be send from global item's list'
+                _items_to_send = self.items_list[start_offset:stop_offset]
+                # Send extracted items & store result
+                run_processed, run_failed, run_total, run_time = self._send_common(_items_to_send)
+                processed += run_processed
+                failed += run_failed
+                total += run_total
+                time += run_time
+                if self.logger:
+                    self.logger.info("%d items sent during run %d" % (stop_offset - start_offset, run))
+                    self.logger.debug("run %d: processed is %d, failed is %d, total is %d" % (run, processed, failed, total))
+                # Compute next run's offsets
+                start_offset = stop_offset
+                stop_offset = min(start_offset + max_value, max_offset+1)
+                run +=1
+                # Reset socket, which is likely to be closed by server
+                self._socket_reset()
         except:
             self._reset()
             self._socket_reset()
             raise
+        if self.logger: # pragma: no cover
+            self.logger.info('All %d items have been sent in %d runs' % (total, run))
+            self.logger.debug(
+                'Total run is %d; item processed: %d, failed: %d, total: %d, during %f seconds' %
+                (run, processed, failed, total, time)
+            )
+        # Everything has been sent.
+        # Reset DataContainer & return results_list
         self._reset()
-        self._socket_reset()
-        return results_list
+        return processed, failed, total, time
 
     def _send_common(self, item):
         """
@@ -111,24 +145,26 @@ class DataContainer(SenderProtocol):
         if self._config.dryrun is False:
             self._send_to_zabbix(item)
             zbx_answer = self._read_from_zabbix()
-        result = self._handle_response(zbx_answer)
+
+        processed, failed, total, time = self._handle_response(zbx_answer)
+
+        output_key = '(bulk)'
+        output_item = '(bulk)'
+        if self.debug_level >= 4:
+            output_key = item[0]['key']
+            output_item = item[0]['value']
         if self.logger: # pragma: no cover
-            output_key = '(bulk)'
-            output_item = '(bulk)'
-            if self.debug_level >= 4:
-                output_key = item['key']
-                output_item = item['value']
             self.logger.info(
                 "" +
                 ZBX_DBG_SEND_RESULT % (
-                    result[0],
-                    result[1],
-                    result[2],
+                    processed,
+                    failed,
+                    total,
                     output_key,
                     output_item
                 )
             )
-        return result
+        return processed, failed, total, time
 
     def _reset(self):
         """
@@ -167,11 +203,11 @@ class DataContainer(SenderProtocol):
             # If dryrun is disabled, we can process answer
             if zbx_answer.get('response') == 'success':
                 result = re.findall(ZBX_RESP_REGEX, zbx_answer.get('info'))
-                result = result[0]
+                processed, failed, total, time = result[0]
         else:
             # If dryrun is enabled, just force result
-            result = ['d', 'd', str(nb_item), 'd']
-        return result
+            processed, failed, total, time = [-1, -1, nb_item, -1]
+        return int(processed), int(failed), int(total), float(time)
 
     @property
     def logger(self):
