@@ -19,6 +19,9 @@ else: # pragma: no cover
 
 ZBX_HDR = "ZBXD\1"
 ZBX_HDR_SIZE = 13
+# Zabbix force TLSv1.2 protocol
+# in src/libs/zbxcrypto/tls.c function zbx_tls_init_child
+ZBX_TLS_PROTOCOL=ssl.PROTOCOL_TLSv1_2
 
 class SenderProtocol(object):
 
@@ -200,7 +203,7 @@ class SenderProtocol(object):
                 self._logger.debug(
                     "TLS enabled to %s" % str(self._config.tls_connect)
                 )
-            ssl_context = self._init_ssl()
+            ssl_context = self._init_tls()
             try:
                 if isinstance(ssl_context, ssl.SSLContext):
                     self.socket = ssl_context.wrap_socket(
@@ -220,7 +223,7 @@ class SenderProtocol(object):
                 "Initialize TLS context"
             )
         # Create a SSLContext and configure it
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        ssl_context = ssl.SSLContext(ZBX_TLS_PROTOCOL)
 
         # If provided, use cert file & key for client authentication
         if self._config.tls_cert_file and self._config.tls_key_file:
