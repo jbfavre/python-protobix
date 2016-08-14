@@ -102,8 +102,10 @@ def test_debug_no_dryrun_yes(data_type):
     assert zbx_datacontainer.debug_level < 4
 
     ''' Send data to zabbix '''
-    results_list = zbx_datacontainer.send()
-    assert results_list == [['d', 'd', '4', 'd']]
+    processed, failed, total, time = zbx_datacontainer.send()
+    assert processed == -1
+    assert failed == -1
+    assert total == 4
     assert zbx_datacontainer.items_list == []
 
 @pytest.mark.parametrize('data_type', pytest_params)
@@ -116,17 +118,17 @@ def test_debug_yes_dryrun_yes(data_type):
     zbx_datacontainer.data_type = data_type
     zbx_datacontainer.dryrun = True
     zbx_datacontainer.debug_level = 4
+
     assert zbx_datacontainer.items_list == []
     zbx_datacontainer.add(DATA[data_type])
+
     assert len(zbx_datacontainer.items_list) == 4
 
-    assert zbx_datacontainer.dryrun is True
-    assert zbx_datacontainer.debug_level >= 4
-
     ''' Send data to zabbix '''
-    results_list = zbx_datacontainer.send()
-    for result in results_list:
-        assert result == ['d', 'd', '1', 'd']
+    processed, failed, total, time = zbx_datacontainer.send()
+    assert processed == -4
+    assert failed == -4
+    assert total == 4
     assert zbx_datacontainer.items_list == []
 
 @pytest.mark.parametrize('data_type', pytest_params)
@@ -188,13 +190,10 @@ def test_need_backend_debug_no_dryrun_no(data_type):
     assert zbx_datacontainer.debug_level < 4
 
     ''' Send data to zabbix '''
-    results_list = zbx_datacontainer.send()
-    assert zbx_datacontainer.items_list == []
-    assert len(results_list) == 1
-    for result in results_list:
-        assert result[0] == '4'
-        assert result[1] == '0'
-        assert result[2] == '4'
+    processed, failed, total, time = zbx_datacontainer.send()
+    assert processed == 4
+    assert failed == 0
+    assert total == 4
     assert zbx_datacontainer.items_list == []
 
 @pytest.mark.parametrize('data_type', pytest_params)
@@ -214,12 +213,10 @@ def test_need_backend_debug_yes_dryrun_no(data_type):
     assert zbx_datacontainer.debug_level >= 4
 
     ''' Send data to zabbix '''
-    results_list = zbx_datacontainer.send()
-    assert len(results_list) == 4
-    for result in results_list:
-        assert result[0] == '1'
-        assert result[1] == '0'
-        assert result[2] == '1'
+    processed, failed, total, time = zbx_datacontainer.send()
+    assert processed == 4
+    assert failed == 0
+    assert total == 4
     assert zbx_datacontainer.items_list == []
 
 @pytest.mark.parametrize('data_type', pytest_params)

@@ -409,5 +409,4 @@ def test_need_backend_tls_cert(data_type, tls_enabled):
     probe_mode = '--update' if data_type == 'items' else '--discovery'
     params.append(probe_mode)
     result = pbx_test_probe.run(params)
-    print(pbx_test_probe.options)
     assert result == 0
