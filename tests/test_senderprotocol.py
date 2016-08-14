@@ -213,15 +213,14 @@ def test_init_tls(mock_configobj):
     mock_configobj.side_effect = [
         {
             'TLSConnect': 'cert',
-            'TLSCAFile': '/tmp/tls_cert_file.pem',
-            'TLSCertFile': '/tmp/tls_cert_file.pem',
-            'TLSKeyFile': '/tmp/tls_key_file.pem'
+            'TLSCAFile': 'tests/tls_cert_file.pem',
+            'TLSCertFile': 'tests/tls_cert_file.pem',
+            'TLSKeyFile': 'tests/tls_key_file.pem'
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
-    with pytest.raises(IOError) as err:
-        tls_context = zbx_senderprotocol._init_tls()
-    #assert isinstance(tls_context, ssl.SSLContext)
+    tls_context = zbx_senderprotocol._init_tls()
+    assert isinstance(tls_context, ssl.SSLContext)
 
 #@mock.patch('configobj.ConfigObj')
 #def test_init_tls_no_tls(mock_configobj):
