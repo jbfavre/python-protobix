@@ -100,8 +100,6 @@ class SenderProtocol(object):
             self._logger.debug(
                 "Building packet to be sent to Zabbix Server"
             )
-        if isinstance(item, dict):
-            item = [item]
         payload = json.dumps({"data": item,
                               "request": self.REQUEST,
                               "clock": self.clock })
