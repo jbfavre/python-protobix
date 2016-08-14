@@ -386,7 +386,7 @@ def test_everything_runs_fine():
         assert result == 0
 
 """
-Check sending data with TLS cert
+Check sending data with or without TLS
 """
 pytest_matrix = (
     ('items', False),
