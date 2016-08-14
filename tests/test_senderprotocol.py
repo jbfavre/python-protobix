@@ -222,16 +222,50 @@ def test_init_tls(mock_configobj):
     tls_context = zbx_senderprotocol._init_tls()
     assert isinstance(tls_context, ssl.SSLContext)
 
-#@mock.patch('configobj.ConfigObj')
-#def test_init_tls_no_tls(mock_configobj):
-#    """
-#    Test SSL context initialization
-#    """
-#    mock_configobj.side_effect = [
-#        {
-#            'TLSConnect': 'unencrypted',
-#        }
-#    ]
-#    zbx_senderprotocol = protobix.SenderProtocol()
-#    _socket = zbx_senderprotocol._socket()
-#    assert isinstance(_socket, socket.socket)
+@mock.patch('configobj.ConfigObj')
+def test_init_tls_non_matching_cert_key(mock_configobj):
+    """
+    Test TLS context initialization
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'cert',
+            'TLSCAFile': 'tests/tls_cert_file.pem',
+            'TLSCertFile': 'tests/tls_cert_file.pem',
+            'TLSKeyFile': 'tests/tls_key_file_invalid.pem'
+        }
+    ]
+    zbx_senderprotocol = protobix.SenderProtocol()
+    with pytest.raises(ssl.SSLError) as err:
+        tls_context = zbx_senderprotocol._init_tls()
+
+@mock.patch('configobj.ConfigObj')
+def test_need_backend_socket_tls_unencrypted(mock_configobj):
+    """
+    Test socket with no TLS
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'unencrypted',
+        }
+    ]
+    zbx_senderprotocol = protobix.SenderProtocol()
+    _socket = zbx_senderprotocol._socket()
+    assert isinstance(_socket, socket.socket)
+
+@mock.patch('configobj.ConfigObj')
+def test_need_backend_socket_tls_cert(mock_configobj):
+    """
+    Test socket with TLS
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'cert',
+            'TLSCAFile': 'tests/tls_cert_file.pem',
+            'TLSCertFile': 'tests/tls_cert_file.pem',
+            'TLSKeyFile': 'tests/tls_key_file.pem'
+        }
+    ]
+    zbx_senderprotocol = protobix.SenderProtocol()
+    _socket = zbx_senderprotocol._socket()
+    assert isinstance(_socket, ssl.SSLSocket)

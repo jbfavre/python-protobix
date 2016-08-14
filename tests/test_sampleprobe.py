@@ -384,3 +384,30 @@ def test_everything_runs_fine():
         mock_datacontainer_send.side_effect = None
         result = pbx_test_probe.run([])
         assert result == 0
+
+"""
+Check sending data with TLS cert
+"""
+pytest_matrix = (
+    ('items', False),
+    ('items', True),
+    ('lld', False),
+    ('lld', True)
+)
+
+@pytest.mark.parametrize('data_type,tls_enabled', pytest_matrix)
+def test_need_backend_tls_cert(data_type, tls_enabled):
+    pbx_test_probe = ProtobixTestProbe()
+    params = []
+    if tls_enabled:
+        params = [
+            '--tls-connect', 'cert',
+            '--tls-ca-file','tests/tls_cert_file.pem',
+            '--tls-cert-file','tests/tls_cert_file.pem',
+            '--tls-key-file','tests/tls_key_file.pem',
+        ]
+    probe_mode = '--update' if data_type == 'items' else '--discovery'
+    params.append(probe_mode)
+    result = pbx_test_probe.run(params)
+    print(pbx_test_probe.options)
+    assert result == 0
