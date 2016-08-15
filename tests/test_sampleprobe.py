@@ -402,9 +402,9 @@ def test_need_backend_tls_cert(data_type, tls_enabled):
     if tls_enabled:
         params = [
             '--tls-connect', 'cert',
-            '--tls-ca-file','tests/tls_cert_file.pem',
-            '--tls-cert-file','tests/tls_cert_file.pem',
-            '--tls-key-file','tests/tls_key_file.pem',
+            '--tls-ca-file', 'tests/tls_ca/protobix-ca.cert.pem',
+            '--tls-cert-file', 'tests/tls_ca/protobix-client.cert.pem',
+            '--tls-key-file', 'tests/tls_ca/protobix-client.key.pem'
         ]
     probe_mode = '--update' if data_type == 'items' else '--discovery'
     params.append(probe_mode)

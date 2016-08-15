@@ -251,9 +251,9 @@ def test_init_tls(mock_configobj):
     mock_configobj.side_effect = [
         {
             'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_cert_file.pem',
-            'TLSCertFile': 'tests/tls_cert_file.pem',
-            'TLSKeyFile': 'tests/tls_key_file.pem'
+            'TLSCAFile': 'tests/tls_ca/protobix-ca.cert.pem',
+            'TLSCertFile': 'tests/tls_ca/protobix-client.cert.pem',
+            'TLSKeyFile': 'tests/tls_ca/protobix-client.key.pem'
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
@@ -268,9 +268,9 @@ def test_init_tls_non_matching_cert_key(mock_configobj):
     mock_configobj.side_effect = [
         {
             'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_cert_file.pem',
-            'TLSCertFile': 'tests/tls_cert_file.pem',
-            'TLSKeyFile': 'tests/tls_key_file_invalid.pem'
+            'TLSCAFile': 'tests/tls_ca/protobix-ca.cert.pem',
+            'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
+            'TLSKeyFile': 'tests/tls_ca/protobix-client.key.pem'
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
@@ -299,9 +299,9 @@ def test_need_backend_socket_tls_cert(mock_configobj):
     mock_configobj.side_effect = [
         {
             'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_cert_file.pem',
-            'TLSCertFile': 'tests/tls_cert_file.pem',
-            'TLSKeyFile': 'tests/tls_key_file.pem'
+            'TLSCAFile': 'tests/tls_ca/protobix-ca.cert.pem',
+            'TLSCertFile': 'tests/tls_ca/protobix-client.cert.pem',
+            'TLSKeyFile': 'tests/tls_ca/protobix-client.key.pem'
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
