@@ -102,9 +102,11 @@ def test_debug_no_dryrun_yes(data_type):
     assert zbx_datacontainer.debug_level < 4
 
     ''' Send data to zabbix '''
-    processed, failed, total, time = zbx_datacontainer.send()
-    assert processed == -1
-    assert failed == -1
+    srv_success, srv_failure, processed, failed, total, time = zbx_datacontainer.send()
+    assert srv_success == 0
+    assert srv_failure == 0
+    assert processed == 0
+    assert failed == 0
     assert total == 4
     assert zbx_datacontainer.items_list == []
 
@@ -125,9 +127,11 @@ def test_debug_yes_dryrun_yes(data_type):
     assert len(zbx_datacontainer.items_list) == 4
 
     ''' Send data to zabbix '''
-    processed, failed, total, time = zbx_datacontainer.send()
-    assert processed == -4
-    assert failed == -4
+    srv_success, srv_failure, processed, failed, total, time = zbx_datacontainer.send()
+    assert srv_success == 0
+    assert srv_failure == 0
+    assert processed == 0
+    assert failed == 0
     assert total == 4
     assert zbx_datacontainer.items_list == []
 
@@ -175,6 +179,21 @@ def test_debug_yes_dryrun_no(data_type):
         results_list = zbx_datacontainer.send()
 
 @pytest.mark.parametrize('data_type', pytest_params)
+def test_server_connection_fails(data_type):
+    """
+    Connection to Zabbix Server fails
+    """
+    zbx_datacontainer = protobix.DataContainer()
+    zbx_datacontainer.server_port = 10060
+    zbx_datacontainer.data_type = data_type
+    assert zbx_datacontainer.items_list == []
+    assert zbx_datacontainer.server_port == 10060
+    zbx_datacontainer.add(DATA[data_type])
+    with pytest.raises(IOError):
+        zbx_datacontainer.send()
+    assert zbx_datacontainer.items_list == []
+
+@pytest.mark.parametrize('data_type', pytest_params)
 def test_need_backend_debug_no_dryrun_no(data_type):
     """
     debug_level to False
@@ -190,7 +209,9 @@ def test_need_backend_debug_no_dryrun_no(data_type):
     assert zbx_datacontainer.debug_level < 4
 
     ''' Send data to zabbix '''
-    processed, failed, total, time = zbx_datacontainer.send()
+    srv_success, srv_failure, processed, failed, total, time = zbx_datacontainer.send()
+    assert srv_success == 1
+    assert srv_failure == 0
     assert processed == 4
     assert failed == 0
     assert total == 4
@@ -213,23 +234,36 @@ def test_need_backend_debug_yes_dryrun_no(data_type):
     assert zbx_datacontainer.debug_level >= 4
 
     ''' Send data to zabbix '''
-    processed, failed, total, time = zbx_datacontainer.send()
+    srv_success, srv_failure, processed, failed, total, time = zbx_datacontainer.send()
+    assert srv_success == 4
+    assert srv_failure == 0
     assert processed == 4
     assert failed == 0
     assert total == 4
     assert zbx_datacontainer.items_list == []
 
+
 @pytest.mark.parametrize('data_type', pytest_params)
-def test_server_connection_fails(data_type):
+def test_need_backend_debug_yes_dryrun_no(data_type):
     """
-    Connection to Zabbix Server fails
+    debug_level to True
+    dryrun to False
     """
     zbx_datacontainer = protobix.DataContainer()
-    zbx_datacontainer.server_port = 10060
+    zbx_datacontainer.debug_level = 4
     zbx_datacontainer.data_type = data_type
     assert zbx_datacontainer.items_list == []
-    assert zbx_datacontainer.server_port == 10060
     zbx_datacontainer.add(DATA[data_type])
-    with pytest.raises(IOError):
-        zbx_datacontainer.send()
+    assert len(zbx_datacontainer.items_list) == 4
+
+    assert zbx_datacontainer.dryrun is False
+    assert zbx_datacontainer.debug_level >= 4
+
+    ''' Send data to zabbix '''
+    srv_success, srv_failure, processed, failed, total, time = zbx_datacontainer.send()
+    assert srv_success == 4
+    assert srv_failure == 0
+    assert processed == 4
+    assert failed == 0
+    assert total == 4
     assert zbx_datacontainer.items_list == []

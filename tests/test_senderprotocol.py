@@ -173,37 +173,75 @@ def test_send_to_zabbix_dryrun():
     result = zbx_senderprotocol._send_to_zabbix(zbx_senderprotocol._items_list)
     assert result == 0
 
+zabbix_answer_params= (
+    # Zabbix Sender protocol <= 2.0
+    'Processed 1 Failed 2 Total 3 Seconds spent 0.123456',
+    # Zabbix Sender protocol >= 2.2
+    'processed: 1; failed: 2; total: 3; seconds spent: 0.123456',
+)
+@pytest.mark.parametrize('zabbix_answer', zabbix_answer_params)
+def test_handle_response(zabbix_answer):
+    """
+    Test Zabbix Server/Proxy answer
+    """
+    payload='{"response":"success","info":"'+zabbix_answer+'"}'
+    zbx_datacontainer = protobix.DataContainer()
+    srv_response, processed, failed, total, time = zbx_datacontainer._handle_response(payload)
+    assert srv_response == 'success'
+    assert processed == 1
+    assert failed == 2
+    assert total == 3
+    assert time == 0.123456
+
+zabbix_answer_params= (
+    # Zabbix Sender protocol <= 2.0
+    'Invalid content',
+    # Zabbix Sender protocol >= 2.2
+    'invalid content',
+)
+@pytest.mark.parametrize('zabbix_answer', zabbix_answer_params)
+def test_handle_response_with_invalid_content(zabbix_answer):
+    """
+    Test Zabbix Server/Proxy answer
+    """
+    payload='{"response":"success","info":"'+zabbix_answer+'"}'
+    zbx_datacontainer = protobix.DataContainer()
+    with pytest.raises(IndexError):
+        zbx_datacontainer._handle_response(payload)
+
 @mock.patch('socket.socket', return_value=mock.MagicMock(name='socket', spec=socket.socket))
-def test_read_from_zabbix(mock_socket):
+def test_read_from_zabbix_valid_content(mock_socket):
     """
     Test sending data to Zabbix Server
     """
     answer_payload = '{"info": "processed: 0; failed: 1; total: 1; seconds spent: 0.000441", "response": "success"}'
     answer_packet = b('ZBXD\1') + struct.pack('<Q', 93) + b(answer_payload)
     mock_socket.recv.return_value = answer_packet
-    answer_awaited = json.loads(answer_payload)
 
     zbx_senderprotocol = protobix.SenderProtocol()
     zbx_senderprotocol.data_type='item'
     zbx_senderprotocol.socket = mock_socket
-    result = zbx_senderprotocol._read_from_zabbix()
-    assert result == answer_awaited
+    srv_response, processed, failed, total, time = zbx_senderprotocol._read_from_zabbix()
+    assert srv_response == 'success'
+    assert processed == 0
+    assert failed == 1
+    assert total == 1
+    assert time == 0.000441
 
 @mock.patch('socket.socket', return_value=mock.MagicMock(name='socket', spec=socket.socket))
-def test_read_from_zabbix(mock_socket):
+def test_read_from_zabbix_invalid_content(mock_socket):
     """
     Test sending data to Zabbix Server
     """
-    answer_payload = '{"info": "processed: 0; failed: 1; total: 1; seconds spent: 0.000441", "response": "success"}'
+    answer_payload = '{"info": "invalid content", "response": "success"}'
     answer_packet = b('ZBXD\1') + struct.pack('<Q', 93) + b(answer_payload)
     mock_socket.recv.return_value = answer_packet
-    answer_awaited = json.loads(answer_payload)
 
     zbx_senderprotocol = protobix.SenderProtocol()
     zbx_senderprotocol.data_type='item'
     zbx_senderprotocol.socket = mock_socket
-    result = zbx_senderprotocol._read_from_zabbix()
-    assert result == answer_awaited
+    with pytest.raises(IndexError):
+        zbx_senderprotocol._read_from_zabbix()
 
 @mock.patch('configobj.ConfigObj')
 def test_init_tls(mock_configobj):
