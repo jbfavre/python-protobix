@@ -1,6 +1,7 @@
 import struct
 import sys
 import time
+import re
 
 import socket
 import ssl
@@ -22,6 +23,8 @@ ZBX_HDR_SIZE = 13
 # Zabbix force TLSv1.2 protocol
 # in src/libs/zbxcrypto/tls.c function zbx_tls_init_child
 ZBX_TLS_PROTOCOL=ssl.PROTOCOL_TLSv1_2
+ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? ' + \
+                 r'[Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
 
 class SenderProtocol(object):
 
@@ -156,8 +159,50 @@ class SenderProtocol(object):
             )
         if sys.version_info[0] >= 3: # pragma: no cover
             zbx_srv_resp_body = zbx_srv_resp_body.decode()
+        # Analyze Zabbix answer
+        response, processed, failed, total, time = self._handle_response(zbx_srv_resp_body)
+
         # Return Zabbix Server answer as JSON
-        return json.loads(zbx_srv_resp_body)
+        return response, processed, failed, total, time
+
+    def _handle_response(self, zbx_answer):
+        """
+        Analyze Zabbix Server response
+        Returns a list with number of:
+        * processed items
+        * failed items
+        * total items
+        * time spent
+
+        :zbx_answer: Zabbix server response as string
+        """
+        zbx_answer = json.loads(zbx_answer)
+        if self._logger: # pragma: no cover
+            self._logger.info(
+                "Anaylizing Zabbix Server's answer"
+            )
+            if zbx_answer:
+                self._logger.debug("Zabbix Server response is: [%s]" % zbx_answer)
+
+        # Default items number in length of th storage list
+        nb_item = len(self._items_list)
+        if self._config.debug_level >= 4:
+            # If debug enabled, force it to 1
+            nb_item = 1
+
+        if zbx_answer and self._config.dryrun is True:
+            # If dryrun is enabled, just force result
+            response, processed, failed, total, time = ['dryrun', -1, -1, nb_item, -1]
+        else:
+            # If dryrun is disabled, we can process answer
+            # Answer from Zabbix Server can be:
+            # {'response': 'failed', 'info': 'processed: 0; failed: 0; total: 0; seconds spent: 0.000006'}
+            # {'response': 'success', 'info': 'processed: 0; failed: 0; total: 0; seconds spent: 0.000006'}
+            response = zbx_answer.get('response')
+            result = re.findall(ZBX_RESP_REGEX, zbx_answer.get('info'))
+            processed, failed, total, time = result[0]
+
+        return response, int(processed), int(failed), int(total), float(time)
 
     def _socket_reset(self):
         if self.socket:
