@@ -251,6 +251,7 @@ class SenderProtocol(object):
                 if isinstance(ssl_context, ssl.SSLContext):
                     self.socket = ssl_context.wrap_socket(
                         self.socket,
+                        do_handshake_on_connect=True,
                         server_hostname=self._config.server_active
                     )
             except ssl.CertificateError:
@@ -265,11 +266,16 @@ class SenderProtocol(object):
             self._logger.info(
                 "Initialize TLS context"
             )
+
         # Create a SSLContext and configure it
         ssl_context = ssl.SSLContext(ZBX_TLS_PROTOCOL)
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
 
-        # If provided, use cert file & key for client authentication
-        if self._config.tls_cert_file and self._config.tls_key_file:
+        # Avoid CRIME and related attacks
+        ssl_context.options |= ssl.OP_NO_COMPRESSION
+
+        # If tls_connect is cert, we must provide client cert file & key
+        if self._config.tls_connect == 'cert':
             if self._logger: # pragma: no cover
                 self._logger.debug(
                     "Using provided TLSCertFile %s" % self._config.tls_cert_file
@@ -288,15 +294,28 @@ class SenderProtocol(object):
                 self._logger.debug(
                     "Using provided TLSCAFile %s" % self._config.tls_ca_file
                 )
-            ssl_context.verify_mode = ssl.CERT_REQUIRED
+            ssl_context.load_default_certs(ssl.Purpose.SERVER_AUTH)
             ssl_context.load_verify_locations(
                 cafile=self._config.tls_ca_file
             )
 
+        # If provided, use CRL file & enforce server certificate check
+        if self._config.tls_crl_file:
+            if self._logger: # pragma: no cover
+                self._logger.debug(
+                    "Using provided TLSCRLFile %s" % self._config.tls_crl_file
+                )
+            ssl_context.verify_flags =  ssl.VERIFY_X509_STRICT | ssl.VERIFY_CRL_CHECK_LEAF
+            ssl_context.load_verify_locations(
+                cafile=self._config.tls_crl_file
+            )
+
         ## If provided enforce server cert issuer check
         #if self._config.tls_server_cert_issuer:
-        #    ssl_context.verify_issuer
+        #    verify_issuer
+
         ## If provided enforce server cert subject check
         #if self._config.tls_server_cert_issuer:
-        #    ssl_context.verify_issuer
+        #    verify_issuer
+
         return ssl_context
