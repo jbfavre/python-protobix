@@ -163,16 +163,6 @@ def test_send_to_zabbix(mock_socket):
 
     zbx_senderprotocol.socket.sendall.assert_called_with(packet)
 
-def test_send_to_zabbix_dryrun():
-    """
-    Test sending data to Zabbix Server
-    """
-    zbx_senderprotocol = protobix.SenderProtocol()
-    zbx_senderprotocol.data_type='item'
-    zbx_senderprotocol._config.dryrun = True
-    result = zbx_senderprotocol._send_to_zabbix(zbx_senderprotocol._items_list)
-    assert result == 0
-
 zabbix_answer_params= (
     # Zabbix Sender protocol <= 2.0
     'Processed 1 Failed 2 Total 3 Seconds spent 0.123456',
@@ -299,9 +289,9 @@ def test_need_backend_socket_tls_cert(mock_configobj):
     mock_configobj.side_effect = [
         {
             'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_ca/protobix-ca.cert.pem',
-            'TLSCertFile': 'tests/tls_ca/protobix-client.cert.pem',
-            'TLSKeyFile': 'tests/tls_ca/protobix-client.key.pem'
+            'TLSCAFile': 'tests/tls_ca/rogue-protobix-ca.cert.pem',
+            'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
+            'TLSKeyFile': 'tests/tls_ca/rogue-protobix-client.key.pem'
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
