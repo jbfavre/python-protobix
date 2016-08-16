@@ -20,11 +20,11 @@ else: # pragma: no cover
 
 ZBX_HDR = "ZBXD\1"
 ZBX_HDR_SIZE = 13
+ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? ' + \
+                 r'[Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
 # Zabbix force TLSv1.2 protocol
 # in src/libs/zbxcrypto/tls.c function zbx_tls_init_child
 ZBX_TLS_PROTOCOL=ssl.PROTOCOL_TLSv1_2
-ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? ' + \
-                 r'[Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
 
 class SenderProtocol(object):
 
@@ -86,13 +86,6 @@ class SenderProtocol(object):
         return int(time.time())
 
     def _send_to_zabbix(self, item):
-        # Return 0 if dryrun mode enabled
-        if self._config.dryrun:
-            if self._logger: # pragma: no cover
-                self._logger.info(
-                    "dryrun mode enabled. Nothing to do"
-                )
-            return 0
         if self._logger: # pragma: no cover
             self._logger.info(
                 "Send data to Zabbix Server"
@@ -106,6 +99,8 @@ class SenderProtocol(object):
         payload = json.dumps({"data": item,
                               "request": self.REQUEST,
                               "clock": self.clock })
+        if self._logger: # pragma: no cover
+            self._logger.debug('About to send: ' + str(payload))
         data_length = len(payload)
         data_header = struct.pack('<Q', data_length)
         packet = b(ZBX_HDR) + data_header + b(payload)
@@ -190,17 +185,10 @@ class SenderProtocol(object):
             # If debug enabled, force it to 1
             nb_item = 1
 
-        if zbx_answer and self._config.dryrun is True:
-            # If dryrun is enabled, just force result
-            response, processed, failed, total, time = ['dryrun', -1, -1, nb_item, -1]
-        else:
-            # If dryrun is disabled, we can process answer
-            # Answer from Zabbix Server can be:
-            # {'response': 'failed', 'info': 'processed: 0; failed: 0; total: 0; seconds spent: 0.000006'}
-            # {'response': 'success', 'info': 'processed: 0; failed: 0; total: 0; seconds spent: 0.000006'}
-            response = zbx_answer.get('response')
-            result = re.findall(ZBX_RESP_REGEX, zbx_answer.get('info'))
-            processed, failed, total, time = result[0]
+        # If dryrun is disabled, we can process answer
+        response = zbx_answer.get('response')
+        result = re.findall(ZBX_RESP_REGEX, zbx_answer.get('info'))
+        processed, failed, total, time = result[0]
 
         return response, int(processed), int(failed), int(total), float(time)
 
@@ -217,7 +205,7 @@ class SenderProtocol(object):
         # If socket already exists, use it
         if self.socket is not None:
             if self._logger: # pragma: no cover
-                self._logger.info(
+                self._logger.debug(
                     "Using existing socket"
                 )
             return self.socket
@@ -243,21 +231,46 @@ class SenderProtocol(object):
         # TLS is enabled, let's set it up
         if self._config.tls_connect != 'unencrypted':
             if self._logger: # pragma: no cover
-                self._logger.debug(
-                    "TLS enabled to %s" % str(self._config.tls_connect)
+                self._logger.info(
+                    'TLS enabled to %s' % str(self._config.tls_connect)
                 )
             ssl_context = self._init_tls()
+            if self._logger: # pragma: no cover
+                self._logger.debug(
+                    'TLS context initialized'
+                )
             try:
                 if isinstance(ssl_context, ssl.SSLContext):
+                    if self._logger: # pragma: no cover
+                        self._logger.debug(
+                            'Wrapping socket to SSL context'
+                        )
                     self.socket = ssl_context.wrap_socket(
-                        self.socket,
-                        do_handshake_on_connect=True,
-                        server_hostname=self._config.server_active
+                        self.socket
                     )
             except ssl.CertificateError:
-                raise
+                if self._logger: # pragma: no cover
+                    self._logger.error(
+                        'SSL Certificate Error occured'
+                    )
+                # OpenSSL seems to raise ssl.SSLError exception
+                # even for certificate errors
+                raise # pragma: no cover
             except ssl.SSLError:
+                if self._logger: # pragma: no cover
+                    self._logger.error(
+                        'SSL Error occured'
+                    )
                 raise
+
+        if self._logger and isinstance(self.socket, ssl.SSLSocket): # pragma: no cover
+            self._logger.info(
+                'Network socket initialized with TLS support'
+            )
+        elif self._logger: # pragma: no cover
+            self._logger.info(
+                'Network socket initialized with no TLS'
+            )
 
         return self.socket
 
@@ -269,9 +282,17 @@ class SenderProtocol(object):
 
         # Create a SSLContext and configure it
         ssl_context = ssl.SSLContext(ZBX_TLS_PROTOCOL)
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                'Setting TLS verify_mode to ssl.CERT_REQUIRED'
+            )
         ssl_context.verify_mode = ssl.CERT_REQUIRED
 
         # Avoid CRIME and related attacks
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                'Setting TLS option ssl.OP_NO_COMPRESSION'
+            )
         ssl_context.options |= ssl.OP_NO_COMPRESSION
 
         # If tls_connect is cert, we must provide client cert file & key
