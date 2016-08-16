@@ -91,17 +91,25 @@ class DataContainer(SenderProtocol):
                     self.logger.info("Bulk limit is %d items" % max_value)
             # Initialize offsets & counters
             max_offset = len(self._items_list)
-            run = 1
+            run = 0
             start_offset = 0
-            stop_offset = min(start_offset + max_value, max_offset+1)
+            stop_offset = min(start_offset + max_value, max_offset)
             server_success = server_failure = processed = failed = total = time = 0
-            while start_offset < max_offset:
+            while start_offset < stop_offset:
+                run += 1
                 if self.logger: # pragma: no cover
-                    self.logger.info("run %d: start_offset is %d, stop_offset is %d" % (run, start_offset, stop_offset))
+                    self.logger.debug(
+                        'run %d: start_offset is %d, stop_offset is %d' %
+                        (run, start_offset, stop_offset)
+                    )
+
                 # Extract items to be send from global item's list'
                 _items_to_send = self.items_list[start_offset:stop_offset]
-                # Send extracted items & store result
+
+                # Send extracted items
                 run_response, run_processed, run_failed, run_total, run_time = self._send_common(_items_to_send)
+
+                # Update counters
                 if run_response == 'success':
                     server_success += 1
                 elif run_response == 'failed':
@@ -111,12 +119,16 @@ class DataContainer(SenderProtocol):
                 total += run_total
                 time += run_time
                 if self.logger: # pragma: no cover
-                    self.logger.info("%d items sent during run %d" % (stop_offset - start_offset, run))
-                    self.logger.debug("run %d: processed is %d, failed is %d, total is %d" % (run, processed, failed, total))
+                    self.logger.info("%d items sent during run %d" % (run_total, run))
+                    self.logger.debug(
+                        'run %d: processed is %d, failed is %d, total is %d' %
+                        (run, run_processed, run_failed, run_total)
+                    )
+
                 # Compute next run's offsets
                 start_offset = stop_offset
-                stop_offset = min(start_offset + max_value, max_offset+1)
-                run +=1
+                stop_offset = min(start_offset + max_value, max_offset)
+
                 # Reset socket, which is likely to be closed by server
                 self._socket_reset()
         except:
