@@ -163,64 +163,109 @@ def test_send_to_zabbix(mock_socket):
 
     zbx_senderprotocol.socket.sendall.assert_called_with(packet)
 
-def test_send_to_zabbix_dryrun():
+zabbix_answer_params= (
+    # Zabbix Sender protocol <= 2.0
+    'Processed 1 Failed 2 Total 3 Seconds spent 0.123456',
+    # Zabbix Sender protocol >= 2.2
+    'processed: 1; failed: 2; total: 3; seconds spent: 0.123456',
+)
+@pytest.mark.parametrize('zabbix_answer', zabbix_answer_params)
+def test_handle_response(zabbix_answer):
     """
-    Test sending data to Zabbix Server
+    Test Zabbix Server/Proxy answer
     """
-    zbx_senderprotocol = protobix.SenderProtocol()
-    zbx_senderprotocol.data_type='item'
-    zbx_senderprotocol._config.dryrun = True
-    result = zbx_senderprotocol._send_to_zabbix(zbx_senderprotocol._items_list)
-    assert result == 0
+    payload='{"response":"success","info":"'+zabbix_answer+'"}'
+    zbx_datacontainer = protobix.DataContainer()
+    srv_response, processed, failed, total, time = zbx_datacontainer._handle_response(payload)
+    assert srv_response == 'success'
+    assert processed == 1
+    assert failed == 2
+    assert total == 3
+    assert time == 0.123456
+
+zabbix_answer_params= (
+    # Zabbix Sender protocol <= 2.0
+    'Invalid content',
+    # Zabbix Sender protocol >= 2.2
+    'invalid content',
+)
+@pytest.mark.parametrize('zabbix_answer', zabbix_answer_params)
+def test_handle_response_with_invalid_content(zabbix_answer):
+    """
+    Test Zabbix Server/Proxy answer
+    """
+    payload='{"response":"success","info":"'+zabbix_answer+'"}'
+    zbx_datacontainer = protobix.DataContainer()
+    with pytest.raises(IndexError):
+        zbx_datacontainer._handle_response(payload)
 
 @mock.patch('socket.socket', return_value=mock.MagicMock(name='socket', spec=socket.socket))
-def test_read_from_zabbix(mock_socket):
+def test_read_from_zabbix_valid_content(mock_socket):
     """
     Test sending data to Zabbix Server
     """
     answer_payload = '{"info": "processed: 0; failed: 1; total: 1; seconds spent: 0.000441", "response": "success"}'
     answer_packet = b('ZBXD\1') + struct.pack('<Q', 93) + b(answer_payload)
     mock_socket.recv.return_value = answer_packet
-    answer_awaited = json.loads(answer_payload)
 
     zbx_senderprotocol = protobix.SenderProtocol()
     zbx_senderprotocol.data_type='item'
     zbx_senderprotocol.socket = mock_socket
-    result = zbx_senderprotocol._read_from_zabbix()
-    assert result == answer_awaited
+    srv_response, processed, failed, total, time = zbx_senderprotocol._read_from_zabbix()
+    assert srv_response == 'success'
+    assert processed == 0
+    assert failed == 1
+    assert total == 1
+    assert time == 0.000441
 
 @mock.patch('socket.socket', return_value=mock.MagicMock(name='socket', spec=socket.socket))
-def test_read_from_zabbix(mock_socket):
+def test_read_from_zabbix_invalid_content(mock_socket):
     """
     Test sending data to Zabbix Server
     """
-    answer_payload = '{"info": "processed: 0; failed: 1; total: 1; seconds spent: 0.000441", "response": "success"}'
+    answer_payload = '{"info": "invalid content", "response": "success"}'
     answer_packet = b('ZBXD\1') + struct.pack('<Q', 93) + b(answer_payload)
     mock_socket.recv.return_value = answer_packet
-    answer_awaited = json.loads(answer_payload)
 
     zbx_senderprotocol = protobix.SenderProtocol()
     zbx_senderprotocol.data_type='item'
     zbx_senderprotocol.socket = mock_socket
-    result = zbx_senderprotocol._read_from_zabbix()
-    assert result == answer_awaited
+    with pytest.raises(IndexError):
+        zbx_senderprotocol._read_from_zabbix()
 
 @mock.patch('configobj.ConfigObj')
-def test_init_tls(mock_configobj):
+def test_need_backend_init_tls(mock_configobj):
     """
     Test TLS context initialization
     """
     mock_configobj.side_effect = [
         {
             'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_cert_file.pem',
-            'TLSCertFile': 'tests/tls_cert_file.pem',
-            'TLSKeyFile': 'tests/tls_key_file.pem'
+            'TLSCAFile': 'tests/tls_ca/rogue-protobix-ca.cert.pem',
+            'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
+            'TLSKeyFile': 'tests/tls_ca/rogue-protobix-client.key.pem'
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
-    tls_context = zbx_senderprotocol._init_tls()
-    assert isinstance(tls_context, ssl.SSLContext)
+    tls_socket = zbx_senderprotocol._socket()
+    assert isinstance(tls_socket, ssl.SSLSocket)
+
+@mock.patch('configobj.ConfigObj')
+def test_need_backend_init_tls_cert_verify_fails(mock_configobj):
+    """
+    Test TLS context initialization
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'cert',
+            'TLSCAFile': 'tests/tls_ca/protobix-ca.cert.pem',
+            'TLSCertFile': 'tests/tls_ca/protobix-client.cert.pem',
+            'TLSKeyFile': 'tests/tls_ca/protobix-client.key.pem'
+        }
+    ]
+    zbx_senderprotocol = protobix.SenderProtocol()
+    with pytest.raises(ssl.SSLError):
+        zbx_senderprotocol._socket()
 
 @mock.patch('configobj.ConfigObj')
 def test_init_tls_non_matching_cert_key(mock_configobj):
@@ -230,9 +275,9 @@ def test_init_tls_non_matching_cert_key(mock_configobj):
     mock_configobj.side_effect = [
         {
             'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_cert_file.pem',
-            'TLSCertFile': 'tests/tls_cert_file.pem',
-            'TLSKeyFile': 'tests/tls_key_file_invalid.pem'
+            'TLSCAFile': 'tests/tls_ca/protobix-ca.cert.pem',
+            'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
+            'TLSKeyFile': 'tests/tls_ca/protobix-client.key.pem'
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
@@ -261,9 +306,9 @@ def test_need_backend_socket_tls_cert(mock_configobj):
     mock_configobj.side_effect = [
         {
             'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_cert_file.pem',
-            'TLSCertFile': 'tests/tls_cert_file.pem',
-            'TLSKeyFile': 'tests/tls_key_file.pem'
+            'TLSCAFile': 'tests/tls_ca/rogue-protobix-ca.cert.pem',
+            'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
+            'TLSKeyFile': 'tests/tls_ca/rogue-protobix-client.key.pem'
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()

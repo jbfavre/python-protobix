@@ -6,3 +6,5 @@
 MANIFEST
 dist/
 *.egg-info
+*.xdb
+*.db

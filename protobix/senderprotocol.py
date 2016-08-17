@@ -1,6 +1,7 @@
 import struct
 import sys
 import time
+import re
 
 import socket
 import ssl
@@ -19,6 +20,8 @@ else: # pragma: no cover
 
 ZBX_HDR = "ZBXD\1"
 ZBX_HDR_SIZE = 13
+ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? ' + \
+                 r'[Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
 # Zabbix force TLSv1.2 protocol
 # in src/libs/zbxcrypto/tls.c function zbx_tls_init_child
 ZBX_TLS_PROTOCOL=ssl.PROTOCOL_TLSv1_2
@@ -83,13 +86,6 @@ class SenderProtocol(object):
         return int(time.time())
 
     def _send_to_zabbix(self, item):
-        # Return 0 if dryrun mode enabled
-        if self._config.dryrun:
-            if self._logger: # pragma: no cover
-                self._logger.info(
-                    "dryrun mode enabled. Nothing to do"
-                )
-            return 0
         if self._logger: # pragma: no cover
             self._logger.info(
                 "Send data to Zabbix Server"
@@ -103,6 +99,8 @@ class SenderProtocol(object):
         payload = json.dumps({"data": item,
                               "request": self.REQUEST,
                               "clock": self.clock })
+        if self._logger: # pragma: no cover
+            self._logger.debug('About to send: ' + str(payload))
         data_length = len(payload)
         data_header = struct.pack('<Q', data_length)
         packet = b(ZBX_HDR) + data_header + b(payload)
@@ -156,8 +154,43 @@ class SenderProtocol(object):
             )
         if sys.version_info[0] >= 3: # pragma: no cover
             zbx_srv_resp_body = zbx_srv_resp_body.decode()
+        # Analyze Zabbix answer
+        response, processed, failed, total, time = self._handle_response(zbx_srv_resp_body)
+
         # Return Zabbix Server answer as JSON
-        return json.loads(zbx_srv_resp_body)
+        return response, processed, failed, total, time
+
+    def _handle_response(self, zbx_answer):
+        """
+        Analyze Zabbix Server response
+        Returns a list with number of:
+        * processed items
+        * failed items
+        * total items
+        * time spent
+
+        :zbx_answer: Zabbix server response as string
+        """
+        zbx_answer = json.loads(zbx_answer)
+        if self._logger: # pragma: no cover
+            self._logger.info(
+                "Anaylizing Zabbix Server's answer"
+            )
+            if zbx_answer:
+                self._logger.debug("Zabbix Server response is: [%s]" % zbx_answer)
+
+        # Default items number in length of th storage list
+        nb_item = len(self._items_list)
+        if self._config.debug_level >= 4:
+            # If debug enabled, force it to 1
+            nb_item = 1
+
+        # If dryrun is disabled, we can process answer
+        response = zbx_answer.get('response')
+        result = re.findall(ZBX_RESP_REGEX, zbx_answer.get('info'))
+        processed, failed, total, time = result[0]
+
+        return response, int(processed), int(failed), int(total), float(time)
 
     def _socket_reset(self):
         if self.socket:
@@ -172,7 +205,7 @@ class SenderProtocol(object):
         # If socket already exists, use it
         if self.socket is not None:
             if self._logger: # pragma: no cover
-                self._logger.info(
+                self._logger.debug(
                     "Using existing socket"
                 )
             return self.socket
@@ -198,33 +231,76 @@ class SenderProtocol(object):
         # TLS is enabled, let's set it up
         if self._config.tls_connect != 'unencrypted':
             if self._logger: # pragma: no cover
-                self._logger.debug(
-                    "TLS enabled to %s" % str(self._config.tls_connect)
+                self._logger.info(
+                    'Configuring TLS'
                 )
-            ssl_context = self._init_tls()
-            try:
-                if isinstance(ssl_context, ssl.SSLContext):
-                    self.socket = ssl_context.wrap_socket(
-                        self.socket,
-                        server_hostname=self._config.server_active
-                    )
-            except ssl.CertificateError:
-                raise
-            except ssl.SSLError:
-                raise
+                self._logger.debug(
+                    'TLS enabled to %s' % str(self._config.tls_connect)
+                )
+            self.socket = self._init_tls()
+            if self._logger: # pragma: no cover
+                self._logger.info(
+                    'Network socket initialized with TLS support'
+                )
+            #try:
+            #    if isinstance(ssl_context, ssl.SSLContext):
+            #        if self._logger: # pragma: no cover
+            #            self._logger.debug(
+            #                'Wrapping socket to SSL context'
+            #            )
+            #        self.socket = ssl_context.wrap_socket(
+            #            self.socket
+            #        )
+            #except ssl.CertificateError:
+            #    # OpenSSL seems to raise ssl.SSLError exception
+            #    # even for certificate errors.
+            #    if self._logger: # pragma: no cover
+            #        self._logger.error(
+            #            'SSL Certificate Error occured'
+            #        )
+            #    raise # pragma: no cover
+            #except ssl.SSLError:
+            #    if self._logger: # pragma: no cover
+            #        self._logger.error(
+            #            'SSL Error occured'
+            #        )
+            #    raise
+
+        if self._logger and isinstance(self.socket, socket.socket): # pragma: no cover
+            self._logger.info(
+                'Network socket initialized with no TLS'
+            )
 
         return self.socket
 
+    """
+    Manage TLS context & Wrap socket
+    Returns
+    """
     def _init_tls(self):
         if self._logger: # pragma: no cover
             self._logger.info(
                 "Initialize TLS context"
             )
+
         # Create a SSLContext and configure it
         ssl_context = ssl.SSLContext(ZBX_TLS_PROTOCOL)
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                'Setting TLS verify_mode to ssl.CERT_REQUIRED'
+            )
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
 
-        # If provided, use cert file & key for client authentication
-        if self._config.tls_cert_file and self._config.tls_key_file:
+        # Avoid CRIME and related attacks
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                'Setting TLS option ssl.OP_NO_COMPRESSION'
+            )
+        ssl_context.options |= ssl.OP_NO_COMPRESSION
+        ssl_context.verify_flags =  ssl.VERIFY_X509_STRICT
+
+        # If tls_connect is cert, we must provide client cert file & key
+        if self._config.tls_connect == 'cert':
             if self._logger: # pragma: no cover
                 self._logger.debug(
                     "Using provided TLSCertFile %s" % self._config.tls_cert_file
@@ -243,15 +319,33 @@ class SenderProtocol(object):
                 self._logger.debug(
                     "Using provided TLSCAFile %s" % self._config.tls_ca_file
                 )
-            ssl_context.verify_mode = ssl.CERT_REQUIRED
+            ssl_context.load_default_certs(ssl.Purpose.SERVER_AUTH)
             ssl_context.load_verify_locations(
                 cafile=self._config.tls_ca_file
             )
 
+        # If provided, use CRL file & enforce server certificate check
+        if self._config.tls_crl_file:
+            if self._logger: # pragma: no cover
+                self._logger.debug(
+                    "Using provided TLSCRLFile %s" % self._config.tls_crl_file
+                )
+            ssl_context.verify_flags |=  ssl.VERIFY_CRL_CHECK_LEAF
+            ssl_context.load_verify_locations(
+                cafile=self._config.tls_crl_file
+            )
+
         ## If provided enforce server cert issuer check
         #if self._config.tls_server_cert_issuer:
-        #    ssl_context.verify_issuer
+        #    verify_issuer
+
         ## If provided enforce server cert subject check
         #if self._config.tls_server_cert_issuer:
-        #    ssl_context.verify_issuer
-        return ssl_context
+        #    verify_issuer
+
+        # Once configuration is done, wrap network socket to TLS context
+        tls_socket = ssl_context.wrap_socket(
+            self.socket
+        )
+        assert isinstance(tls_socket, ssl.SSLSocket)
+        return tls_socket
