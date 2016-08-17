@@ -232,48 +232,51 @@ class SenderProtocol(object):
         if self._config.tls_connect != 'unencrypted':
             if self._logger: # pragma: no cover
                 self._logger.info(
+                    'Configuring TLS'
+                )
+                self._logger.debug(
                     'TLS enabled to %s' % str(self._config.tls_connect)
                 )
-            ssl_context = self._init_tls()
+            self.socket = self._init_tls()
             if self._logger: # pragma: no cover
-                self._logger.debug(
-                    'TLS context initialized'
+                self._logger.info(
+                    'Network socket initialized with TLS support'
                 )
-            try:
-                if isinstance(ssl_context, ssl.SSLContext):
-                    if self._logger: # pragma: no cover
-                        self._logger.debug(
-                            'Wrapping socket to SSL context'
-                        )
-                    self.socket = ssl_context.wrap_socket(
-                        self.socket
-                    )
-            except ssl.CertificateError:
-                if self._logger: # pragma: no cover
-                    self._logger.error(
-                        'SSL Certificate Error occured'
-                    )
-                # OpenSSL seems to raise ssl.SSLError exception
-                # even for certificate errors
-                raise # pragma: no cover
-            except ssl.SSLError:
-                if self._logger: # pragma: no cover
-                    self._logger.error(
-                        'SSL Error occured'
-                    )
-                raise
+            #try:
+            #    if isinstance(ssl_context, ssl.SSLContext):
+            #        if self._logger: # pragma: no cover
+            #            self._logger.debug(
+            #                'Wrapping socket to SSL context'
+            #            )
+            #        self.socket = ssl_context.wrap_socket(
+            #            self.socket
+            #        )
+            #except ssl.CertificateError:
+            #    # OpenSSL seems to raise ssl.SSLError exception
+            #    # even for certificate errors.
+            #    if self._logger: # pragma: no cover
+            #        self._logger.error(
+            #            'SSL Certificate Error occured'
+            #        )
+            #    raise # pragma: no cover
+            #except ssl.SSLError:
+            #    if self._logger: # pragma: no cover
+            #        self._logger.error(
+            #            'SSL Error occured'
+            #        )
+            #    raise
 
-        if self._logger and isinstance(self.socket, ssl.SSLSocket): # pragma: no cover
-            self._logger.info(
-                'Network socket initialized with TLS support'
-            )
-        elif self._logger: # pragma: no cover
+        if self._logger and isinstance(self.socket, socket.socket): # pragma: no cover
             self._logger.info(
                 'Network socket initialized with no TLS'
             )
 
         return self.socket
 
+    """
+    Manage TLS context & Wrap socket
+    Returns
+    """
     def _init_tls(self):
         if self._logger: # pragma: no cover
             self._logger.info(
@@ -294,6 +297,7 @@ class SenderProtocol(object):
                 'Setting TLS option ssl.OP_NO_COMPRESSION'
             )
         ssl_context.options |= ssl.OP_NO_COMPRESSION
+        ssl_context.verify_flags =  ssl.VERIFY_X509_STRICT
 
         # If tls_connect is cert, we must provide client cert file & key
         if self._config.tls_connect == 'cert':
@@ -326,7 +330,7 @@ class SenderProtocol(object):
                 self._logger.debug(
                     "Using provided TLSCRLFile %s" % self._config.tls_crl_file
                 )
-            ssl_context.verify_flags =  ssl.VERIFY_X509_STRICT | ssl.VERIFY_CRL_CHECK_LEAF
+            ssl_context.verify_flags |=  ssl.VERIFY_CRL_CHECK_LEAF
             ssl_context.load_verify_locations(
                 cafile=self._config.tls_crl_file
             )
@@ -339,4 +343,9 @@ class SenderProtocol(object):
         #if self._config.tls_server_cert_issuer:
         #    verify_issuer
 
-        return ssl_context
+        # Once configuration is done, wrap network socket to TLS context
+        tls_socket = ssl_context.wrap_socket(
+            self.socket
+        )
+        assert isinstance(tls_socket, ssl.SSLSocket)
+        return tls_socket
