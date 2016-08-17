@@ -234,7 +234,24 @@ def test_read_from_zabbix_invalid_content(mock_socket):
         zbx_senderprotocol._read_from_zabbix()
 
 @mock.patch('configobj.ConfigObj')
-def test_init_tls(mock_configobj):
+def test_need_backend_init_tls(mock_configobj):
+    """
+    Test TLS context initialization
+    """
+    mock_configobj.side_effect = [
+        {
+            'TLSConnect': 'cert',
+            'TLSCAFile': 'tests/tls_ca/rogue-protobix-ca.cert.pem',
+            'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
+            'TLSKeyFile': 'tests/tls_ca/rogue-protobix-client.key.pem'
+        }
+    ]
+    zbx_senderprotocol = protobix.SenderProtocol()
+    tls_socket = zbx_senderprotocol._socket()
+    assert isinstance(tls_socket, ssl.SSLSocket)
+
+@mock.patch('configobj.ConfigObj')
+def test_need_backend_init_tls_cert_verify_fails(mock_configobj):
     """
     Test TLS context initialization
     """
@@ -247,8 +264,8 @@ def test_init_tls(mock_configobj):
         }
     ]
     zbx_senderprotocol = protobix.SenderProtocol()
-    tls_context = zbx_senderprotocol._init_tls()
-    assert isinstance(tls_context, ssl.SSLContext)
+    with pytest.raises(ssl.SSLError):
+        zbx_senderprotocol._socket()
 
 @mock.patch('configobj.ConfigObj')
 def test_init_tls_non_matching_cert_key(mock_configobj):
