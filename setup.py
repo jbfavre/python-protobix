@@ -2,30 +2,6 @@
 
 import sys
 from setuptools import setup
-from setuptools.command.test import test as TestCommand
-
-class PyTest(TestCommand):
-    user_options = []
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import pytest
-        pytest_options = ['-v', '-k-_need_backend']
-        coverage_options = ['--cov', 'protobix', '--cov-report', 'term-missing']
-        pylint_options = ['--pylint ', '--pylint-error-types=WEF']
-        try: import coverage
-        except ImportError: coverage_options = []
-        try: import pylint
-        except ImportError: pylint_options = []
-        pytest_options += coverage_options
-        pytest_options += pylint_options
-        print(pytest_options)
-        errno = pytest.main(pytest_options)
-        raise SystemExit(errno)
 
 setup(
     name = 'protobix',
@@ -42,6 +18,7 @@ setup(
         'pytest-cov',
         'pytest-mock'
     ],
+    test_suite='tests',
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
                          'It allows to build list of items and send '
@@ -55,5 +32,4 @@ setup(
     download_url = 'https://github.com/jbfavre/python-protobix/archive/0.1.2.tar.gz',
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
-    cmdclass={'test': PyTest}
    )
