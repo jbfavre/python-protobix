@@ -36,7 +36,7 @@ setup(
         'simplejson',
         'traceback2'
     ],
-    tests_requires = [
+    tests_require = [
         'mock',
         'pytest',
         'pytest-cov',
