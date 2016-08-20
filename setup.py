@@ -14,7 +14,6 @@ setup(
     tests_require = [
         'mock',
         'pytest',
-        'pytest-cov',
     ],
     test_suite='tests',
     description = 'Implementation of Zabbix Sender protocol',
