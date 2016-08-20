@@ -36,7 +36,12 @@ setup(
         'simplejson',
         'traceback2'
     ],
-
+    tests_requires = [
+        'mock',
+        'pytest',
+        'pytest-cov',
+        'pytest-mock'
+    ],
     description = 'Implementation of Zabbix Sender protocol',
     long_description = ( 'This module implements Zabbix Sender Protocol.\n'
                          'It allows to build list of items and send '
