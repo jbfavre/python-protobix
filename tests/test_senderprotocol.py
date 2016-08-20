@@ -9,7 +9,6 @@ import time
 try: import simplejson as json
 except ImportError: import json
 import socket
-import ssl
 
 import sys
 import os
@@ -26,6 +25,13 @@ else:
     import codecs
     def b(x):
         return codecs.utf_8_encode(x)[0]
+
+# Zabbix force TLSv1.2 protocol
+# in src/libs/zbxcrypto/tls.c function zbx_tls_init_child
+HAVE_DECENT_SSL = False
+if sys.version_info > (2,7,9):
+    import ssl
+    HAVE_DECENT_SSL = True
 
 def test_default_params():
     """
@@ -233,84 +239,86 @@ def test_read_from_zabbix_invalid_content(mock_socket):
     with pytest.raises(IndexError):
         zbx_senderprotocol._read_from_zabbix()
 
-@mock.patch('configobj.ConfigObj')
-def test_need_backend_init_tls(mock_configobj):
-    """
-    Test TLS context initialization
-    """
-    mock_configobj.side_effect = [
-        {
-            'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_ca/rogue-protobix-ca.cert.pem',
-            'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
-            'TLSKeyFile': 'tests/tls_ca/rogue-protobix-client.key.pem'
-        }
-    ]
-    zbx_senderprotocol = protobix.SenderProtocol()
-    tls_socket = zbx_senderprotocol._socket()
-    assert isinstance(tls_socket, ssl.SSLSocket)
+if HAVE_DECENT_SSL is True:
 
-@mock.patch('configobj.ConfigObj')
-def test_need_backend_init_tls_cert_verify_fails(mock_configobj):
-    """
-    Test TLS context initialization
-    """
-    mock_configobj.side_effect = [
-        {
-            'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_ca/protobix-ca.cert.pem',
-            'TLSCertFile': 'tests/tls_ca/protobix-client.cert.pem',
-            'TLSKeyFile': 'tests/tls_ca/protobix-client.key.pem'
-        }
-    ]
-    zbx_senderprotocol = protobix.SenderProtocol()
-    with pytest.raises(ssl.SSLError):
-        zbx_senderprotocol._socket()
+    @mock.patch('configobj.ConfigObj')
+    def test_need_backend_init_tls(mock_configobj):
+        """
+        Test TLS context initialization
+        """
+        mock_configobj.side_effect = [
+            {
+                'TLSConnect': 'cert',
+                'TLSCAFile': 'tests/tls_ca/rogue-protobix-ca.cert.pem',
+                'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
+                'TLSKeyFile': 'tests/tls_ca/rogue-protobix-client.key.pem'
+            }
+        ]
+        zbx_senderprotocol = protobix.SenderProtocol()
+        tls_socket = zbx_senderprotocol._socket()
+        assert isinstance(tls_socket, ssl.SSLSocket)
 
-@mock.patch('configobj.ConfigObj')
-def test_init_tls_non_matching_cert_key(mock_configobj):
-    """
-    Test TLS context initialization
-    """
-    mock_configobj.side_effect = [
-        {
-            'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_ca/protobix-ca.cert.pem',
-            'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
-            'TLSKeyFile': 'tests/tls_ca/protobix-client.key.pem'
-        }
-    ]
-    zbx_senderprotocol = protobix.SenderProtocol()
-    with pytest.raises(ssl.SSLError) as err:
-        tls_context = zbx_senderprotocol._init_tls()
+    @mock.patch('configobj.ConfigObj')
+    def test_need_backend_init_tls_cert_verify_fails(mock_configobj):
+        """
+        Test TLS context initialization
+        """
+        mock_configobj.side_effect = [
+            {
+                'TLSConnect': 'cert',
+                'TLSCAFile': 'tests/tls_ca/protobix-ca.cert.pem',
+                'TLSCertFile': 'tests/tls_ca/protobix-client.cert.pem',
+                'TLSKeyFile': 'tests/tls_ca/protobix-client.key.pem'
+            }
+        ]
+        zbx_senderprotocol = protobix.SenderProtocol()
+        with pytest.raises(ssl.SSLError):
+            zbx_senderprotocol._socket()
 
-@mock.patch('configobj.ConfigObj')
-def test_need_backend_socket_tls_unencrypted(mock_configobj):
-    """
-    Test socket with no TLS
-    """
-    mock_configobj.side_effect = [
-        {
-            'TLSConnect': 'unencrypted',
-        }
-    ]
-    zbx_senderprotocol = protobix.SenderProtocol()
-    _socket = zbx_senderprotocol._socket()
-    assert isinstance(_socket, socket.socket)
+    @mock.patch('configobj.ConfigObj')
+    def test_init_tls_non_matching_cert_key(mock_configobj):
+        """
+        Test TLS context initialization
+        """
+        mock_configobj.side_effect = [
+            {
+                'TLSConnect': 'cert',
+                'TLSCAFile': 'tests/tls_ca/protobix-ca.cert.pem',
+                'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
+                'TLSKeyFile': 'tests/tls_ca/protobix-client.key.pem'
+            }
+        ]
+        zbx_senderprotocol = protobix.SenderProtocol()
+        with pytest.raises(ssl.SSLError) as err:
+            tls_context = zbx_senderprotocol._init_tls()
 
-@mock.patch('configobj.ConfigObj')
-def test_need_backend_socket_tls_cert(mock_configobj):
-    """
-    Test socket with TLS
-    """
-    mock_configobj.side_effect = [
-        {
-            'TLSConnect': 'cert',
-            'TLSCAFile': 'tests/tls_ca/rogue-protobix-ca.cert.pem',
-            'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
-            'TLSKeyFile': 'tests/tls_ca/rogue-protobix-client.key.pem'
-        }
-    ]
-    zbx_senderprotocol = protobix.SenderProtocol()
-    _socket = zbx_senderprotocol._socket()
-    assert isinstance(_socket, ssl.SSLSocket)
+    @mock.patch('configobj.ConfigObj')
+    def test_need_backend_socket_tls_unencrypted(mock_configobj):
+        """
+        Test socket with no TLS
+        """
+        mock_configobj.side_effect = [
+            {
+                'TLSConnect': 'unencrypted',
+            }
+        ]
+        zbx_senderprotocol = protobix.SenderProtocol()
+        _socket = zbx_senderprotocol._socket()
+        assert isinstance(_socket, socket.socket)
+
+    @mock.patch('configobj.ConfigObj')
+    def test_need_backend_socket_tls_cert(mock_configobj):
+        """
+        Test socket with TLS
+        """
+        mock_configobj.side_effect = [
+            {
+                'TLSConnect': 'cert',
+                'TLSCAFile': 'tests/tls_ca/rogue-protobix-ca.cert.pem',
+                'TLSCertFile': 'tests/tls_ca/rogue-protobix-client.cert.pem',
+                'TLSKeyFile': 'tests/tls_ca/rogue-protobix-client.key.pem'
+            }
+        ]
+        zbx_senderprotocol = protobix.SenderProtocol()
+        _socket = zbx_senderprotocol._socket()
+        assert isinstance(_socket, ssl.SSLSocket)

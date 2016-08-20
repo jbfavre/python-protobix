@@ -11,12 +11,18 @@ import resource
 import time
 import sys
 import os
-import ssl
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import protobix
 import logging
 import argparse
+
+# Zabbix force TLSv1.2 protocol
+# in src/libs/zbxcrypto/tls.c function zbx_tls_init_child
+HAVE_DECENT_SSL = False
+if sys.version_info > (2,7,9):
+    import ssl
+    HAVE_DECENT_SSL = True
 
 class ProtobixTestProbe(protobix.SampleProbe):
     __version__="1.0.0"
@@ -436,172 +442,174 @@ def test_everything_runs_fine():
         result = pbx_test_probe.run([])
         assert result == 0
 
-"""
-Check sending data with or without TLS with debug disabled
-"""
-pytest_matrix = (
-    ('items', False, False),
-    ('lld', False, False),
-    ('items', True, False),
-    ('lld', True, False),
-    ('items', False, True),
-    ('lld', False, True),
-    ('items', True, True),
-    ('lld', True, True),
-)
-@pytest.mark.parametrize('data_type,tls_enabled,tls_crl_enabled', pytest_matrix)
-def test_need_backend_tls_cert(data_type, tls_enabled, tls_crl_enabled):
-    params = []
-    if tls_enabled:
-        params = [
-            '--tls-connect', 'cert',
-            '--tls-ca-file', 'tests/tls_ca/rogue-protobix-ca.cert.pem',
-            '--tls-cert-file', 'tests/tls_ca/rogue-protobix-client.cert.pem',
-            '--tls-key-file', 'tests/tls_ca/rogue-protobix-client.key.pem',
-        ]
-    if tls_crl_enabled:
-        params.append('--tls-crl-file')
-        params.append('tests/tls_ca/rogue-protobix.crl')
-    params.append('--update' if data_type == 'items' else '--discovery')
-    params.append('-vvv')
-    pbx_test_probe = ProtobixTLSTestProbe()
-    server_success, server_failure, processed, failed, total, time = pbx_test_probe.run(params)
-    if tls_enabled is False:
-        assert server_success == 1
-        assert server_failure == 0
-        assert processed == 4
-        assert failed == 0
-        assert total == 4
-    else:
-        # protobix.host1 does NOT have TLS enabled
-        # therefore items sent on behalf of protobix.host1 must fail
-        assert server_success == 1
-        assert server_failure == 0
-        assert processed == 2
-        assert failed == 2
-        assert total == 4
+if HAVE_DECENT_SSL is True:
 
-"""
-Check sending data with or without TLS with debug enabled
-"""
-pytest_matrix = (
-    ('items', False, False),
-    ('lld', False, False),
-    ('items', True, False),
-    ('lld', True, False),
-    ('items', False, True),
-    ('lld', False, True),
-    ('items', True, True),
-    ('lld', True, True),
-)
-@pytest.mark.parametrize('data_type,tls_enabled,tls_crl_enabled', pytest_matrix)
-def test_need_backend_tls_cert_debug(data_type, tls_enabled, tls_crl_enabled):
-    params = []
-    if tls_enabled:
-        params = [
-            '--tls-connect', 'cert',
-            '--tls-ca-file', 'tests/tls_ca/rogue-protobix-ca.cert.pem',
-            '--tls-cert-file', 'tests/tls_ca/rogue-protobix-client.cert.pem',
-            '--tls-key-file', 'tests/tls_ca/rogue-protobix-client.key.pem',
-        ]
-    if tls_crl_enabled:
-        params.append('--tls-crl-file')
-        params.append('tests/tls_ca/rogue-protobix.crl')
-    params.append('--update' if data_type == 'items' else '--discovery')
-    params.append('-vvvvv')
-    pbx_test_probe = ProtobixTLSTestProbe()
-    server_success, server_failure, processed, failed, total, time = pbx_test_probe.run(params)
-    if tls_enabled is False:
-        assert server_success == 4
-        assert server_failure == 0
-        assert processed == 4
-        assert failed == 0
-        assert total == 4
-    else:
-        # protobix.host1 does NOT have TLS enabled
-        # therefore items sent on behalf of protobix.host1 must fail
-        assert server_success == 4
-        assert server_failure == 0
-        assert processed == 2
-        assert failed == 2
-        assert total == 4
-
-"""
-Check sending data with or without TLS with debug disabled
-"""
-pytest_matrix = (
-    ('items', False, False),
-    ('lld', False, False),
-    ('items', True, False),
-    ('lld', True, False),
-    ('items', False, True),
-    ('lld', False, True),
-    ('items', True, True),
-    ('lld', True, True),
-)
-@pytest.mark.parametrize('data_type,tls_enabled,tls_crl_enabled', pytest_matrix)
-def test_need_backend_tls_cert_invalid(data_type, tls_enabled, tls_crl_enabled):
-    params = []
-    if tls_enabled:
-        params = [
-            '--tls-connect', 'cert',
-            '--tls-ca-file', 'tests/tls_ca/protobix-ca.cert.pem',
-            '--tls-cert-file', 'tests/tls_ca/protobix-client.cert.pem',
-            '--tls-key-file', 'tests/tls_ca/protobix-client.key.pem',
-        ]
-    if tls_crl_enabled:
-        params.append('--tls-crl-file')
-        params.append('tests/tls_ca/protobix.crl')
-    params.append('--update' if data_type == 'items' else '--discovery')
-    params.append('-vvv')
-    pbx_test_probe = ProtobixTLSTestProbe()
-    if tls_enabled is True:
-        with pytest.raises(ssl.SSLError) as err:
-            pbx_test_probe.run(params)
-    else:
+    """
+    Check sending data with or without TLS with debug disabled
+    """
+    pytest_matrix = (
+        ('items', False, False),
+        ('lld', False, False),
+        ('items', True, False),
+        ('lld', True, False),
+        ('items', False, True),
+        ('lld', False, True),
+        ('items', True, True),
+        ('lld', True, True),
+    )
+    @pytest.mark.parametrize('data_type,tls_enabled,tls_crl_enabled', pytest_matrix)
+    def test_need_backend_tls_cert(data_type, tls_enabled, tls_crl_enabled):
+        params = []
+        if tls_enabled:
+            params = [
+                '--tls-connect', 'cert',
+                '--tls-ca-file', 'tests/tls_ca/rogue-protobix-ca.cert.pem',
+                '--tls-cert-file', 'tests/tls_ca/rogue-protobix-client.cert.pem',
+                '--tls-key-file', 'tests/tls_ca/rogue-protobix-client.key.pem',
+            ]
+        if tls_crl_enabled:
+            params.append('--tls-crl-file')
+            params.append('tests/tls_ca/rogue-protobix.crl')
+        params.append('--update' if data_type == 'items' else '--discovery')
+        params.append('-vvv')
+        pbx_test_probe = ProtobixTLSTestProbe()
         server_success, server_failure, processed, failed, total, time = pbx_test_probe.run(params)
-        assert server_success == 1
-        assert server_failure == 0
-        assert processed == 4
-        assert failed == 0
-        assert total == 4
+        if tls_enabled is False:
+            assert server_success == 1
+            assert server_failure == 0
+            assert processed == 4
+            assert failed == 0
+            assert total == 4
+        else:
+            # protobix.host1 does NOT have TLS enabled
+            # therefore items sent on behalf of protobix.host1 must fail
+            assert server_success == 1
+            assert server_failure == 0
+            assert processed == 2
+            assert failed == 2
+            assert total == 4
 
-"""
-Check sending data with or without TLS with debug enabled
-"""
-pytest_matrix = (
-    ('items', False, False),
-    ('lld', False, False),
-    ('items', True, False),
-    ('lld', True, False),
-    ('items', False, True),
-    ('lld', False, True),
-    ('items', True, True),
-    ('lld', True, True),
-)
-@pytest.mark.parametrize('data_type,tls_enabled,tls_crl_enabled', pytest_matrix)
-def test_need_backend_tls_cert_invalid_debug(data_type, tls_enabled, tls_crl_enabled):
-    params = []
-    if tls_enabled:
-        params = [
-            '--tls-connect', 'cert',
-            '--tls-ca-file', 'tests/tls_ca/protobix-ca.cert.pem',
-            '--tls-cert-file', 'tests/tls_ca/protobix-client.cert.pem',
-            '--tls-key-file', 'tests/tls_ca/protobix-client.key.pem',
-        ]
-    if tls_crl_enabled:
-        params.append('--tls-crl-file')
-        params.append('tests/tls_ca/protobix.crl')
-    params.append('--update' if data_type == 'items' else '--discovery')
-    params.append('-vvvvv')
-    pbx_test_probe = ProtobixTLSTestProbe()
-    if tls_enabled is True:
-        with pytest.raises(ssl.SSLError) as err:
-            pbx_test_probe.run(params)
-    else:
+    """
+    Check sending data with or without TLS with debug enabled
+    """
+    pytest_matrix = (
+        ('items', False, False),
+        ('lld', False, False),
+        ('items', True, False),
+        ('lld', True, False),
+        ('items', False, True),
+        ('lld', False, True),
+        ('items', True, True),
+        ('lld', True, True),
+    )
+    @pytest.mark.parametrize('data_type,tls_enabled,tls_crl_enabled', pytest_matrix)
+    def test_need_backend_tls_cert_debug(data_type, tls_enabled, tls_crl_enabled):
+        params = []
+        if tls_enabled:
+            params = [
+                '--tls-connect', 'cert',
+                '--tls-ca-file', 'tests/tls_ca/rogue-protobix-ca.cert.pem',
+                '--tls-cert-file', 'tests/tls_ca/rogue-protobix-client.cert.pem',
+                '--tls-key-file', 'tests/tls_ca/rogue-protobix-client.key.pem',
+            ]
+        if tls_crl_enabled:
+            params.append('--tls-crl-file')
+            params.append('tests/tls_ca/rogue-protobix.crl')
+        params.append('--update' if data_type == 'items' else '--discovery')
+        params.append('-vvvvv')
+        pbx_test_probe = ProtobixTLSTestProbe()
         server_success, server_failure, processed, failed, total, time = pbx_test_probe.run(params)
-        assert server_success == 4
-        assert server_failure == 0
-        assert processed == 4
-        assert failed == 0
-        assert total == 4
+        if tls_enabled is False:
+            assert server_success == 4
+            assert server_failure == 0
+            assert processed == 4
+            assert failed == 0
+            assert total == 4
+        else:
+            # protobix.host1 does NOT have TLS enabled
+            # therefore items sent on behalf of protobix.host1 must fail
+            assert server_success == 4
+            assert server_failure == 0
+            assert processed == 2
+            assert failed == 2
+            assert total == 4
+
+    """
+    Check sending data with or without TLS with debug disabled
+    """
+    pytest_matrix = (
+        ('items', False, False),
+        ('lld', False, False),
+        ('items', True, False),
+        ('lld', True, False),
+        ('items', False, True),
+        ('lld', False, True),
+        ('items', True, True),
+        ('lld', True, True),
+    )
+    @pytest.mark.parametrize('data_type,tls_enabled,tls_crl_enabled', pytest_matrix)
+    def test_need_backend_tls_cert_invalid(data_type, tls_enabled, tls_crl_enabled):
+        params = []
+        if tls_enabled:
+            params = [
+                '--tls-connect', 'cert',
+                '--tls-ca-file', 'tests/tls_ca/protobix-ca.cert.pem',
+                '--tls-cert-file', 'tests/tls_ca/protobix-client.cert.pem',
+                '--tls-key-file', 'tests/tls_ca/protobix-client.key.pem',
+            ]
+        if tls_crl_enabled:
+            params.append('--tls-crl-file')
+            params.append('tests/tls_ca/protobix.crl')
+        params.append('--update' if data_type == 'items' else '--discovery')
+        params.append('-vvv')
+        pbx_test_probe = ProtobixTLSTestProbe()
+        if tls_enabled is True:
+            with pytest.raises(ssl.SSLError) as err:
+                pbx_test_probe.run(params)
+        else:
+            server_success, server_failure, processed, failed, total, time = pbx_test_probe.run(params)
+            assert server_success == 1
+            assert server_failure == 0
+            assert processed == 4
+            assert failed == 0
+            assert total == 4
+
+    """
+    Check sending data with or without TLS with debug enabled
+    """
+    pytest_matrix = (
+        ('items', False, False),
+        ('lld', False, False),
+        ('items', True, False),
+        ('lld', True, False),
+        ('items', False, True),
+        ('lld', False, True),
+        ('items', True, True),
+        ('lld', True, True),
+    )
+    @pytest.mark.parametrize('data_type,tls_enabled,tls_crl_enabled', pytest_matrix)
+    def test_need_backend_tls_cert_invalid_debug(data_type, tls_enabled, tls_crl_enabled):
+        params = []
+        if tls_enabled:
+            params = [
+                '--tls-connect', 'cert',
+                '--tls-ca-file', 'tests/tls_ca/protobix-ca.cert.pem',
+                '--tls-cert-file', 'tests/tls_ca/protobix-client.cert.pem',
+                '--tls-key-file', 'tests/tls_ca/protobix-client.key.pem',
+            ]
+        if tls_crl_enabled:
+            params.append('--tls-crl-file')
+            params.append('tests/tls_ca/protobix.crl')
+        params.append('--update' if data_type == 'items' else '--discovery')
+        params.append('-vvvvv')
+        pbx_test_probe = ProtobixTLSTestProbe()
+        if tls_enabled is True:
+            with pytest.raises(ssl.SSLError) as err:
+                pbx_test_probe.run(params)
+        else:
+            server_success, server_failure, processed, failed, total, time = pbx_test_probe.run(params)
+            assert server_success == 4
+            assert server_failure == 0
+            assert processed == 4
+            assert failed == 0
+            assert total == 4

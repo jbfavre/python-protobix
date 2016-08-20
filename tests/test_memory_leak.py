@@ -110,17 +110,17 @@ def long_run(data_type, debug_level):
         run += 1
     return initial_memory, final_memory
 
-pytest_matrix = (
+memory_leak_matrix = (
     ('items', 2),
     ('items', 4),
     ('lld', 2),
     ('lld', 4)
 )
 
-@pytest.mark.parametrize('data_type,debug_level', pytest_matrix)
+@pytest.mark.parametrize(('data_type','debug_level'), memory_leak_matrix)
 def test_long_run_for_memory_leak(data_type, debug_level):
     """
-    Simulate long running process without debug
+    Simulate long running process with and without debug
     and control memory usage
     """
     initial_memory, final_memory = long_run(data_type, debug_level)
