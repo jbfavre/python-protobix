@@ -4,7 +4,6 @@ import time
 import re
 
 import socket
-import ssl
 try: import simplejson as json
 except ImportError: import json # pragma: no cover
 
@@ -18,13 +17,18 @@ else: # pragma: no cover
     def b(x):
         return codecs.utf_8_encode(x)[0]
 
+HAVE_DECENT_SSL = False
+if sys.version_info > (2,7,9):
+    import ssl
+    # Zabbix force TLSv1.2 protocol
+    # in src/libs/zbxcrypto/tls.c function zbx_tls_init_child
+    ZBX_TLS_PROTOCOL=ssl.PROTOCOL_TLSv1_2
+    HAVE_DECENT_SSL = True
+
 ZBX_HDR = "ZBXD\1"
 ZBX_HDR_SIZE = 13
 ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? ' + \
                  r'[Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
-# Zabbix force TLSv1.2 protocol
-# in src/libs/zbxcrypto/tls.c function zbx_tls_init_child
-ZBX_TLS_PROTOCOL=ssl.PROTOCOL_TLSv1_2
 
 class SenderProtocol(object):
 
@@ -229,13 +233,10 @@ class SenderProtocol(object):
         # Manage SSL context & wrapper
         ssl_context = None
         # TLS is enabled, let's set it up
-        if self._config.tls_connect != 'unencrypted':
+        if self._config.tls_connect != 'unencrypted' and HAVE_DECENT_SSL is True:
             if self._logger: # pragma: no cover
                 self._logger.info(
-                    'Configuring TLS'
-                )
-                self._logger.debug(
-                    'TLS enabled to %s' % str(self._config.tls_connect)
+                    'Configuring TLS to %s' % str(self._config.tls_connect)
                 )
             self.socket = self._init_tls()
             if self._logger: # pragma: no cover
