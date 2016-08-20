@@ -14,7 +14,7 @@ setup(
     ],
     tests_require = [
         'mock',
-        'pytest',
+        'pytest>=2.7',
         'pytest-cov',
         'pytest-mock'
     ],
