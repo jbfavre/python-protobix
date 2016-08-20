@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import pytest
 
 user_options = []
@@ -12,6 +13,4 @@ try: import pylint
 except ImportError: pylint_options = []
 pytest_options += coverage_options
 pytest_options += pylint_options
-print(pytest_options)
-errno = pytest.main(pytest_options)
-raise SystemExit(errno)
+pytest.main(pytest_options)
