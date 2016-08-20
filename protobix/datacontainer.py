@@ -1,4 +1,3 @@
-import re
 import logging
 try: import simplejson as json
 except ImportError: import json # pragma: no cover
@@ -11,9 +10,7 @@ from .senderprotocol import SenderProtocol
 # 2.0: Processed 0 Failed 1 Total 1 Seconds spent 0.000057
 # 2.2: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
 # 2.4: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
-ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? ' + \
-                 r'[Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
-ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for key [%s] item [%s]"
+ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for key [%s] item [%s]. Server's response is %s"
 ZBX_TRAPPER_MAX_VALUE = 250
 
 class DataContainer(SenderProtocol):
@@ -94,28 +91,44 @@ class DataContainer(SenderProtocol):
                     self.logger.info("Bulk limit is %d items" % max_value)
             # Initialize offsets & counters
             max_offset = len(self._items_list)
-            run = 1
+            run = 0
             start_offset = 0
-            stop_offset = min(start_offset + max_value, max_offset+1)
-            processed = failed = total = time = 0
-            while start_offset < max_offset:
-                if self.logger:
-                    self.logger.info("run %d: start_offset is %d, stop_offset is %d" % (run, start_offset, stop_offset))
+            stop_offset = min(start_offset + max_value, max_offset)
+            server_success = server_failure = processed = failed = total = time = 0
+            while start_offset < stop_offset:
+                run += 1
+                if self.logger: # pragma: no cover
+                    self.logger.debug(
+                        'run %d: start_offset is %d, stop_offset is %d' %
+                        (run, start_offset, stop_offset)
+                    )
+
                 # Extract items to be send from global item's list'
                 _items_to_send = self.items_list[start_offset:stop_offset]
-                # Send extracted items & store result
-                run_processed, run_failed, run_total, run_time = self._send_common(_items_to_send)
+
+                # Send extracted items
+                run_response, run_processed, run_failed, run_total, run_time = self._send_common(_items_to_send)
+
+                # Update counters
+                if run_response == 'success':
+                    server_success += 1
+                elif run_response == 'failed':
+                    server_failure += 1
                 processed += run_processed
                 failed += run_failed
                 total += run_total
                 time += run_time
-                if self.logger:
-                    self.logger.info("%d items sent during run %d" % (stop_offset - start_offset, run))
-                    self.logger.debug("run %d: processed is %d, failed is %d, total is %d" % (run, processed, failed, total))
+                if self.logger: # pragma: no cover
+                    self.logger.info("%d items sent during run %d" % (run_total, run))
+                    self.logger.debug(
+                        'run %d: processed is %d, failed is %d, total is %d' %
+                        (run, run_processed, run_failed, run_total)
+                    )
+
                 # Compute next run's offsets
                 start_offset = stop_offset
-                stop_offset = min(start_offset + max_value, max_offset+1)
-                run +=1
+                stop_offset = min(start_offset + max_value, max_offset)
+
                 # Reset socket, which is likely to be closed by server
                 self._socket_reset()
         except:
@@ -131,7 +144,7 @@ class DataContainer(SenderProtocol):
         # Everything has been sent.
         # Reset DataContainer & return results_list
         self._reset()
-        return processed, failed, total, time
+        return server_success, server_failure, processed, failed, total, time
 
     def _send_common(self, item):
         """
@@ -141,12 +154,15 @@ class DataContainer(SenderProtocol):
 
         :item: either a list or a single item depending on debug_level
         """
-        zbx_answer = 0
-        if self._config.dryrun is False:
+        total = len(item)
+        processed = failed = time = 0
+        if self._config.dryrun is True:
+            total = len(item)
+            processed = failed = time = 0
+            response = 'dryrun'
+        else:
             self._send_to_zabbix(item)
-            zbx_answer = self._read_from_zabbix()
-
-        processed, failed, total, time = self._handle_response(zbx_answer)
+            response, processed, failed, total, time = self._read_from_zabbix()
 
         output_key = '(bulk)'
         output_item = '(bulk)'
@@ -161,10 +177,11 @@ class DataContainer(SenderProtocol):
                     failed,
                     total,
                     output_key,
-                    output_item
+                    output_item,
+                    response
                 )
             )
-        return processed, failed, total, time
+        return response, processed, failed, total, time
 
     def _reset(self):
         """
@@ -176,38 +193,6 @@ class DataContainer(SenderProtocol):
             self.logger.info("Reset DataContainer")
         self._items_list = []
         self._config.data_type = None
-
-    def _handle_response(self, zbx_answer):
-        """
-        Analyze Zabbix Server response
-        Returns a list with number of:
-        * processed items
-        * failed items
-        * total items
-        * time spent
-
-        :zbx_answer: Zabbix server response as JSON object
-        """
-        if self.logger: # pragma: no cover
-            self.logger.info(
-                "Anaylizing Zabbix Server's answer"
-            )
-            if zbx_answer:
-                self.logger.debug("Zabbix Server response is: [%s]" % zbx_answer)
-        # Default items number in length of th storage list
-        nb_item = len(self._items_list)
-        if self._config.debug_level >= 4:
-            # If debug enabled, force it to 1
-            nb_item = 1
-        if zbx_answer and self._config.dryrun is False:
-            # If dryrun is disabled, we can process answer
-            if zbx_answer.get('response') == 'success':
-                result = re.findall(ZBX_RESP_REGEX, zbx_answer.get('info'))
-                processed, failed, total, time = result[0]
-        else:
-            # If dryrun is enabled, just force result
-            processed, failed, total, time = [-1, -1, nb_item, -1]
-        return int(processed), int(failed), int(total), float(time)
 
     @property
     def logger(self):
