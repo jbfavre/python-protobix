@@ -9,14 +9,12 @@ setup(
     version = '0.1.2',
     install_requires = [
         'configobj',
-        'simplejson',
-        'traceback2'
+        'simplejson'
     ],
     tests_require = [
         'mock',
         'pytest',
         'pytest-cov',
-        'pytest-mock'
     ],
     test_suite='tests',
     description = 'Implementation of Zabbix Sender protocol',
