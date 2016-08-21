@@ -26,7 +26,7 @@ function cleanup() {
 apt-get update
 
 # Install dependencies for both python 2.7 & python 3
-apt-get -qy install ${packages_list}
+apt-get -qq -y install ${packages_list}
 
 # Create an unprivileged user
 addgroup -gid 1000 protobix
