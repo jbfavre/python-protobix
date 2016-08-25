@@ -143,14 +143,14 @@ All configuration options are stored in a `protobix.ZabbixAgentConfig` instance.
 __Protobix specific configuration options__
 
 | option name  | Default value | ZabbixAgentConfig property | Command-line option (SampleProbe) |
-|:------------:|:-------------:|:--------------------------:|:---------------------------------:|
+|--------------|---------------|----------------------------|-----------------------------------|
 | data_type    | `None`        | data_type                  | `--update-items` or `--discovery` |
 | dryrun       | `False`       | dryrun                     | `-d` or `--dryrun`                |
 
 __Zabbix Agent configuration options__
 
 | option name          | Default value           | ZabbixAgentConfig property | Command-line option (SampleProbe) |
-|:--------------------:|:-----------------------:|:--------------------------:|:---------------------------------:|
+|----------------------|-------------------------|----------------------------|-----------------------------------|
 | ServerActive         | 127.0.0.1               | server_active              | `-z` or `--zabbix-server`         |
 | ServerPort           | 10051                   | server_port                | `-p` or `--port`                  |
 | LogType              | file                    | log_type                   | none                              |
