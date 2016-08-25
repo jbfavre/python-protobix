@@ -226,65 +226,58 @@ class SenderProtocol(object):
                 "Creating new socket"
             )
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect(
-            (self._config.server_active, self._config.server_port)
-        )
 
-        # Manage SSL context & wrapper
-        ssl_context = None
         # TLS is enabled, let's set it up
         if self._config.tls_connect != 'unencrypted' and HAVE_DECENT_SSL is True:
             if self._logger: # pragma: no cover
                 self._logger.info(
                     'Configuring TLS to %s' % str(self._config.tls_connect)
                 )
+            # Setup TLS context & Wrap socket
             self.socket = self._init_tls()
             if self._logger: # pragma: no cover
                 self._logger.info(
                     'Network socket initialized with TLS support'
                 )
-            #try:
-            #    if isinstance(ssl_context, ssl.SSLContext):
-            #        if self._logger: # pragma: no cover
-            #            self._logger.debug(
-            #                'Wrapping socket to SSL context'
-            #            )
-            #        self.socket = ssl_context.wrap_socket(
-            #            self.socket
-            #        )
-            #except ssl.CertificateError:
-            #    # OpenSSL seems to raise ssl.SSLError exception
-            #    # even for certificate errors.
-            #    if self._logger: # pragma: no cover
-            #        self._logger.error(
-            #            'SSL Certificate Error occured'
-            #        )
-            #    raise # pragma: no cover
-            #except ssl.SSLError:
-            #    if self._logger: # pragma: no cover
-            #        self._logger.error(
-            #            'SSL Error occured'
-            #        )
-            #    raise
 
         if self._logger and isinstance(self.socket, socket.socket): # pragma: no cover
             self._logger.info(
                 'Network socket initialized with no TLS'
             )
+        # Connect to Zabbix Server
+        self.socket.connect(
+            (self._config.server_active, self._config.server_port)
+        )
+        #if isinstance(self.socket, ssl.SSLSocket):
+        #    server_cert = self.socket.getpeercert()
+        #    if self._config.tls_server_cert_issuer:
+        #        print(server_cert['issuer'])
+        #        assert server_cert['issuer'] == self._config.tls_server_cert_issuer
+        #        self._logger.info(
+        #            'Server certificate issuer is %s' %
+        #            server_cert['issuer']
+        #        )
+        #    if self._config.tls_server_cert_subject:
+        #        print(server_cert['subject'])
+        #        assert server_cert['subject'] == self._config.tls_server_cert_subject
+        #        self._logger.info(
+        #            'Server certificate subject is %s' %
+        #            server_cert['subject']
+        #        )
 
         return self.socket
 
     """
     Manage TLS context & Wrap socket
-    Returns
+    Returns ssl.SSLSocket if TLS enabled
+            socket.socket if TLS disabled
     """
     def _init_tls(self):
+        # Create a SSLContext and configure it
         if self._logger: # pragma: no cover
             self._logger.info(
                 "Initialize TLS context"
             )
-
-        # Create a SSLContext and configure it
         ssl_context = ssl.SSLContext(ZBX_TLS_PROTOCOL)
         if self._logger: # pragma: no cover
             self._logger.debug(
@@ -313,6 +306,8 @@ class SenderProtocol(object):
                 self._config.tls_cert_file,
                 self._config.tls_key_file
             )
+        elif self._config.tls_connect == 'psk':
+            raise NotImplementedError
 
         # If provided, use CA file & enforce server certificate chek
         if self._config.tls_ca_file:
