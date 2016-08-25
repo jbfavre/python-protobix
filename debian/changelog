@@ -1,10 +1,10 @@
-python-protobix (1.0.0~alpha1-1) unstable; urgency=medium
+python-protobix (1.0.0~alpha1-1~bpo9+1) unstable; urgency=medium
 
   * New upstream release
   * Update build dependencies
   * Bump standards version
 
- -- Jean Baptiste Favre <debian@jbfavre.org>  Thu, 25 Aug 2016 14:26:25 +0200
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Thu, 25 Aug 2016 16:35:10 +0200
 
 python-protobix (0.1.2-1) unstable; urgency=medium
 
