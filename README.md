@@ -54,7 +54,7 @@ Python is available as Debian package for Debian GNU/Linux sid and testing.
 
 Once module is installed, you can use it as follow
 
-### Extends `protobix.SampleProbe`
+### Extend `protobix.SampleProbe`
 
 `python-protobix` provides a convenient sample probe you can extend to fit your own needs.
 
@@ -65,7 +65,71 @@ This is the recommanded way of using `python-protobix`.
 
 Some probes are available from my Github repository [`python-zabbix`](https://github.com/jbfavre/python-zabbix)
 
-### Send items as trappers
+```python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+''' Copyright (c) 2013 Jean Baptiste Favre.
+    Sample Python script which extends protobix.SampleProbe
+'''
+import protobix
+import argparse
+import socket
+import sys
+
+class ExampleProbe(protobix.SampleProbe):
+
+    __version__ = '1.0.0alpha1'
+    discovery_key = "example.probe.discovery"
+
+    def _parse_probe_args(self, parser):
+        # Parse the script arguments
+        # parser is an instance of argparse.parser created by SampleProbe._parse_args method
+        # you *must* return parser to SampleProbe so that your own options are taken into account
+        example_probe_options = parser.add_argument_group('ExampleProbe configuration')
+        example_probe_options.add_argument(
+            "-o", "--option", default="default_value",
+            help="WTF do this option"
+        )
+        return parser
+
+    def _init_probe(self):
+        # Whatever you need to initiliaze your probe
+        # Can be establishing a connection
+        # Or reading a configuration file
+        # If you have nothing special to do
+        # Just do not declare this method
+        # Or use:
+        pass
+
+    def _get_discovery(self):
+        # Whatever you need to do to discover LLD items
+        # this method is mandatory
+        # If not declared, calling the probe ith --discovery option will resut in a NotimplementedError
+        # If you get discovery infos for only one node you should return data as follow
+        return { self.hostname: data }
+        # If you get discovery infos for many hosts, then you should build data dict by your self
+        # and return result as follow
+        return data
+
+    def _get_metrics(self):
+        # Whatever you need to do to collect metrics
+        # this method is mandatory
+        # If not declared, calling the probe with --update-items option will resut in a NotimplementedError
+        # If you get metrics for only one node you should return data as follow
+        return { self.hostname: data }
+        # If you get metrics for many hosts, then you should build data dict by your self
+        # and return result as follow
+        return data
+
+if __name__ == '__main__':
+    ret = RedisServer().run()
+    print ret
+    sys.exit(ret)
+```
+
+### Use `python-protobix` only
+
+__How to send items updates__
 
 ```python
 #!/usr/bin/env python
@@ -90,7 +154,7 @@ zbx_datacontainer.add(DATA)
 zbx_datacontainer.send()
 ```
 
-### Send Low Level Discovery as trappers
+__How to send Low Level Discovery__
 
 ```python
 #!/usr/bin/env python
@@ -135,7 +199,7 @@ zbx_datacontainer.add(DATA)
 zbx_datacontainer.send()
 ```
 
-### Advanced configuration
+## Advanced configuration
 
 `python-protobix` behaviour can be altered in many ways using options.  
 All configuration options are stored in a `protobix.ZabbixAgentConfig` instance.
