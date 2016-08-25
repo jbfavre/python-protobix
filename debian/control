@@ -2,8 +2,15 @@ Source: python-protobix
 Maintainer: Jean Baptiste Favre <jean-baptiste.favre@blablacar.com>
 Section: python
 Priority: optional
-Build-Depends: debhelper (>= 8), python-all (>= 2.6.6-3), python-setuptools, dh-python, python3-all, python3-setuptools
-Standards-Version: 3.9.6
+Build-Depends: debhelper (>= 8), dh-python,
+               python-all (>= 2.6.6-3), python-setuptools,
+               python3-all, python3-setuptools,
+               python-configobj, python3-configobj,
+               python-simplejson, python3-simplejson,
+               python-mock, python3-mock,
+               python-pytest-cov, python3-pytest-cov,
+               python-pytest, python3-pytest
+Standards-Version: 3.9.8
 
 Package: python-protobix
 Architecture: all
