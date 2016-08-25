@@ -1,25 +1,46 @@
 # python-protobix
 
-dev Branch: [![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=dev)](https://travis-ci.org/jbfavre/python-protobix)
-upstream Branch: [![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=upstream)](https://travis-ci.org/jbfavre/python-protobix)
+* dev Branch: [![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=dev)](https://travis-ci.org/jbfavre/python-protobix)
+* upstream Branch (default): [![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=upstream)](https://travis-ci.org/jbfavre/python-protobix)
 
-Very simple python module implementing Zabbix Sender protocol.  
-It allows one to build list of items and send them as trapper.
-It currently supports `items` as well as [`Low Level Discovery`](https://www.zabbix.com/documentation/2.4/manual/discovery/low_level_discovery).
+`python-protobix` is a very simple python module implementing [Zabbix Sender protocol 2.0](https://www.zabbix.org/wiki/Docs/protocols/zabbix_sender/2.0).  
+It allows to build list of Zabbix items and send them as trappers.
+
+Currently `python-protobix` supports `items` as well as [`Low Level Discovery`](https://www.zabbix.com/documentation/2.4/manual/discovery/low_level_discovery).
+
+Please note that `python-protobix` is developped and tested on Debian GNU/Linux only.  
+I can't enforce compatibility with other distributions, though it should work on any distribution providing Python 2.7 or Python 3.x.
+
+Any feedback on this is, of course, welcomed.
 
 ## Test
 
-First, launch provided Zabbix Trapper Server:
-
-    python tests/ZabbixServerTrapper.py
-
-Then, launch test suite:
+To install all required dependencies and launch test suite
 
     python setup.py test
 
-## Install
+By default, all tests named like `*need_backend*` are disabled, since they need a working Zabbix Server.
 
-With `pip`:
+If you want to run theses tests as well, you will need:
+* a working Zabbix Server 3.x configuration file like the one in `tests/zabbix/zabbix_server.conf`
+* SQL statements in `tests/zabbix/zabbix_server_mysql.sql` with all informations to create testing  hosts & items
+
+You can then start Zabbix Server with `zabbix_server -c tests/zabbix/zabbix_server.conf -f` and launch test suite with
+
+    py.test --cov protobix --cov-report term-missing
+
+### Using a docker container
+
+You can also use docker to run test suite on any Linux distribution of your choice.  
+You can use provided script `docker-tests.sh` as entrypoint example:
+
+    docker run --volume=$(pwd):/home/python-protobix --entrypoint=/home/python-protobix/tests/docker-tests.sh -ti debian:jessie
+
+__Please note that this docker entrypoint does not provide a way to execute test that need a backend__.
+
+## Installation
+
+With `pip` (stable version):
 
     pip install protobix
 
@@ -27,20 +48,24 @@ With `pip` (test version):
 
     pip install -i https://testpypi.python.org/simple/ protobix
 
-Build `Debian` package:
-
-    apt-get install python-stdeb python-setuptools
-
-    cd module
-    python setup.py --command-packages=stdeb.command bdist_deb
-    apt-get install python-simplejson
-    dpkg -i deb_dist/python-zabbix_0.0.1-1_all.deb
+Python is available as Debian package for Debian GNU/Linux sid and testing.
 
 ## Usage
 
 Once module is installed, you can use it as follow
 
-## Send items as trappers
+### Extends `protobix.SampleProbe`
+
+`python-protobix` provides a convenient sample probe you can extend to fit your own needs.
+
+Using `protobix.SampleProbe` allows you to concetrate on getting metrics or Low Level Discovery items without taking care of anything related to `protobix` itself.  
+This is the recommanded way of using `python-protobix`.
+
+`protobix.SampleProbe` provides a `run` methods which take care of everything related to `protobix`.
+
+Some probes are available from my Github repository [`python-zabbix`](https://github.com/jbfavre/python-zabbix)
+
+### Send items as trappers
 
 ```python
 #!/usr/bin/env python
@@ -48,47 +73,10 @@ Once module is installed, you can use it as follow
 ''' import module '''
 import protobix
 
-''' create DataContainer, providing data_type, zabbix server and port '''
-zbx_container = protobix.DataContainer(data_type = "items",
-                                       zbx_host  = '127.0.0.1',
-                                       zbx_port  = 10051,
-                                       debug     = False,
-                                       dryrun    = False)
-''' set debug '''
-zbx_container.debug = True
-
-''' set dryrun for testing purpose. Won't send anything to Zabbix '''
-zbx_container.dryrun = True
-
-''' Add items one after the other '''
-hostname="myhost"
-item="my.zabbix.item"
-value=0
-zbx_container.add_item( hostname, item, value)
-
-''' or use bulk insert '''
-data = {
-    "myhost1": {
-        "my.zabbix.item1": 0,
-        "my.zabbix.item2": "item string"
-    },
-    "myhost2": {
-        "my.zabbix.item1": 0,
-        "my.zabbix.item2": "item string"
-    }
-}
-zbx_container.add(data)
-
-''' Send data to zabbix '''
-try:
-    zbx_container.send()
-except SendException as e:
-    print str(e)
-
 print "Everything is OK"
 ```
 
-## Send Low Level Discovery as trappers
+### Send Low Level Discovery as trappers
 
 ```python
 #!/usr/bin/env python
@@ -96,50 +84,13 @@ print "Everything is OK"
 ''' import module '''
 import protobix
 
-''' create DataContainer, providing data_type, zabbix server and port '''
-zbx_container = protobix.DataContainer(data_type = "lld",
-                                       zbx_host  = '127.0.0.1',
-                                       zbx_port  = 10051,
-                                       debug     = False,
-                                       dryrun    = False)
-''' set debug '''
-zbx_container.debug = True
-
-''' Add items one after the other '''
-hostname="myhost"
-item="my.zabbix.lld_item1"
-value=[
-    { 'my.zabbix.ldd_key1': 0,
-      'my.zabbix.ldd_key2': 'lld string' },
-    { 'my.zabbix.ldd_key3': 1,
-      'my.zabbix.ldd_key4': 'another lld string' }
-]
-zbx_container.add_item( hostname, item, value)
-
-''' or use bulk insert '''
-data = {
-    'myhost1': {
-        'my.zabbix.lld_item1': [
-            { '{#ZBX_LLD_KEY11}': 0,
-              '{#ZBX_LLD_KEY12}': 'lld string' },
-            { '{#ZBX_LLD_KEY11}': 1,
-              '{#ZBX_LLD_KEY12}': 'another lld string' }
-        ]
-    'myhost2':
-        'my.zabbix.lld_item2': [
-            { '{#ZBX_LLD_KEY21}': 10,
-              '{#ZBX_LLD_KEY21}': 'yet an lld string' },
-            { '{#ZBX_LLD_KEY21}': 2,
-              '{#ZBX_LLD_KEY21}': 'yet another lld string' }
-        ]
-}
-zbx_container.add(data)
-
-''' Send data to zabbix '''
-try:
-    zbx_container.send()
-except SendException as e:
-    print str(e)
-
 print "Everything is OK"
 ```
+
+## Contribute
+
+You can contribute to `protobix`:
+* fork this repository
+* write tests and documentation
+* implement the feature you need
+* open a pull request against __`upstream`__ branch
