@@ -73,7 +73,21 @@ Some probes are available from my Github repository [`python-zabbix`](https://gi
 ''' import module '''
 import protobix
 
-print "Everything is OK"
+DATA = {
+    "protobix.host1": {
+        "my.protobix.item.int": 0,
+        "my.protobix.item.string": "item string"
+    },
+    "protobix.host2": {
+        "my.protobix.item.int": 0,
+        "my.protobix.item.string": "item string"
+    }
+}
+
+zbx_datacontainer = protobix.DataContainer()
+zbx_datacontainer.data_type = 'lld'
+zbx_datacontainer.add(DATA)
+zbx_datacontainer.send()
 ```
 
 ### Send Low Level Discovery as trappers
@@ -84,8 +98,73 @@ print "Everything is OK"
 ''' import module '''
 import protobix
 
-print "Everything is OK"
+DATA = {
+    'protobix.host1': {
+        'my.protobix.lld_item1': [
+            { '{#PBX_LLD_KEY11}': 0,
+              '{#PBX_LLD_KEY12}': 'lld string' },
+            { '{#PBX_LLD_KEY11}': 1,
+              '{#PBX_LLD_KEY12}': 'another lld string' }
+        ],
+        'my.protobix.lld_item2': [
+            { '{#PBX_LLD_KEY21}': 10,
+              '{#PBX_LLD_KEY21}': 'yet an lld string' },
+            { '{#PBX_LLD_KEY21}': 2,
+              '{#PBX_LLD_KEY21}': 'yet another lld string' }
+        ]
+    },
+    'protobix.host2': {
+        'my.protobix.lld_item1': [
+            { '{#PBX_LLD_KEY11}': 0,
+              '{#PBX_LLD_KEY12}': 'lld string' },
+            { '{#PBX_LLD_KEY11}': 1,
+              '{#PBX_LLD_KEY12}': 'another lld string' }
+        ],
+        'my.protobix.lld_item2': [
+            { '{#PBX_LLD_KEY21}': 10,
+              '{#PBX_LLD_KEY21}': 'yet an lld string' },
+            { '{#PBX_LLD_KEY21}': 2,
+              '{#PBX_LLD_KEY21}': 'yet another lld string' }
+        ]
+    }
+}
+
+zbx_datacontainer = protobix.DataContainer()
+zbx_datacontainer.data_type = 'lld'
+zbx_datacontainer.add(DATA)
+zbx_datacontainer.send()
 ```
+
+### Advanced configuration
+
+`python-protobix` behaviour can be altered in many ways using options.  
+All configuration options are stored in a `protobix.ZabbixAgentConfig` instance.
+
+__Protobix specific configuration options__
+
+| option name  | Default value | ZabbixAgentConfig property | Command-line option (SampleProbe) |
+|:------------:|:-------------:|:--------------------------:|:---------------------------------:|
+| data_type    | `None`        | data_type                  | `--update-items` or `--discovery` |
+| dryrun       | `False`       | dryrun                     | `-d` or `--dryrun`                |
+
+__Zabbix Agent configuration options__
+
+| option name          | Default value           | ZabbixAgentConfig property | Command-line option (SampleProbe) |
+|:--------------------:|:-----------------------:|:--------------------------:|:---------------------------------:|
+| ServerActive         | 127.0.0.1               | server_active              | `-z` or `--zabbix-server`         |
+| ServerPort           | 10051                   | server_port                | `-p` or `--port`                  |
+| LogType              | file                    | log_type                   | none                              |
+| LogFile              | /tmp/zabbix_agentd.log  | log_file                   | none                              |
+| DebugLevel           | 3                       | debug_level                | `-v` (from none to `-vvvvv`)      |
+| Timeout              | 3                       | timeout                    | none                              |
+| Hostname             | `socket.getfqdn()`      | hostname                   | none                              |
+| TLSConnect           | unencrypted             | tls_connect                | `--tls-connect`                   |
+| TLSCAFile            | `None`                  | tls_ca_file                | `--tls-ca-file`                   |
+| TLSCertFile          | `None`                  | tls_cert_file              | `--tls-cert-file`                 |
+| TLSCRLFile           | `None`                  | tls_crl_file               | `--tls-crl-file`                  |
+| TLSKeyFile           | `None`                  | tls_key_file               | `--tls-key-file`                  |
+| TLSServerCertIssuer  | `None`                  | tls_server_cert_issuer     | `--tls-server-cert-issuer`        |
+| TLSServerCertSubject | `None`                  | tls_server_cert_subject    | `--tls-server-cert-subject`       |
 
 ## Contribute
 
