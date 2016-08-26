@@ -251,6 +251,6 @@ __Zabbix Agent configuration options__
 
 You can contribute to `protobix`:
 * fork this repository
-* write tests and documentation
+* write tests and documentation (tests __must__ pass for both Python 2.7 & 3.x)
 * implement the feature you need
 * open a pull request against __`upstream`__ branch
