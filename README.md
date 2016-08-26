@@ -127,6 +127,23 @@ if __name__ == '__main__':
     sys.exit(ret)
 ```
 
+Declare your newly created probe as `Zabbix Agent` user parameters:
+
+    UserParameter=example.probe.check,/usr/local/bin/example_probe.py --update-items
+    UserParameter=example.probe.discovery,/usr/local/bin/example_probe.py --discovery
+
+You're done.
+
+The `protobix.SampleProbe` exit code will be sent to Zabbix.  
+You'll be able to setup triggers if needed.
+
+__Exit codes mapping__:
+* 0: everything went well
+* 1: probe failed at step 1 (probe initialization)
+* 2: probe failed at step 2 (probe data collection)
+* 3: probe failed at step 3 (add data to DataContainer)
+* 4: probe failed at step 4 (send data to Zabbix)
+
 ### Use `python-protobix` only
 
 __How to send items updates__
