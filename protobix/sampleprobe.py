@@ -79,7 +79,7 @@ class SampleProbe(object):
                  "file."
         )
         protobix.add_argument(
-            '-c', '--config', dest='config_file',
+            '-c', '--config', dest='config_file', default='/etc/zabbix/zabbix_agentd.conf',
             help="Use config-file. Zabbix sender reads server details from\n"
                  "the agentd configuration file. By default Protobix reads\n"
                  "`/etc/zabbix/zabbix_agentd.conf`.\n"
