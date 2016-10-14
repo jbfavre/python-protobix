@@ -11,7 +11,7 @@ from .zabbixagentconfig import ZabbixAgentConfig
 
 class SampleProbe(object):
 
-    __version__ = '0.2.0'
+    __version__ = '1.0.0rc1'
     # Mapping between zabbix-agent Debug option & logging level
     LOG_LEVEL = [
         logging.NOTSET,
@@ -349,7 +349,10 @@ class SampleProbe(object):
         except socket.error as e:
             if self.logger:
                 self.logger.critical(
-                    "Step 4 - Sent to Zabbix Server failed [%s]" % str(e)
+                    "Step 4 - Sent to Zabbix Server [%s] failed [%s]" % (
+                        self.zbx_config.server_active,
+                        str(e)
+                    )
                 )
                 self.logger.debug(traceback.format_exc())
             return 4
