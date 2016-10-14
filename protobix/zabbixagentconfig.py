@@ -4,8 +4,12 @@ import socket
 class ZabbixAgentConfig(object):
 
     _logger = None
+    _default_config_file='/etc/zabbix/zabbix_agentd.conf'
 
-    def __init__(self, config_file='/etc/zabbix/zabbix_agentd.conf', logger=None):
+    def __init__(self, config_file=None, logger=None):
+        if config_file is None:
+            config_file=self._default_config_file
+
         if logger: # pragma: no cover
             self._logger = logger
 
