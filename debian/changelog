@@ -1,3 +1,9 @@
+python-protobix (1.0.0~rc1-1~bpo7+1) stable; urgency=medium
+
+  * New upstream version 1.0.0rc1
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Fri, 14 Oct 2016 17:52:18 +0200
+
 python-protobix (1.0.0~alpha1-1~bpo7+1) stable; urgency=medium
 
   * New upstream version 1.0.0alpha1
