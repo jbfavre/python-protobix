@@ -78,7 +78,7 @@ import sys
 
 class ExampleProbe(protobix.SampleProbe):
 
-    __version__ = '1.0.0alpha1'
+    __version__ = '1.0.0rc1'
     discovery_key = "example.probe.discovery"
 
     def _parse_probe_args(self, parser):

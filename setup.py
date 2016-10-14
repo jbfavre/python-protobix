@@ -6,7 +6,7 @@ from setuptools import setup
 setup(
     name = 'protobix',
     packages = ['protobix'],
-    version = '1.0.0alpha1',
+    version = '1.0.0rc1',
     install_requires = [
         'configobj',
         'simplejson'
@@ -26,7 +26,7 @@ setup(
     author_email = 'jean-baptiste.favre@blablacar.com',
     license = 'GPL-3+',
     url='https://github.com/jbfavre/python-protobix/',
-    download_url = 'https://github.com/jbfavre/python-protobix/archive/1.0.0alpha1.tar.gz',
+    download_url = 'https://github.com/jbfavre/python-protobix/archive/1.0.0rc1.tar.gz',
     keywords = ['monitoring','zabbix','trappers'],
     classifiers = [],
    )
