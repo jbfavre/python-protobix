@@ -1,3 +1,9 @@
+python-protobix (1.0.0~rc1-1~bpo8+1) jessie-backports; urgency=medium
+
+  * New upstream version 1.0.0rc1
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Fri, 14 Oct 2016 17:50:21 +0200
+
 python-protobix (1.0.0~alpha1-1~bpo8+1) jessie-backports; urgency=medium
 
   * New upstream version 1.0.0alpha1
