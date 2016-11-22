@@ -1,3 +1,9 @@
+python-protobix (1.0.0-1) unstable; urgency=medium
+
+  * Import python-protobix_1.0.0.orig.tar.gz
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Tue, 22 Nov 2016 13:39:02 +0100
+
 python-protobix (0.1.2-1) unstable; urgency=medium
 
   * Import python-protobix_0.1.2.orig.tar.gz
