@@ -1,5 +1,2 @@
 configobj
 simplejson
-traceback2
-pytest
-pytest-cov
