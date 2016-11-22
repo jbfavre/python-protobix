@@ -1,3 +1,9 @@
+python-protobix (1.0.0-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Tue, 22 Nov 2016 13:16:49 +0100
+
 python-protobix (1.0.0~rc1-1) unstable; urgency=medium
 
   * New upstream release
