@@ -1,3 +1,9 @@
+python-protobix (1.0.0-1~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Tue, 22 Nov 2016 16:16:34 +0100
+
 python-protobix (1.0.0-1) unstable; urgency=medium
 
   * New upstream release
