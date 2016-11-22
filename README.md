@@ -1,12 +1,12 @@
 # python-protobix
 
-* dev Branch: [![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=dev)](https://travis-ci.org/jbfavre/python-protobix)
-* upstream Branch (default): [![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=upstream)](https://travis-ci.org/jbfavre/python-protobix)
+* `dev` Branch: [![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=dev)](https://travis-ci.org/jbfavre/python-protobix)
+* `upstream` Branch (default): [![Build Status](https://travis-ci.org/jbfavre/python-protobix.svg?branch=upstream)](https://travis-ci.org/jbfavre/python-protobix)
 
-`python-protobix` is a very simple python module implementing [Zabbix Sender protocol 2.0](https://www.zabbix.org/wiki/Docs/protocols/zabbix_sender/2.0).  
-It allows to build list of Zabbix items and send them as trappers.
+`python-protobix` is a very simple python module which implements [Zabbix Sender protocol 2.0](https://www.zabbix.org/wiki/Docs/protocols/zabbix_sender/2.0).  
+It allows to build a list of Zabbix items and send them as `trappers`.
 
-Currently `python-protobix` supports `items` as well as [`Low Level Discovery`](https://www.zabbix.com/documentation/2.4/manual/discovery/low_level_discovery).
+Currently `python-protobix` supports "classics" `items` as well as [`Low Level Discovery`](https://www.zabbix.com/documentation/2.4/manual/discovery/low_level_discovery) ones.
 
 Please note that `python-protobix` is developped and tested on Debian GNU/Linux only.  
 I can't enforce compatibility with other distributions, though it should work on any distribution providing Python 2.7 or Python 3.x.
@@ -36,6 +36,8 @@ You can use provided script `docker-tests.sh` as entrypoint example:
 
     docker run --volume=$(pwd):/home/python-protobix --entrypoint=/home/python-protobix/tests/docker-tests.sh -ti debian:jessie
 
+Currently, entrypoint `docker-tests.sh` only supports Debian GNU/Linux.
+
 __Please note that this docker entrypoint does not provide a way to execute test that need a backend__.
 
 ## Installation
@@ -52,16 +54,16 @@ Python is available as Debian package for Debian GNU/Linux sid and testing.
 
 ## Usage
 
-Once module is installed, you can use it as follow
+Once module is installed, you can use it either extending `protobix.SampleProbe` or directly using `protobix.Datacontainer`.
 
 ### Extend `protobix.SampleProbe`
 
 `python-protobix` provides a convenient sample probe you can extend to fit your own needs.
 
-Using `protobix.SampleProbe` allows you to concetrate on getting metrics or Low Level Discovery items without taking care of anything related to `protobix` itself.  
+Using `protobix.SampleProbe` allows you to concentrate on getting metrics or Low Level Discovery items without taking care of anything related to `protobix` itself.  
 This is the recommanded way of using `python-protobix`.
 
-`protobix.SampleProbe` provides a `run` methods which take care of everything related to `protobix`.
+`protobix.SampleProbe` provides a `run` method which take care of everything related to `protobix`.
 
 Some probes are available from my Github repository [`python-zabbix`](https://github.com/jbfavre/python-zabbix)
 
@@ -69,7 +71,7 @@ Some probes are available from my Github repository [`python-zabbix`](https://gi
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ''' Copyright (c) 2013 Jean Baptiste Favre.
-    Sample Python script which extends protobix.SampleProbe
+    Sample Python class which extends protobix.SampleProbe
 '''
 import protobix
 import argparse
@@ -79,7 +81,9 @@ import sys
 class ExampleProbe(protobix.SampleProbe):
 
     __version__ = '1.0.0rc1'
-    discovery_key = "example.probe.discovery"
+    # discovery_key is *not* the one declared in Zabbix Agent configuration
+    # it's the one declared in Zabbix template's "Discovery rules"
+    discovery_key = "example.probe.llddiscovery"
 
     def _parse_probe_args(self, parser):
         # Parse the script arguments
@@ -97,7 +101,7 @@ class ExampleProbe(protobix.SampleProbe):
         # Can be establishing a connection
         # Or reading a configuration file
         # If you have nothing special to do
-        # Just do not declare this method
+        # Just do not override this method
         # Or use:
         pass
 
@@ -107,7 +111,7 @@ class ExampleProbe(protobix.SampleProbe):
         # If not declared, calling the probe ith --discovery option will resut in a NotimplementedError
         # If you get discovery infos for only one node you should return data as follow
         return { self.hostname: data }
-        # If you get discovery infos for many hosts, then you should build data dict by your self
+        # If you get discovery infos for many hosts, then you should build data dict by yourself
         # and return result as follow
         return data
 
@@ -144,7 +148,9 @@ __Exit codes mapping__:
 * 3: probe failed at step 3 (add data to DataContainer)
 * 4: probe failed at step 4 (send data to Zabbix)
 
-### Use `python-protobix` only
+### Use `protobix.Datacontainer`
+
+If you don't want or can't use `protobix.SampleProbe`, you can also directly use `protobix.Datacontainer`.
 
 __How to send items updates__
 
@@ -211,7 +217,7 @@ DATA = {
 }
 
 zbx_datacontainer = protobix.DataContainer()
-zbx_datacontainer.data_type = 'lld'
+zbx_datacontainer.data_type = 'items'
 zbx_datacontainer.add(DATA)
 zbx_datacontainer.send()
 ```
@@ -223,31 +229,31 @@ All configuration options are stored in a `protobix.ZabbixAgentConfig` instance.
 
 __Protobix specific configuration options__
 
-| option name  | Default value | ZabbixAgentConfig property | Command-line option (SampleProbe) |
+| Option name  | Default value | ZabbixAgentConfig property | Command-line option (SampleProbe) |
 |--------------|---------------|----------------------------|-----------------------------------|
-| data_type    | `None`        | data_type                  | `--update-items` or `--discovery` |
-| dryrun       | `False`       | dryrun                     | `-d` or `--dryrun`                |
+| `data_type`  | `None`        | `data_type`                | `--update-items` or `--discovery` |
+| `dryrun`     | `False`       | `dryrun`                   | `-d` or `--dryrun`                |
 
 __Zabbix Agent configuration options__
 
-| option name          | Default value           | ZabbixAgentConfig property | Command-line option (SampleProbe) |
-|----------------------|-------------------------|----------------------------|-----------------------------------|
-| ServerActive         | 127.0.0.1               | server_active              | `-z` or `--zabbix-server`         |
-| ServerPort           | 10051                   | server_port                | `-p` or `--port`                  |
-| LogType              | file                    | log_type                   | none                              |
-| LogFile              | /tmp/zabbix_agentd.log  | log_file                   | none                              |
-| DebugLevel           | 3                       | debug_level                | `-v` (from none to `-vvvvv`)      |
-| Timeout              | 3                       | timeout                    | none                              |
-| Hostname             | `socket.getfqdn()`      | hostname                   | none                              |
-| TLSConnect           | unencrypted             | tls_connect                | `--tls-connect`                   |
-| TLSCAFile            | `None`                  | tls_ca_file                | `--tls-ca-file`                   |
-| TLSCertFile          | `None`                  | tls_cert_file              | `--tls-cert-file`                 |
-| TLSCRLFile           | `None`                  | tls_crl_file               | `--tls-crl-file`                  |
-| TLSKeyFile           | `None`                  | tls_key_file               | `--tls-key-file`                  |
-| TLSServerCertIssuer  | `None`                  | tls_server_cert_issuer     | `--tls-server-cert-issuer`        |
-| TLSServerCertSubject | `None`                  | tls_server_cert_subject    | `--tls-server-cert-subject`       |
+| Option name            | Default value            | ZabbixAgentConfig property | Command-line option (SampleProbe) |
+|------------------------|--------------------------|----------------------------|-----------------------------------|
+| `ServerActive`         | `127.0.0.1`              | `server_active`            | `-z` or `--zabbix-server`         |
+| `ServerPort`           | `10051`                  | `server_port`              | `-p` or `--port`                  |
+| `LogType`              | `file`                   | `log_type`                 | none                              |
+| `LogFile`              | `/tmp/zabbix_agentd.log` | `log_file`                 | none                              |
+| `DebugLevel`           | `3`                      | `debug_level`              | `-v` (from none to `-vvvvv`)      |
+| `Timeout`              | `3`                      | `timeout`                  | none                              |
+| `Hostname`             | `socket.getfqdn()`       | `hostname`                 | none                              |
+| `TLSConnect`           | `unencrypted`            | `tls_connect`              | `--tls-connect`                   |
+| `TLSCAFile`            | `None`                   | `tls_ca_file`              | `--tls-ca-file`                   |
+| `TLSCertFile`          | `None`                   | `tls_cert_file`            | `--tls-cert-file`                 |
+| `TLSCRLFile`           | `None`                   | `tls_crl_file`             | `--tls-crl-file`                  |
+| `TLSKeyFile`           | `None`                   | `tls_key_file`             | `--tls-key-file`                  |
+| `TLSServerCertIssuer`  | `None`                   | `tls_server_cert_issuer`   | `--tls-server-cert-issuer`        |
+| `TLSServerCertSubject` | `None`                   | `tls_server_cert_subject`  | `--tls-server-cert-subject`       |
 
-## Contribute
+## How to contribute
 
 You can contribute to `protobix`:
 * fork this repository
