@@ -1,277 +1,347 @@
-import re
-import socket
 import struct
-import time
 import sys
-import warnings,functools
-try: import simplejson as json
-except ImportError: import json
+import time
+import re
 
-if sys.version_info < (3,):
+import socket
+try: import simplejson as json
+except ImportError: import json # pragma: no cover
+
+from .zabbixagentconfig import ZabbixAgentConfig
+
+if sys.version_info < (3,): # pragma: no cover
     def b(x):
         return x
-else:
+else: # pragma: no cover
     import codecs
     def b(x):
         return codecs.utf_8_encode(x)[0]
 
-if sys.version_info < (3,):
-    def deprecated(func):
-        '''This is a decorator which can be used to mark functions
-        as deprecated. It will result in a warning being emitted
-        when the function is used.'''
-
-        @functools.wraps(func)
-        def new_func(*args, **kwargs):
-            warnings.warn_explicit(
-                "Call to deprecated function {}.".format(func.__name__),
-                category=DeprecationWarning,
-                filename=func.func_code.co_filename,
-                lineno=func.func_code.co_firstlineno + 1
-            )
-            return func(*args, **kwargs)
-        return new_func
-else:
-    def deprecated(func):
-        '''This is a decorator which can be used to mark functions
-        as deprecated. It will result in a warning being emitted
-        when the function is used.'''
-
-        @functools.wraps(func)
-        def new_func(*args, **kwargs):
-            warnings.warn_explicit(
-                "Call to deprecated function {}.".format(func.__name__),
-                category=DeprecationWarning,
-                filename=func.__code__.co_filename,
-                lineno=func.__code__.co_firstlineno + 1
-            )
-            return func(*args, **kwargs)
-        return new_func
+HAVE_DECENT_SSL = False
+if sys.version_info > (2,7,9):
+    import ssl
+    # Zabbix force TLSv1.2 protocol
+    # in src/libs/zbxcrypto/tls.c function zbx_tls_init_child
+    ZBX_TLS_PROTOCOL=ssl.PROTOCOL_TLSv1_2
+    HAVE_DECENT_SSL = True
 
 ZBX_HDR = "ZBXD\1"
 ZBX_HDR_SIZE = 13
-# For both 2.0 & >2.2 Zabbix version
-# ? 1.8: Processed 0 Failed 1 Total 1 Seconds spent 0.000057
-# 2.0: Processed 0 Failed 1 Total 1 Seconds spent 0.000057
-# 2.2: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
-# 2.4: processed: 50; failed: 1000; total: 1050; seconds spent: 0.09957
-ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? [Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
-ZBX_DBG_SEND_RESULT = "Send result [%s-%s-%s] for %s"
-ZBX_DBG_SEND_ITEM   = "[%s %s %s]"
-ZBX_SEND_ITEM   = "[%d items]"
+ZBX_RESP_REGEX = r'[Pp]rocessed:? (\d+);? [Ff]ailed:? (\d+);? ' + \
+                 r'[Tt]otal:? (\d+);? [Ss]econds spent:? (\d+\.\d+)'
 
 class SenderProtocol(object):
-    def __init__(self):
-        self._config = {
-            'server': '127.0.0.1',
-            'port': 10051,
-            'log_output': '/tmp/zabbix_agentd.log',
-            'log_level': 3,
-            'timeout': 3,
-            'dryrun': False,
-            'data_type': None }
+
+    REQUEST = "sender data"
+    _logger = None
+
+    def __init__(self, logger=None):
+        self._config = ZabbixAgentConfig()
         self._items_list = []
-        self.data = None
-    
-    @property
-    def zbx_host(self):
-        return self._config['server']
-
-    @zbx_host.setter
-    def zbx_host(self, value):
-        self._config['server'] = value
+        self.socket = None
+        if logger: # pragma: no cover
+            self._logger = logger
 
     @property
-    def zbx_port(self):
-        return self._config['port']
+    def server_active(self):
+        return self._config.server_active
 
-    @zbx_port.setter
-    def zbx_port(self, value):
-        if isinstance(value, int) and \
-           value > 0 and value < 65535:
-            self._config['port'] = value
-        else:
-            if self._logger:
-                self._logger.error('zbx_port requires a valid TCP port number')
-            raise ValueError('zbx_port requires a valid TCP port number')
+    @server_active.setter
+    def server_active(self, value):
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                "Replacing server_active  '%s' with '%s'" %
+                (self._config.server_active, value)
+            )
+        self._config.server_active = value
+
+    @property
+    def server_port(self):
+        return self._config.server_port
+
+    @server_port.setter
+    def server_port(self, value):
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                "Replacing server_port  '%s' with '%s'" %
+                (self._config.server_port, value)
+            )
+        self._config.server_port = value
+
+    @property
+    def debug_level(self):
+        return self._config.debug_level
+
+    @debug_level.setter
+    def debug_level(self, value):
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                "Replacing debug_level  '%s' with '%s'" %
+                (self._config.debug_level, value)
+            )
+        self._config.debug_level = value
 
     @property
     def items_list(self):
         return self._items_list
 
     @property
-    def result(self):
-        return self._result
-
-    @property
     def clock(self):
         return int(time.time())
 
     def _send_to_zabbix(self, item):
-        # Return 0 if dryrun mode enabled
-        if self._config['dryrun']:
-            return 0
+        if self._logger: # pragma: no cover
+            self._logger.info(
+                "Send data to Zabbix Server"
+            )
+
         # Format data to be sent
-        if type(item) is dict:
-            item = [ item ]
-        self.data = json.dumps({ "data": item,
-                                 "request": self.REQUEST,
-                                 "clock": self.clock })
-        # Set socket options & open connection
-        socket.setdefaulttimeout(self._config['timeout'])
-        try:
-            self.zbx_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.zbx_sock.connect((self._config['server'], int(self._config['port'])))
-        except Exception as e:
-            # Maybe we could consider storing missed sent data for later retry
-            self.data = None
-            self._items_list = []
-            self.zbx_sock.close()
-            if self._logger:
-                self._logger.error(
-                    "Unable to connect to server %s on port %d" % \
-                    (self._config['server'], self._config['port'])
-                )
-            raise
-        # Build Zabbix Sender payload
-        data_length = len(self.data)
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                "Building packet to be sent to Zabbix Server"
+            )
+        payload = json.dumps({"data": item,
+                              "request": self.REQUEST,
+                              "clock": self.clock })
+        if self._logger: # pragma: no cover
+            self._logger.debug('About to send: ' + str(payload))
+        data_length = len(payload)
         data_header = struct.pack('<Q', data_length)
-        packet = b(ZBX_HDR) + data_header + b(self.data)
-        # Send payload to Zabbix Server and check response header
-        try:
-            self.zbx_sock.sendall(packet)
-        except:
-            if self._logger:
-                self._logger.error('Error while sending data to Zabbix server')
-            raise
+        packet = b(ZBX_HDR) + data_header + b(payload)
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                "Sending packet to Zabbix Server"
+            )
+        # Send payload to Zabbix Server
+        self._socket().sendall(packet)
 
-        try:
-            # Check the 5 first bytes from answer to ensure it's well formatted
-            zbx_srv_resp_hdr = self.zbx_sock.recv(5)
-            assert(zbx_srv_resp_hdr == b(ZBX_HDR))
-        except Exception as e:
-            if self._logger:
-                self._logger.error(
-                    'Error while receiving response from Zabbix server [%s]' % e
-                )
-            raise
-        # Get the 8 next bytes and unpack to get response's payload length
-        zbx_srv_resp_data_hdr = self.zbx_sock.recv(8)
-        zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_data_hdr)[0]
-        # Get response payload from Zabbix Server
-        zbx_srv_resp_body = self.zbx_sock.recv(zbx_srv_resp_body_len)
-        self.data = None
-        self._items_list = []
-        self.zbx_sock.close()
-        if sys.version_info[0] == 3:
+    def _read_from_zabbix(self):
+        recv_length = 4096
+        zbx_srv_resp_data = b''
+
+        # Read Zabbix server answer
+        if self._logger: # pragma: no cover
+            self._logger.info(
+                "Reading Zabbix Server's answer"
+            )
+        while recv_length >= 4096:
+            _buffer = self._socket().recv(4096)
+            zbx_srv_resp_data += _buffer
+            recv_length = len(_buffer)
+
+        _buffer = None
+        recv_length = None
+        # Check that we have a valid Zabbix header mark
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                "Checking Zabbix headers"
+            )
+        assert zbx_srv_resp_data[:5] == b(ZBX_HDR)
+
+        # Extract response body length from packet
+        zbx_srv_resp_body_len = struct.unpack('<Q', zbx_srv_resp_data[5:ZBX_HDR_SIZE])[0]
+
+        # Extract response body
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                "Extracting answer's body"
+            )
+        body_offset=ZBX_HDR_SIZE+zbx_srv_resp_body_len
+        zbx_srv_resp_body = zbx_srv_resp_data[ZBX_HDR_SIZE:body_offset]
+
+        # Check that we have read the whole packet
+        assert zbx_srv_resp_data[body_offset:] == b''
+
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                "Building JSON object to be analyzed"
+            )
+        if sys.version_info[0] >= 3: # pragma: no cover
             zbx_srv_resp_body = zbx_srv_resp_body.decode()
-        return json.loads(zbx_srv_resp_body)
+        # Analyze Zabbix answer
+        response, processed, failed, total, time = self._handle_response(zbx_srv_resp_body)
 
-    def send(self, container = None):
-        if container != None and self.logger:
-            # Using container argument is deprecated
-            self.logger.warning(
-                'Deprecated call of send() function with container argument'
-            )
-        zbx_answer = 0
-        self._result = []
-        if self._config['log_level'] >= 4:
-            # Per item sent if debug mode enabled
-            for item in self._items_list:
-                output =  ZBX_DBG_SEND_ITEM % (
-                    item["host"],
-                    item["key"],
-                    item["value"]
-                )
-                zbx_answer = self._send_to_zabbix(item)
-                result = self._handle_response(zbx_answer, output)
-                if self.logger:
-                    self._logger.debug(
-                        ZBX_DBG_SEND_RESULT % (
-                            result[0],
-                            result[1],
-                            result[2],
-                            output
-                        )
-                    )
-                self._result.append(result)
-        else:
-            # All items at once if no debug
-            output = ZBX_SEND_ITEM % (
-                len(self._items_list)
-            )
-            zbx_answer = self._send_to_zabbix(self._items_list)
-            result = self._handle_response(zbx_answer, output)
-            if self.logger:
-                self._logger.info(
-                    ZBX_DBG_SEND_RESULT % (
-                        result[0],
-                        result[1],
-                        result[2],
-                        output
-                    )
-                )
-            self._result.append(result)
-        self.data = None
-        self._items_list = []
-        if not self._config['dryrun']:
-            self.zbx_sock.close()
-        self._config['data_type'] = None
+        # Return Zabbix Server answer as JSON
+        return response, processed, failed, total, time
 
-    def _handle_response(self, zbx_answer, output):
-        if zbx_answer and self.logger:
-            self.logger.debug("Got [%s] as response from Zabbix server" % zbx_answer)
+    def _handle_response(self, zbx_answer):
+        """
+        Analyze Zabbix Server response
+        Returns a list with number of:
+        * processed items
+        * failed items
+        * total items
+        * time spent
+
+        :zbx_answer: Zabbix server response as string
+        """
+        zbx_answer = json.loads(zbx_answer)
+        if self._logger: # pragma: no cover
+            self._logger.info(
+                "Anaylizing Zabbix Server's answer"
+            )
+            if zbx_answer:
+                self._logger.debug("Zabbix Server response is: [%s]" % zbx_answer)
+
+        # Default items number in length of th storage list
         nb_item = len(self._items_list)
-        if self._config['log_level'] >= 4:
+        if self._config.debug_level >= 4:
+            # If debug enabled, force it to 1
             nb_item = 1
-        if zbx_answer:
-            if zbx_answer.get('response') == 'success':
-                result = re.findall( ZBX_RESP_REGEX, zbx_answer.get('info'))
-                result = result[0]
-        else:
-            result = ['d', 'd', str(nb_item)]
-        return result
 
-    @deprecated
-    def set_debug(self, value):
-        if value:
-            self._config['log_level'] = 4
-        else:
-            self._config['log_level'] = 3
+        # If dryrun is disabled, we can process answer
+        response = zbx_answer.get('response')
+        result = re.findall(ZBX_RESP_REGEX, zbx_answer.get('info'))
+        processed, failed, total, time = result[0]
 
-    @deprecated
-    def set_verbosity(self, value):
-        pass
+        return response, int(processed), int(failed), int(total), float(time)
 
-    @deprecated
-    def set_dryrun(self, value):
-        if value == None:
-            value = False
-        self._config['dryrun'] = value
+    def _socket_reset(self):
+        if self.socket:
+            if self._logger: # pragma: no cover
+                self._logger.info(
+                    "Reset socket"
+                )
+            self.socket.close()
+            self.socket = None
 
-    @deprecated
-    def set_host(self, value):
-        self._config['server'] = value
+    def _socket(self):
+        # If socket already exists, use it
+        if self.socket is not None:
+            if self._logger: # pragma: no cover
+                self._logger.debug(
+                    "Using existing socket"
+                )
+            return self.socket
 
-    @deprecated
-    def set_port(self, value):
-        self._config['port'] = value
+        # If not, we have to create it
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                "Setting socket options"
+            )
+        socket.setdefaulttimeout(self._config.timeout)
+        # Connect to Zabbix server or proxy with provided config options
+        if self._logger: # pragma: no cover
+            self._logger.info(
+                "Creating new socket"
+            )
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    @property
-    @deprecated
-    def debug(self):
-        if self._config['log_level'] >= 4:
-            return True
-        else:
-            return False
+        # TLS is enabled, let's set it up
+        if self._config.tls_connect != 'unencrypted' and HAVE_DECENT_SSL is True:
+            if self._logger: # pragma: no cover
+                self._logger.info(
+                    'Configuring TLS to %s' % str(self._config.tls_connect)
+                )
+            # Setup TLS context & Wrap socket
+            self.socket = self._init_tls()
+            if self._logger: # pragma: no cover
+                self._logger.info(
+                    'Network socket initialized with TLS support'
+                )
 
-    @debug.setter
-    @deprecated
-    def debug(self, value):
-        if value in [True, False]:
-            if value is True:
-                self._config['log_level'] = 4
-            else:
-                self._config['log_level'] = 3
-        else:
-            raise ValueError('debug parameter requires boolean')
+        if self._logger and isinstance(self.socket, socket.socket): # pragma: no cover
+            self._logger.info(
+                'Network socket initialized with no TLS'
+            )
+        # Connect to Zabbix Server
+        self.socket.connect(
+            (self._config.server_active, self._config.server_port)
+        )
+        #if isinstance(self.socket, ssl.SSLSocket):
+        #    server_cert = self.socket.getpeercert()
+        #    if self._config.tls_server_cert_issuer:
+        #        print(server_cert['issuer'])
+        #        assert server_cert['issuer'] == self._config.tls_server_cert_issuer
+        #        self._logger.info(
+        #            'Server certificate issuer is %s' %
+        #            server_cert['issuer']
+        #        )
+        #    if self._config.tls_server_cert_subject:
+        #        print(server_cert['subject'])
+        #        assert server_cert['subject'] == self._config.tls_server_cert_subject
+        #        self._logger.info(
+        #            'Server certificate subject is %s' %
+        #            server_cert['subject']
+        #        )
+
+        return self.socket
+
+    """
+    Manage TLS context & Wrap socket
+    Returns ssl.SSLSocket if TLS enabled
+            socket.socket if TLS disabled
+    """
+    def _init_tls(self):
+        # Create a SSLContext and configure it
+        if self._logger: # pragma: no cover
+            self._logger.info(
+                "Initialize TLS context"
+            )
+        ssl_context = ssl.SSLContext(ZBX_TLS_PROTOCOL)
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                'Setting TLS verify_mode to ssl.CERT_REQUIRED'
+            )
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
+
+        # Avoid CRIME and related attacks
+        if self._logger: # pragma: no cover
+            self._logger.debug(
+                'Setting TLS option ssl.OP_NO_COMPRESSION'
+            )
+        ssl_context.options |= ssl.OP_NO_COMPRESSION
+        ssl_context.verify_flags =  ssl.VERIFY_X509_STRICT
+
+        # If tls_connect is cert, we must provide client cert file & key
+        if self._config.tls_connect == 'cert':
+            if self._logger: # pragma: no cover
+                self._logger.debug(
+                    "Using provided TLSCertFile %s" % self._config.tls_cert_file
+                )
+                self._logger.debug(
+                    "Using provided TLSKeyFile %s" % self._config.tls_key_file
+                )
+            ssl_context.load_cert_chain(
+                self._config.tls_cert_file,
+                self._config.tls_key_file
+            )
+        elif self._config.tls_connect == 'psk':
+            raise NotImplementedError
+
+        # If provided, use CA file & enforce server certificate chek
+        if self._config.tls_ca_file:
+            if self._logger: # pragma: no cover
+                self._logger.debug(
+                    "Using provided TLSCAFile %s" % self._config.tls_ca_file
+                )
+            ssl_context.load_default_certs(ssl.Purpose.SERVER_AUTH)
+            ssl_context.load_verify_locations(
+                cafile=self._config.tls_ca_file
+            )
+
+        # If provided, use CRL file & enforce server certificate check
+        if self._config.tls_crl_file:
+            if self._logger: # pragma: no cover
+                self._logger.debug(
+                    "Using provided TLSCRLFile %s" % self._config.tls_crl_file
+                )
+            ssl_context.verify_flags |=  ssl.VERIFY_CRL_CHECK_LEAF
+            ssl_context.load_verify_locations(
+                cafile=self._config.tls_crl_file
+            )
+
+        ## If provided enforce server cert issuer check
+        #if self._config.tls_server_cert_issuer:
+        #    verify_issuer
+
+        ## If provided enforce server cert subject check
+        #if self._config.tls_server_cert_issuer:
+        #    verify_issuer
+
+        # Once configuration is done, wrap network socket to TLS context
+        tls_socket = ssl_context.wrap_socket(
+            self.socket
+        )
+        assert isinstance(tls_socket, ssl.SSLSocket)
+        return tls_socket
