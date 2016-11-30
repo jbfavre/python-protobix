@@ -217,7 +217,7 @@ DATA = {
 }
 
 zbx_datacontainer = protobix.DataContainer()
-zbx_datacontainer.data_type = 'items'
+zbx_datacontainer.data_type = 'lld'
 zbx_datacontainer.add(DATA)
 zbx_datacontainer.send()
 ```
