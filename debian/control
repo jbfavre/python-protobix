@@ -9,7 +9,6 @@ Build-Depends: debhelper (>= 8), dh-python,
                python-configobj, python3-configobj,
                python-simplejson, python3-simplejson,
                python-mock, python3-mock,
-               python-pytest-cov, python3-pytest-cov,
                python-pytest, python3-pytest
 Standards-Version: 3.9.8
 Homepage: https://github.com/jbfavre/python-protobix
