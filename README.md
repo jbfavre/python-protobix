@@ -61,7 +61,12 @@ zbx_container.dryrun = True
 hostname="myhost"
 item="my.zabbix.item"
 value=0
-zbx_container.add_item( hostname, item, value)
+state=0
+
+zbx_container.add_item(hostname, item, value, state)
+
+To send to Zabbix server "Not supported" item with information, set the
+state=1. Value in that case is stored as errormsg on the server side.
 
 ''' or use bulk insert '''
 data = {
@@ -111,7 +116,7 @@ value=[
     { 'my.zabbix.ldd_key3': 1,
       'my.zabbix.ldd_key4': 'another lld string' }
 ]
-zbx_container.add_item( hostname, item, value)
+zbx_container.add_item(hostname, item, value)
 
 ''' or use bulk insert '''
 data = {
