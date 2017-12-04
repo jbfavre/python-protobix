@@ -80,7 +80,7 @@ import sys
 
 class ExampleProbe(protobix.SampleProbe):
 
-    __version__ = '1.0.0'
+    __version__ = '1.0.1'
     # discovery_key is *not* the one declared in Zabbix Agent configuration
     # it's the one declared in Zabbix template's "Discovery rules"
     discovery_key = "example.probe.llddiscovery"
@@ -217,7 +217,7 @@ DATA = {
 }
 
 zbx_datacontainer = protobix.DataContainer()
-zbx_datacontainer.data_type = 'items'
+zbx_datacontainer.data_type = 'lld'
 zbx_datacontainer.add(DATA)
 zbx_datacontainer.send()
 ```
