@@ -34,7 +34,7 @@ class DataContainer(SenderProtocol):
             self.logger = logger
         self._items_list = []
 
-    def add_item(self, host, key, value, clock=None):
+    def add_item(self, host, key, value, clock=None, state=0):
         """
         Add a single item into DataContainer
 
@@ -47,9 +47,9 @@ class DataContainer(SenderProtocol):
             clock = self.clock
         if self._config.data_type == "items":
             item = {"host": host, "key": key,
-                    "value": value, "clock": clock}
+                    "value": value, "clock": clock, "state": state}
         elif self._config.data_type == "lld":
-            item = {"host": host, "key": key, "clock": clock,
+            item = {"host": host, "key": key, "clock": clock, "state": state,
                     "value": json.dumps({"data": value})}
         else:
             if self.logger: # pragma: no cover
