@@ -11,7 +11,7 @@ from .zabbixagentconfig import ZabbixAgentConfig
 
 class SampleProbe(object):
 
-    __version__ = '1.0.0'
+    __version__ = '1.0.1'
     # Mapping between zabbix-agent Debug option & logging level
     LOG_LEVEL = [
         logging.NOTSET,
