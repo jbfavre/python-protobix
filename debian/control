@@ -10,7 +10,7 @@ Build-Depends: debhelper (>= 8), dh-python,
                python-simplejson, python3-simplejson,
                python-mock, python3-mock,
                python-pytest, python3-pytest
-Standards-Version: 3.9.8
+Standards-Version: 4.1.1
 Homepage: https://github.com/jbfavre/python-protobix
 Vcs-Git: https://anonscm.debian.org/git/python-modules/packages/python-protobix.git
 Vcs-Browser: https://anonscm.debian.org/cgit/python-modules/packages/python-protobix.git
