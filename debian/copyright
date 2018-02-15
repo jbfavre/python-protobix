@@ -1,4 +1,4 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Jean Baptiste Favre
 Upstream-Contact: jean-baptiste.favre@blablacar.com
 Source: https://github.com/jbfavre/python-protobix
