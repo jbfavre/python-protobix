@@ -3,6 +3,7 @@ python-protobix (1.0.1-2) UNRELEASED; urgency=medium
   * d/control: Set Vcs-* to salsa.debian.org
   * d/copyright: Use https protocol in Format field
   * d/control: Remove ancient X-Python-Version field
+  * d/control: Remove ancient X-Python3-Version field
 
  -- Ondřej Nový <onovy@debian.org>  Tue, 13 Feb 2018 10:04:25 +0100
 
