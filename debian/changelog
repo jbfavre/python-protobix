@@ -1,12 +1,17 @@
-python-protobix (1.0.1-2) UNRELEASED; urgency=medium
+python-protobix (1.0.1-2) unstable; urgency=medium
 
+  [ Ondřej Nový ]
   * d/control: Set Vcs-* to salsa.debian.org
   * d/copyright: Use https protocol in Format field
   * d/control: Remove ancient X-Python-Version field
   * d/control: Remove ancient X-Python3-Version field
   * Convert git repository from git-dpm to gbp layout
 
- -- Ondřej Nový <onovy@debian.org>  Tue, 13 Feb 2018 10:04:25 +0100
+  [ Jean Baptiste Favre ]
+  * Update debhelper compat version
+  * Update standard version
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Mon, 20 Aug 2018 14:11:16 +0200
 
 python-protobix (1.0.1-1) unstable; urgency=medium
 
