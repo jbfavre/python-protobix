@@ -25,7 +25,7 @@ if sys.version_info > (2,7,9):
     HAVE_DECENT_SSL = True
 
 class ProtobixTestProbe(protobix.SampleProbe):
-    __version__="1.0.1"
+    __version__="1.0.2"
 
     def _get_metrics(self):
         return {
@@ -121,7 +121,7 @@ class ProtobixTLSTestProbe(ProtobixTestProbe):
         return  server_success, server_failure, processed, failed, total, time
 
 class ProtobixTestProbe2(protobix.SampleProbe):
-    __version__="1.0.1"
+    __version__="1.0.2"
 
 """
 Check default configuration of the sample probe
