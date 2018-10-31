@@ -1,3 +1,11 @@
+python-protobix (1.0.2-2) unstable; urgency=medium
+
+  * Update Standards-Version in d/control
+  * Fix duplicate short description
+  * Removed lintian override
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Wed, 31 Oct 2018 17:28:30 +0100
+
 python-protobix (1.0.2-1) unstable; urgency=medium
 
   * New upstream version 1.0.2
