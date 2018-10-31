@@ -29,7 +29,7 @@ Description: Implementation of Zabbix Sender protocol
 Package: python3-protobix
 Architecture: all
 Depends: ${misc:Depends}, ${python3:Depends}
-Description: Implementation of Zabbix Sender protocol
+Description: Implementation of Zabbix Sender protocol (Python 3)
  This module implements Zabbix Sender Protocol.
  It allows one to build list of items and send items and send them as trapper.
  It currently supports items as well as Low Level Discovery.
