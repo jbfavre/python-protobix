@@ -9,7 +9,7 @@ except ImportError:
     coverage_options = []
 try:
     import pylint
-    pylint_options = ['--pylint ', '--pylint-error-types=WEF']
+    pylint_options = ['--pylint ']
 except ImportError:
     pylint_options = []
 
