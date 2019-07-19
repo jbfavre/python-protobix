@@ -3,7 +3,7 @@ Section: python
 Priority: optional
 Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
 Uploaders: Jean Baptiste Favre <debian@jbfavre.org>
-Build-Depends: debhelper (>= 11), dh-python,
+Build-Depends: debhelper-compat (= 11), dh-python,
                python-all (>= 2.6.6-3), python-setuptools,
                python3-all, python3-setuptools,
                python-configobj, python3-configobj,
