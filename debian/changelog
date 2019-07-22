@@ -1,8 +1,12 @@
-python-protobix (1.0.2-3) UNRELEASED; urgency=medium
+python-protobix (1.0.2-3) unstable; urgency=medium
 
+  [ Ondřej Nový ]
   * Use debhelper-compat instead of debian/compat.
 
- -- Ondřej Nový <onovy@debian.org>  Sat, 20 Jul 2019 00:03:16 +0200
+  [ Jean Baptiste Favre ]
+  * Bump Standards-Version to 4.4.0.
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Mon, 22 Jul 2019 10:45:59 +0200
 
 python-protobix (1.0.2-2) unstable; urgency=medium
 
