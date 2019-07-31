@@ -1,8 +1,9 @@
-python-protobix (1.0.2-4) UNRELEASED; urgency=medium
+python-protobix (1.0.2-4) unstable; urgency=medium
 
+  * Team upload.
   * Drop Python 2 support.
 
- -- Ondřej Nový <onovy@debian.org>  Wed, 31 Jul 2019 13:42:34 +0200
+ -- Ondřej Nový <onovy@debian.org>  Wed, 31 Jul 2019 13:42:35 +0200
 
 python-protobix (1.0.2-3) unstable; urgency=medium
 
