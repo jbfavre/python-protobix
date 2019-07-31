@@ -1,6 +1,7 @@
 python-protobix (1.0.2-5) unstable; urgency=medium
 
   * Enable salsa-ci
+  * Use debhelper-compat version 12
 
  -- Jean Baptiste Favre <debian@jbfavre.org>  Wed, 31 Jul 2019 15:14:45 +0200
 
