@@ -1,11 +1,19 @@
+python-protobix (1.0.2-7) unstable; urgency=medium
+
+  * Bump Standards-Version
+  * Update debhelper-compat version.
+  * Add 'Rules-Requires-Root: no' in d/control
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Fri, 22 May 2020 19:45:53 +0200
+
 python-protobix (1.0.2-6) UNRELEASED; urgency=medium
 
-  [ Ondřej Nový ]
-  * Bump Standards-Version to 4.4.1.
+   [ Ondřej Nový ]
+   * Bump Standards-Version to 4.4.1.
 
   [ Debian Janitor ]
-  * Set upstream metadata fields: Bug-Database, Bug-Submit, Repository,
-    Repository-Browse.
+   * Set upstream metadata fields: Bug-Database, Bug-Submit, Repository,
+     Repository-Browse.
 
  -- Ondřej Nový <onovy@debian.org>  Fri, 18 Oct 2019 15:55:43 +0200
 
