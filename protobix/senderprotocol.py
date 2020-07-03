@@ -87,7 +87,9 @@ class SenderProtocol(object):
 
     @property
     def clock(self):
-        return int(time.time())
+        now = time.time()
+        # second and nanosecond part of "now"
+        return int(now), int((now-int(now))*1000000000)
 
     def _send_to_zabbix(self, item):
         if self._logger: # pragma: no cover
@@ -100,9 +102,13 @@ class SenderProtocol(object):
             self._logger.debug(
                 "Building packet to be sent to Zabbix Server"
             )
+
+        now, now_ns = self.clock
+
         payload = json.dumps({"data": item,
                               "request": self.REQUEST,
-                              "clock": self.clock })
+                              "clock": now,
+                              "ns": now_ns})
         if self._logger: # pragma: no cover
             self._logger.debug('About to send: ' + str(payload))
         data_length = len(payload)
