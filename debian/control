@@ -1,7 +1,7 @@
 Source: python-protobix
 Section: python
 Priority: optional
-Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
+Maintainer: Debian Python Team <team+python@tracker.debian.org>
 Uploaders: Jean Baptiste Favre <debian@jbfavre.org>
 Build-Depends: debhelper-compat (= 13), dh-python,
                python3-all, python3-setuptools,
