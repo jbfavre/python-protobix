@@ -1,11 +1,12 @@
-python-protobix (1.0.2-8) UNRELEASED; urgency=medium
+python-protobix (1.0.2-8) unstable; urgency=medium
 
+  [ Ondřej Nový ]
   * d/control: Update Maintainer field with new Debian Python Team
     contact address.
   * d/control: Update Vcs-* fields with new Debian Python Team Salsa
     layout.
 
- -- Ondřej Nový <onovy@debian.org>  Thu, 24 Sep 2020 08:52:37 +0200
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Wed, 07 Oct 2020 16:37:10 +0200
 
 python-protobix (1.0.2-7) unstable; urgency=medium
 
