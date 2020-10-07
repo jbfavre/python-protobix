@@ -1,23 +1,10 @@
 ---
-include: https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/salsa-ci.yml
+include:
+  - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/salsa-ci.yml
+  - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/pipeline-jobs.yml
 
 variables:
-  RELEASE: 'experimental'
+  SALSA_CI_DISABLE_APTLY: 1
 
-build:
-  extends: .build-package
-
-#reprotest:
-#  extends: .test-reprotest
-
-lintian:
-  extends: .test-lintian
-
-autopkgtest:
-  extends: .test-autopkgtest
-
-#blhc:
-#  extends: .test-blhc
-
-piuparts:
-  extends: .test-piuparts
+reprotest:
+  allow_failure: true
