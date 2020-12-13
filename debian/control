@@ -9,7 +9,7 @@ Build-Depends: debhelper-compat (= 13), dh-python,
                python3-simplejson,
                python3-mock,
                python3-pytest
-Standards-Version: 4.5.0
+Standards-Version: 4.5.1
 Rules-Requires-Root: no
 Testsuite: autopkgtest-pkg-python
 Homepage: https://github.com/jbfavre/python-protobix
