@@ -94,7 +94,6 @@ class SenderProtocol(object):
             self._logger.info(
                 "Send data to Zabbix Server"
             )
-        self._logger.debug(self._config.ensure_ascii)
         # Format data to be sent
         if self._logger: # pragma: no cover
             self._logger.debug(
@@ -174,7 +173,6 @@ class SenderProtocol(object):
 
         :zbx_answer: Zabbix server response as string
         """
-        self._logger.debug(zbx_answer)
         zbx_answer = json.loads(zbx_answer)
         if self._logger: # pragma: no cover
             self._logger.info(
