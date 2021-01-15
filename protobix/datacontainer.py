@@ -48,7 +48,7 @@ class DataContainer(SenderProtocol):
         if self._config.data_type == "items":
             item = {"host": host, "key": key,
                     "value": value, "clock": clock, "state": state}
-        elif self._config.data_type == "lld" and self._config.ensure_ascii is not None:
+        elif self._config.data_type == "lld":
             item = {"host": host, "key": key, "clock": clock, "state": state,
                     "value": json.dumps({"data": value}, ensure_ascii=self._config.ensure_ascii)}
         else:
