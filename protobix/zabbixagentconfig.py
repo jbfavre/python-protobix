@@ -26,6 +26,7 @@ class ZabbixAgentConfig(object):
             # Protobix specific options
             'data_type': None,
             'dryrun': False,
+            'ensure_ascii': True,
             # Zabbix Agent options
             'ServerActive': '127.0.0.1',
             'ServerPort': 10051,
@@ -333,3 +334,14 @@ class ZabbixAgentConfig(object):
             self.config['data_type'] = value
         else:
             raise ValueError('data_type requires either "items" or "lld"')
+
+    @property
+    def ensure_ascii(self):
+        return self.config['ensure_ascii']
+
+    @ensure_ascii.setter
+    def ensure_ascii(self, value):
+        if value in [True, False]:
+            self.config['ensure_ascii'] = value
+        else:
+            raise ValueError('ensure_ascii parameter requires boolean')

@@ -94,7 +94,7 @@ class SenderProtocol(object):
             self._logger.info(
                 "Send data to Zabbix Server"
             )
-
+        self._logger.debug(self._config.ensure_ascii)
         # Format data to be sent
         if self._logger: # pragma: no cover
             self._logger.debug(
@@ -102,10 +102,10 @@ class SenderProtocol(object):
             )
         payload = json.dumps({"data": item,
                               "request": self.REQUEST,
-                              "clock": self.clock })
+                              "clock": self.clock}, ensure_ascii=self._config.ensure_ascii)
         if self._logger: # pragma: no cover
             self._logger.debug('About to send: ' + str(payload))
-        data_length = len(payload)
+        data_length = len(payload.encode('utf-8'))
         data_header = struct.pack('<Q', data_length)
         packet = b(ZBX_HDR) + data_header + b(payload)
         if self._logger: # pragma: no cover
@@ -128,7 +128,6 @@ class SenderProtocol(object):
             _buffer = self._socket().recv(4096)
             zbx_srv_resp_data += _buffer
             recv_length = len(_buffer)
-
         _buffer = None
         recv_length = None
         # Check that we have a valid Zabbix header mark
@@ -175,6 +174,7 @@ class SenderProtocol(object):
 
         :zbx_answer: Zabbix server response as string
         """
+        self._logger.debug(zbx_answer)
         zbx_answer = json.loads(zbx_answer)
         if self._logger: # pragma: no cover
             self._logger.info(
