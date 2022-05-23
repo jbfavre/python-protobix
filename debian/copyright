@@ -4,11 +4,11 @@ Upstream-Contact: jean-baptiste.favre@blablacar.com
 Source: https://github.com/jbfavre/python-protobix
 
 Files: *
-Copyright: Copyright (c) 2015 Jean Baptiste Favre
+Copyright: Copyright (c) 2015 - 2022 Jean Baptiste Favre
 License: GPL-3
 
 Files: debian/*
-Copyright: Copyright (c) 2015 Jean Baptiste Favre
+Copyright: Copyright (c) 2015 - 2022 Jean Baptiste Favre
 License: GPL-3
 
 License: GPL-3

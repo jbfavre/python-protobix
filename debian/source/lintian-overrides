@@ -1,0 +1,5 @@
+# Do not check SQL files in tests directory
+python-protobix source: very-long-line-length-in-source-file
+
+# Upstream doesn't provide signed tags or releases
+python-protobix source: debian-watch-does-not-check-gpg-signature
