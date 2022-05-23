@@ -1,3 +1,12 @@
+python-protobix (1.0.2-9) unstable; urgency=medium
+
+  * Fix Salsa CI
+  * Update Standards-Version
+  * Convert from git-dpm to patches unapplied format
+  * Lintian fixes
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Mon, 23 May 2022 13:52:22 +0200
+
 python-protobix (1.0.2-8) unstable; urgency=medium
 
   [ Ondřej Nový ]
