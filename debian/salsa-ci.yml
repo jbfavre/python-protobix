@@ -4,6 +4,10 @@ include:
   - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/pipeline-jobs.yml
 
 variables:
+  SALSA_CI_DISABLE_BUILD_PACKAGE_ALL: 0
+  SALSA_CI_DISABLE_BUILD_PACKAGE_ANY: 1
+  SALSA_CI_DISABLE_BUILD_PACKAGE_I386: 1
+  SALSA_CI_DISABLE_CROSSBUILD_ARM64: 1
   SALSA_CI_DISABLE_APTLY: 1
 
 reprotest:
