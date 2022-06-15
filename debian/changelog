@@ -1,3 +1,11 @@
+python-protobix (1.0.2-12) unstable; urgency=medium
+
+  * Improve CI keeping only relevant bits
+  * Add patch to fix test_log_file_invalid
+  * Update d/salsa-ci.yml to remove allowed failure for reprotest
+
+ -- Jean Baptiste Favre <debian@jbfavre.org>  Wed, 15 Jun 2022 19:24:10 +0200
+
 python-protobix (1.0.2-11) unstable; urgency=medium
 
   * Update Standards-Version
