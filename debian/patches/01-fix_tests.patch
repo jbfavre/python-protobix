@@ -1,0 +1,21 @@
+Description: Skip unit tests when running as root
+ On unit test check failure when providing a log file where user has no write privileges.
+ Running the test suite as root makes the test to fail
+Author: Jean Baptiste Favre <debian@jbfavre.org>
+Forwarded: https://github.com/jbfavre/python-protobix/pull/41
+Applied-Upstream: https://github.com/jbfavre/python-protobix/commit/c3c95c56ba1282641466190f5eb615ddcd01a54b
+Last-Update: 2022-06-15
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: python-protobix/tests/test_sampleprobe.py
+===================================================================
+--- python-protobix.orig/tests/test_sampleprobe.py	2022-06-15 19:16:14.346672574 +0200
++++ python-protobix/tests/test_sampleprobe.py	2022-06-15 19:18:34.126987159 +0200
+@@ -335,6 +335,7 @@
+ Here, invalid means that it doesn't exists, or we don't have
+ permission to write into
+ """
++@pytest.mark.skipif(os.getuid() == 0, reason="requires non-root user")
+ def test_log_file_invalid():
+     pbx_test_probe = ProtobixTestProbe()
+     pbx_test_probe._init_logging()

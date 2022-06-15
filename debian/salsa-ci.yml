@@ -9,6 +9,3 @@ variables:
   SALSA_CI_DISABLE_BUILD_PACKAGE_I386: 1
   SALSA_CI_DISABLE_CROSSBUILD_ARM64: 1
   SALSA_CI_DISABLE_APTLY: 1
-
-reprotest:
-  allow_failure: true
