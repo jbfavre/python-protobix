@@ -335,6 +335,7 @@ Check logger configuration in file mode with invalid file
 Here, invalid means that it doesn't exists, or we don't have
 permission to write into
 """
+@pytest.mark.skipif(os.getuid() == 0, reason="requires non-root user")
 def test_log_file_invalid():
     pbx_test_probe = ProtobixTestProbe()
     pbx_test_probe._init_logging()
