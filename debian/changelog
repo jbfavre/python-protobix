@@ -1,3 +1,10 @@
+python-protobix (1.0.2-13) UNRELEASED; urgency=medium
+
+  * debian/patches/pytest7.patch
+    - fix pytest -k syntax for pytest7; Closes: #1013709
+
+ -- Sandro Tosi <morph@debian.org>  Sun, 26 Jun 2022 23:13:58 -0400
+
 python-protobix (1.0.2-12) unstable; urgency=medium
 
   * Improve CI keeping only relevant bits
