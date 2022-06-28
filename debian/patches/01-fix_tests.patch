@@ -7,11 +7,9 @@ Applied-Upstream: https://github.com/jbfavre/python-protobix/commit/c3c95c56ba12
 Last-Update: 2022-06-15
 ---
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
-Index: python-protobix/tests/test_sampleprobe.py
-===================================================================
---- python-protobix.orig/tests/test_sampleprobe.py	2022-06-15 19:16:14.346672574 +0200
-+++ python-protobix/tests/test_sampleprobe.py	2022-06-15 19:18:34.126987159 +0200
-@@ -335,6 +335,7 @@
+--- a/tests/test_sampleprobe.py
++++ b/tests/test_sampleprobe.py
+@@ -335,6 +335,7 @@ Check logger configuration in file mode
  Here, invalid means that it doesn't exists, or we don't have
  permission to write into
  """
@@ -19,3 +17,20 @@ Index: python-protobix/tests/test_sampleprobe.py
  def test_log_file_invalid():
      pbx_test_probe = ProtobixTestProbe()
      pbx_test_probe._init_logging()
+--- a/pytest.ini
++++ b/pytest.ini
+@@ -1,2 +1,2 @@
+ [pytest]
+-addopts='-k-_need_backend'
++addopts=-k 'not _need_backend'
+--- a/tests/__init__.py
++++ b/tests/__init__.py
+@@ -13,7 +13,7 @@ try:
+ except ImportError:
+     pylint_options = []
+ 
+-pytest_options = ['-v', '-k-_need_backend']
++pytest_options = ['-v']
+ pytest_options += coverage_options
+ pytest_options += pylint_options
+ 
